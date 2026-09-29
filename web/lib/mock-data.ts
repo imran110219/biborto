@@ -1,7 +1,7 @@
 import type { Business, BlogPost, EventItem, Member, Sponsor } from "./types";
 
-// Ported verbatim from the static mockup (site/members.html, admin/members.html)
-// — see db/seed_members.sql for the same data as SQL, for whenever a real
+// Ported verbatim from the original static mockup's sample data — see
+// db/seed_members.sql for the same data as SQL, for whenever a real
 // backend replaces this file.
 export const members: Member[] = [
   { id: "1", name: "Tahmina Akter", initials: "TA", discipline: "Architecture", profession: "Architect", city: "Dhaka", email: "tahmina@example.com", platformRole: "superadmin", status: "active", joinedAt: "Jan 2025" },

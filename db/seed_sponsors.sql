@@ -1,7 +1,7 @@
 -- Migrates the 5 sample sponsors from web/lib/mock-data.ts into real
 -- rows. Depends on seed_businesses.sql having run first — all 5 mock
 -- sponsors happen to match a business by name, so business_id is
--- resolved via that match (see db/README.md "Sponsors are not
+-- resolved via that match (see docs/db/README.md "Sponsors are not
 -- businesses" for why this is a cross-link, not a requirement).
 --
 -- Known gap: logo_key is left NULL for all 5 — the mockup never had a

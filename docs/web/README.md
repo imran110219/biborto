@@ -1,13 +1,17 @@
 # Batch 11 — web (Next.js port)
 
-A real, componentized Next.js port of the static HTML mockup in `../site/`.
+Docs for `web/` — this file lives in `docs/web/`, not next to the code
+it describes. Paths below are relative to `web/` unless they start with
+`docs/` or name another top-level folder (`site/`, `db/`) explicitly.
+
+A real, componentized Next.js port of the static HTML mockup in `site/`.
 Same design, same content, but built from reusable React components with
 Tailwind instead of ~3,000-line one-line HTML files with duplicated inline
 styles.
 
 ## Why this exists
 
-`../site/` is a faithful but static HTML/CSS mockup — hand-duplicated
+`site/` is a faithful but static HTML/CSS mockup — hand-duplicated
 markup per page, no components, no data model. This project is the
 "reflect the UI, then build it properly" step: every page, card, badge,
 and layout from the mockup ported into typed, reusable components. The
@@ -24,7 +28,7 @@ gaps](#known-gaps-vs-the-mockup).
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — theme tokens in `app/globals.css` `@theme` block,
-  copied 1:1 from `../site/DESIGN.md`'s color/type/spacing system
+  copied 1:1 from `docs/site/DESIGN.md`'s color/type/spacing system
 - **next/font/google** for Fraunces + Instrument Sans — same fonts as the
   mockup, but a few KB instead of the mockup's ~600KB self-hosted
   base64 `@font-face` block
@@ -113,14 +117,14 @@ Phase 2 auth exists (sign-in, RSVP, submit business, edit post all still
 render inert mock data today).
 
 **Setup**: copy `.env.example` to `.env.local` and point `DATABASE_URL`
-at a Postgres instance loaded with `../db/schema.sql` + the `seed_*.sql`
-files (see `../db/README.md`). Then:
+at a Postgres instance loaded with `db/schema.sql` + the `db/seed_*.sql`
+files (see `docs/db/README.md`). Then:
 
 ```bash
 npm run db:pull   # introspects the live DB into drizzle/schema.ts + relations.ts
 ```
 
-`../db/schema.sql` is still the single source of truth for the actual
+`db/schema.sql` is still the single source of truth for the actual
 schema — `drizzle.config.ts` only ever runs `pull` (introspect), never
 `generate`/`push`. Whenever `schema.sql` changes, reapply it to your dev
 database and re-run `npm run db:pull` to pick up the new columns/types.
@@ -138,7 +142,7 @@ returned object would leak it over the wire even though `MemberCard`
 never renders it.
 
 **Filtering**: query functions replicate the same `status`/`is_public`/
-`visibility` filters `../db/schema.sql`'s `public_*` views encode
+`visibility` filters `db/schema.sql`'s `public_*` views encode
 (members: `status='active' AND is_public=true`; businesses:
 `status='active'`; blog posts: `status='published' AND
 visibility='public'`) rather than selecting from the views directly,
@@ -205,7 +209,7 @@ change or a project restructure first.
 - Only one real blog post has real article content (matching the
   mockup); the other 3 seeded posts render the same "coming soon"
   placeholder body the mockup always showed for them — see
-  `../db/seed_blog_posts.sql`.
+  `db/seed_blog_posts.sql`.
 - No forms actually submit (sign-in, business submission, filters) —
   same as the mockup; wiring these depends on Phase 2 auth existing.
 - Real data is thin by design (9 active members, 0 photos, 0 countries

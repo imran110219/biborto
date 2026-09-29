@@ -1,7 +1,10 @@
 # Data model
 
+Docs for `db/` — paths below are given from the repo root, since this
+file lives in `docs/db/` rather than next to the SQL it describes.
+
 The full Postgres schema for the Batch 11 platform, covering every entity
-the Next.js app (`../web/`) already renders from mock data: members,
+the Next.js app (`web/`) already renders from mock data: members,
 businesses, sponsors, events + RSVPs, blog posts, and gallery
 albums/photos/videos. Field choices come from `web/lib/types.ts`,
 `web/lib/mock-data.ts`, and the admin pages under `web/app/admin/**` —
@@ -9,21 +12,21 @@ this isn't a speculative model, it's what the UI already assumes.
 
 ## Files
 
-- `schema.sql` — the full schema: enums, all tables, indexes,
+- `db/schema.sql` — the full schema: enums, all tables, indexes,
   `updated_at` triggers, and `public_*` views that expose only
   public-safe columns. See the file's header comment for the auth,
   authorization, and file-storage decisions baked into it.
-- `seed_disciplines.sql` — Khulna University's discipline reference
+- `db/seed_disciplines.sql` — Khulna University's discipline reference
   list, codes 01-24 (code, school, name, short code, slug, website
   path), supplied directly as authoritative data, not derived from the
-  mockup. Must run before `seed_members.sql`.
-- `seed_countries.sql` — 243 countries/territories for the "current
+  mockup. Must run before `db/seed_members.sql`.
+- `db/seed_countries.sql` — 243 countries/territories for the "current
   country" dropdown: ISO 3166-1 codes and English names sourced from the
   ICU/CLDR data bundled with Node's `Intl.DisplayNames` (generated, not
   hand-typed — see the file's own header for exactly which codes were
-  kept vs. dropped and why). Must run before `seed_members.sql`.
-- `seed_members.sql`, `seed_businesses.sql`, `seed_sponsors.sql`,
-  `seed_events.sql`, `seed_blog_posts.sql`, `seed_gallery.sql` — migrate
+  kept vs. dropped and why). Must run before `db/seed_members.sql`.
+- `db/seed_members.sql`, `db/seed_businesses.sql`, `db/seed_sponsors.sql`,
+  `db/seed_events.sql`, `db/seed_blog_posts.sql`, `db/seed_gallery.sql` — migrate
   every entity in `web/lib/mock-data.ts` into rows, in that dependency
   order (members need disciplines to exist for `discipline_id`,
   businesses need members to exist for `owner_member_id`, sponsors need
@@ -60,7 +63,7 @@ this isn't a speculative model, it's what the UI already assumes.
   Server Components querying Postgres directly for reads, Route Handlers
   for writes once Phase 2 auth exists — same as any other Postgres-backed
   app. `users` is a new, minimal placeholder table for login identity
-  instead. See `web/README.md`'s Data layer section for how the public
+  instead. See `docs/web/README.md`'s Data layer section for how the public
   read paths actually enforce this today.
 - **Files live in R2, not Postgres.** Columns named `*_key` (`avatar_key`,
   `cover_photo_key`, `logo_key`, `r2_key`) store the Cloudflare R2 object
@@ -68,7 +71,7 @@ this isn't a speculative model, it's what the UI already assumes.
   a bucket/domain change never touches stored data.
 - **Sponsors are not businesses.** 5 of the current 5 mock sponsors
   happen to match businesses by name — a sponsor is often also a
-  batchmate's business — but the site's design (see `../site/README.md`)
+  batchmate's business — but the site's design (see `docs/site/README.md`)
   treats them as separately curated. `sponsors.business_id` is an
   optional cross-link, not a hard dependency.
 - **`blood_group` is members-only, not public.** It's in the `members`
@@ -91,12 +94,12 @@ this isn't a speculative model, it's what the UI already assumes.
   `'editor'`s (Rafiul Islam, Arif Khan) remapped to `'admin'` (kept their
   elevated access, new tier name) and the 1 seeded `'admin'` (Tahmina
   Akter) remapped to `'superadmin'` (top-level control) — see
-  `seed_members.sql`'s comment for the reasoning.
+  `db/seed_members.sql`'s comment for the reasoning.
 - **Disciplines are a reference table, not an enum.** They started as a
   12-value `member_discipline` enum scoped to the mock data — reasonable
   when that was all the data available. Given Khulna University's real,
   authoritative discipline list (codes 01-24: code, school, name, short
-  code, slug, website path — see `seed_disciplines.sql`), a flat enum
+  code, slug, website path — see `db/seed_disciplines.sql`), a flat enum
   was the wrong shape: `disciplines` is now a proper table, grouped by
   `school` (`school_name` enum, 8 values — KU's own School/Discipline
   structure).
@@ -105,7 +108,7 @@ this isn't a speculative model, it's what the UI already assumes.
   had drifted from KU's actual naming ("Urban & Rural Planning" vs.
   "Urban **and** Rural Planning", "Electronics & Communication **Eng.**"
   vs. "...**Engineering**", "...Resource **Tech.**" vs.
-  "...**Technology**") — `seed_members.sql` resolves against the
+  "...**Technology**") — `db/seed_members.sql` resolves against the
   authoritative `code`, not by name, specifically to sidestep this class
   of mismatch.
 - **Countries are a reference table, for the same reason as
@@ -115,11 +118,11 @@ this isn't a speculative model, it's what the UI already assumes.
   errors a ~200-row list invites. Excludes deprecated/historical alias
   codes (e.g. Burma→Myanmar, Zaire→DR Congo), pseudo-regions that aren't
   places (EU, UN, Eurozone), and uninhabited territories (Antarctica,
-  Bouvet Island, etc.) — see `seed_countries.sql`'s header for the exact
+  Bouvet Island, etc.) — see `db/seed_countries.sql`'s header for the exact
   list. Includes `XK` (Kosovo), which isn't formally ISO-assigned but is
   CLDR/EU/SWIFT-recognized and near-universal in real country dropdowns.
   `members.country_id` is nullable — nobody's filled it in yet (see
-  `seed_members.sql`'s known-gaps note), same as before this was a real
+  `db/seed_members.sql`'s known-gaps note), same as before this was a real
   column.
 - **Other categorical fields are still fixed enums, scoped to what's
   seeded.** `business_category` (6 values), `blog_category` (4 values),
@@ -128,7 +131,7 @@ this isn't a speculative model, it's what the UI already assumes.
   enum stays the right shape for these since (unlike disciplines) there's
   no known larger authoritative list behind them yet. Add new values with
   `alter type <type_name> add value '...'` as real data needs them — see
-  the comment above each type in `schema.sql`.
+  the comment above each type in `db/schema.sql`.
 - **"Invited" counts aren't modeled.** The admin dashboard shows "[00]
   going of [000] invited" per event; there's no per-event audience
   targeting yet, so "invited" should be derived as all active members
@@ -141,12 +144,13 @@ backend-as-a-service. Any Postgres 14+ instance works (self-hosted,
 Docker, RDS, etc.):
 
 1. Provision a Postgres database.
-2. Run `schema.sql`, then the `seed_*.sql` files in this order:
+2. Run `db/schema.sql`, then the `db/seed_*.sql` files in this order:
    disciplines, countries, members, businesses, sponsors, events,
-   blog_posts, gallery (e.g. `psql $DATABASE_URL -f schema.sql -f
-   seed_disciplines.sql -f seed_countries.sql -f seed_members.sql -f
-   seed_businesses.sql -f seed_sponsors.sql -f seed_events.sql -f
-   seed_blog_posts.sql -f seed_gallery.sql`).
+   blog_posts, gallery (e.g., from the repo root: `psql $DATABASE_URL -f
+   db/schema.sql -f db/seed_disciplines.sql -f db/seed_countries.sql -f
+   db/seed_members.sql -f db/seed_businesses.sql -f db/seed_sponsors.sql
+   -f db/seed_events.sql -f db/seed_blog_posts.sql -f
+   db/seed_gallery.sql`).
 3. Confirm: `select * from public_members;` should return the 12 members
    with only their public fields; `select count(*) from disciplines;`
    should return 24; `select count(*) from countries;` should return
@@ -156,8 +160,8 @@ Docker, RDS, etc.):
 
 - **Wired into `web/` for reads, not writes.** The public pages (home,
   members, business directory, events, blog, gallery) query this schema
-  directly via Drizzle ORM — see `web/README.md`'s Data layer section for
-  how. Admin pages and every form still render `web/lib/mock-data.ts`;
+  directly via Drizzle ORM — see `docs/web/README.md`'s Data layer
+  section for how. Admin pages and every form still render `web/lib/mock-data.ts`;
   none of them can actually write to this schema without Phase 2 auth.
 - No admin UI wired to this yet — a generic Postgres client (psql,
   pgAdmin, TablePlus, etc.) works until a real admin panel exists.

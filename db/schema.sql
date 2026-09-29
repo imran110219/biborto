@@ -107,8 +107,8 @@ create trigger users_set_updated_at
 
 -- ---------------------------------------------------------------------
 -- disciplines — Khulna University's discipline reference list (codes
--- 01-24; see db/README.md for provenance), not a fixed enum. `code` is KU's
--- own 2-digit discipline code (kept as text to preserve the leading
+-- 01-24; see docs/db/README.md for provenance), not a fixed enum.
+-- `code` is KU's own 2-digit discipline code (kept as text to preserve the leading
 -- zero); `website_path` is KU's own /discipline/<short_code> URL, not
 -- necessarily this app's routing.
 -- ---------------------------------------------------------------------
@@ -359,7 +359,7 @@ create table blog_posts (
   -- No default '' / '{}' on body/tags (or offerings, above, the same
   -- shape): drizzle-kit pull's introspection codegen mis-renders empty
   -- string/array defaults (produces invalid syntax for '', and silently
-  -- wrong [""] instead of [] for '{}') — see web/README.md. Every insert
+  -- wrong [""] instead of [] for '{}') — see docs/web/README.md. Every insert
   -- already supplies these explicitly, so no default is actually needed.
   body              text not null,
   cover_photo_key   text,

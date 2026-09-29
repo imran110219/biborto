@@ -1,5 +1,9 @@
 # Biborto — Batch 11, Khulna University Alumni Platform
 
+This file lives in `docs/`. Other docs are at `docs/site/`, `docs/web/`,
+`docs/db/` — but `site/`, `web/`, `db/` mentioned below still mean the
+actual top-level project folders (the code), not their docs.
+
 Three-part repo, in the order the project actually moved through:
 
 ```
@@ -14,17 +18,17 @@ db/     Full Postgres data model (members, businesses, sponsors, events,
 
 - **`site/`** is the original design export, split into plain multi-page
   HTML/CSS. Pure mockup: sample data, inert forms, almost no JS. See
-  `site/README.md` and `site/DESIGN.md`.
+  `docs/site/README.md` and `docs/site/DESIGN.md`.
 - **`web/`** is the "build it properly" step: every page and component from
   `site/` ported into a componentized Next.js + Tailwind app. Its public
   pages (home, members, business directory, events, blog, gallery) now
   query the real database directly; admin pages and every form still
   render `web/lib/mock-data.ts`, pending Phase 2 auth. This is the
-  actively developed project. See `web/README.md`.
+  actively developed project. See `docs/web/README.md`.
 - **`db/`** is the full Postgres data model — members, businesses,
   sponsors, events/RSVPs, blog posts, gallery — targeting an independent
   Postgres database (Supabase was considered and ruled out). See
-  `db/README.md`.
+  `docs/db/README.md`.
 
 The overall arc: mockup → componentized frontend → public pages wired to
 a real database (current) → auth + write paths (Phase 2, not started —
@@ -47,7 +51,7 @@ started — no bucket wired up yet).
 `web/` is the project to run, and it now needs a database:
 
 ```bash
-# 1. stand up Postgres + load the schema and seed data — see db/README.md
+# 1. stand up Postgres + load the schema and seed data — see docs/db/README.md
 # 2. cd web && cp .env.example .env.local, then set DATABASE_URL
 cd web
 npm install   # see web/.npmrc — this network's registry mirror

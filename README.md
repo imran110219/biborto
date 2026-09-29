@@ -5,7 +5,8 @@ Three-part repo, in the order the project actually moved through:
 ```
 site/   Static HTML/CSS mockup — the original design, no backend, no build step.
 web/    Next.js port of that mockup — same design/content, real components.
-db/     Postgres schema for Phase 1 (member data) — not wired to web/ yet.
+db/     Full Postgres data model (members, businesses, sponsors, events,
+        blog, gallery) — not wired to web/ yet.
 ```
 
 ## How the pieces relate
@@ -17,10 +18,11 @@ db/     Postgres schema for Phase 1 (member data) — not wired to web/ yet.
   `site/` ported into a componentized Next.js + Tailwind app, still
   rendering from static mock data (`web/lib/mock-data.ts`) rather than a
   database. This is the actively developed project. See `web/README.md`.
-- **`db/`** is a Postgres schema sketch for the members table — the first
-  slice of a real backend, targeting an independent Postgres database
-  (Supabase was considered and ruled out). Not connected to `web/` yet;
-  `web/` still reads from mock data. See `db/README.md`.
+- **`db/`** is the full Postgres data model — members, businesses,
+  sponsors, events/RSVPs, blog posts, gallery — targeting an independent
+  Postgres database (Supabase was considered and ruled out). Not
+  connected to `web/` yet; `web/` still reads from mock data. See
+  `db/README.md`.
 
 The overall arc: mockup → componentized frontend (current) → real backend
 (decided, not started — `web/` becomes both frontend and backend via its

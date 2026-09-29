@@ -11,10 +11,13 @@ import {
   MembersIcon,
   PhotoIcon,
 } from "@/components/ui/icons";
-import { members, businesses, events } from "@/lib/mock-data";
+import { businesses, events } from "@/lib/mock-data";
+import { getAdminMembers } from "@/lib/db/queries/members";
+import { approveMember, suspendMember } from "@/app/admin/members/actions";
 
-export default function AdminDashboardPage() {
-  const pendingMembers = members.filter((m) => m.status === "pending");
+export default async function AdminDashboardPage() {
+  const allMembers = await getAdminMembers();
+  const pendingMembers = allMembers.filter((m) => m.status === "pending");
   const pendingBusinesses = businesses.filter((b) => b.status === "pending");
 
   return (
@@ -30,7 +33,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-5 md:grid-cols-5">
-        <AdminStatCard label="Members" value="[000]" caption={`[${pendingMembers.length.toString().padStart(2, "0")}] waiting for approval`} icon={<MembersIcon />} />
+        <AdminStatCard label="Members" value={String(allMembers.length)} caption={`${pendingMembers.length} waiting for approval`} icon={<MembersIcon />} />
         <AdminStatCard label="Blog posts" value="[00]" caption="[0] drafts in review" icon={<DocumentIcon />} />
         <AdminStatCard label="Upcoming events" value={`[${events.length}]`} caption="Next: Grand Reunion, Dec 12" icon={<CalendarIcon />} />
         <AdminStatCard label="Photos & videos" value="[000]" caption="[00] uploads this month" icon={<PhotoIcon />} />
@@ -46,7 +49,14 @@ export default function AdminDashboardPage() {
             </a>
           </div>
           {pendingMembers.map((m) => (
-            <ApprovalRow key={m.id} initials={m.initials} title={m.name} subtitle={`${m.discipline} · Student ID [ID]`} />
+            <ApprovalRow
+              key={m.id}
+              initials={m.initials}
+              title={m.name}
+              subtitle={`${m.discipline} · Student ID ${m.studentId ?? "—"}`}
+              onApprove={approveMember.bind(null, m.id)}
+              onReject={suspendMember.bind(null, m.id)}
+            />
           ))}
         </div>
 

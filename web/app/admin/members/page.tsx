@@ -3,9 +3,11 @@ import { Avatar } from "@/components/ui/Avatar";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { DownloadIcon, EditIcon, PlusIcon, SearchIcon, TrashIcon } from "@/components/ui/icons";
-import { members } from "@/lib/mock-data";
+import { getAdminMembers } from "@/lib/db/queries/members";
 
-export default function AdminMembersPage() {
+export default async function AdminMembersPage() {
+  const members = await getAdminMembers();
+
   return (
     <AdminLayout>
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -46,7 +48,7 @@ export default function AdminMembersPage() {
             <option>Editor</option>
             <option>Admin</option>
           </select>
-          <span className="ml-auto text-sm text-text-secondary">[000] members</span>
+          <span className="ml-auto text-sm text-text-secondary">{members.length} members</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -97,7 +99,7 @@ export default function AdminMembersPage() {
         </div>
 
         <div className="flex items-center justify-between border-t border-[#EFEAE0] px-5 py-3.5 text-sm text-text-secondary">
-          <span>Rows 1–{members.length} of [000]</span>
+          <span>Rows 1–{members.length} of {members.length}</span>
           <div className="flex gap-2">
             <button className="h-11 rounded-[10px] border border-border-input px-4 text-sm font-semibold">Previous</button>
             <button className="h-11 rounded-[10px] border border-border-input px-4 text-sm font-semibold">Next</button>

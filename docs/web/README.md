@@ -2,19 +2,22 @@
 
 Docs for `web/` — this file lives in `docs/web/`, not next to the code
 it describes. Paths below are relative to `web/` unless they start with
-`docs/` or name another top-level folder (`site/`, `db/`) explicitly.
+`docs/` or name another top-level folder (`db/`) explicitly.
 
-A real, componentized Next.js port of the static HTML mockup in `site/`.
-Same design, same content, but built from reusable React components with
-Tailwind instead of ~3,000-line one-line HTML files with duplicated inline
-styles.
+A real, componentized Next.js app. Originally a port of a static HTML
+mockup (`site/`, removed from the repo once this port fully superseded
+it) — same design, same content, but built from reusable React
+components with Tailwind instead of ~3,000-line one-line HTML files with
+duplicated inline styles. The design system that survived the removal
+lives in `docs/web/DESIGN.md`.
 
 ## Why this exists
 
-`site/` is a faithful but static HTML/CSS mockup — hand-duplicated
-markup per page, no components, no data model. This project is the
-"reflect the UI, then build it properly" step: every page, card, badge,
-and layout from the mockup ported into typed, reusable components. The
+The original `site/` was a faithful but static HTML/CSS mockup —
+hand-duplicated markup per page, no components, no data model. This
+project was the "reflect the UI, then build it properly" step: every
+page, card, badge, and layout from the mockup ported into typed,
+reusable components. The
 public, unauthenticated pages (home, members, business directory, events,
 blog, gallery) render from a real independent Postgres database (no
 Supabase) — see [Data layer](#data-layer). Sign-in/sign-up are real too
@@ -30,7 +33,7 @@ gaps](#known-gaps-vs-the-mockup).
 
 - **Next.js 16** (App Router, TypeScript, Turbopack)
 - **Tailwind CSS v4** — theme tokens in `app/globals.css` `@theme` block,
-  copied 1:1 from `docs/site/DESIGN.md`'s color/type/spacing system
+  documented in `docs/web/DESIGN.md`
 - **next/font/google** for Fraunces + Instrument Sans — same fonts as the
   mockup, but a few KB instead of the mockup's ~600KB self-hosted
   base64 `@font-face` block

@@ -1,34 +1,34 @@
 # Biborto — Batch 11, Khulna University Alumni Platform
 
-This file lives in `docs/`. Other docs are at `docs/site/`, `docs/web/`,
-`docs/db/` — but `site/`, `web/`, `db/` mentioned below still mean the
-actual top-level project folders (the code), not their docs.
+This file lives in `docs/`. Other docs are at `docs/web/`, `docs/db/` —
+but `web/`, `db/` mentioned below still mean the actual top-level project
+folders (the code), not their docs.
 
-Three-part repo, in the order the project actually moved through:
+Two-part repo:
 
 ```
-site/   Static HTML/CSS mockup — the original design, no backend, no build step.
-web/    Next.js port of that mockup — real components, public pages read
-        from a real Postgres database, real sign-in gates /admin/**,
-        admin page content + every other form still on mock data.
+web/    Next.js app — real components, public pages read from a real
+        Postgres database, real sign-in gates /admin/**, admin page
+        content + every other form still on mock data.
 db/     Full Postgres data model (members, businesses, sponsors, events,
         blog, gallery, auth) — wired into web/'s public pages and login
         via Drizzle ORM / Auth.js.
 ```
 
+`web/` started as a componentized port of a static HTML/CSS mockup
+(`site/`) — that folder was removed once the port fully superseded it as
+the actively developed project; its design system (colors, type scale,
+component shapes) lives on in `docs/web/DESIGN.md`.
+
 ## How the pieces relate
 
-- **`site/`** is the original design export, split into plain multi-page
-  HTML/CSS. Pure mockup: sample data, inert forms, almost no JS. See
-  `docs/site/README.md` and `docs/site/DESIGN.md`.
-- **`web/`** is the "build it properly" step: every page and component from
-  `site/` ported into a componentized Next.js + Tailwind app. Its public
-  pages (home, members, business directory, events, blog, gallery) query
-  the real database directly, and sign-in (email/password + Google)
-  really authenticates and role-gates `/admin/**`. Admin *page content*
-  and every other form (business submission, RSVP, edit-post's save)
-  still render `web/lib/mock-data.ts` and do nothing. This is the
-  actively developed project. See `docs/web/README.md`.
+- **`web/`** is a componentized Next.js + Tailwind app. Its public pages
+  (home, members, business directory, events, blog, gallery) query the
+  real database directly, and sign-in (email/password + Google) really
+  authenticates and role-gates `/admin/**`. Admin *page content* and
+  every other form (business submission, RSVP, edit-post's save) still
+  render `web/lib/mock-data.ts` and do nothing. This is the actively
+  developed project. See `docs/web/README.md` and `docs/web/DESIGN.md`.
 - **`db/`** is the full Postgres data model — members, businesses,
   sponsors, events/RSVPs, blog posts, gallery, plus auth (`users`,
   `accounts`, `sessions`, `verification_tokens`) — targeting an
@@ -68,8 +68,6 @@ npm install   # see web/.npmrc — this network's registry mirror
 npm run db:pull   # introspects the DB into drizzle/schema.ts
 npm run dev
 ```
-
-`site/`'s HTML files can be opened directly in a browser, no server needed.
 
 ## Note on the root package.json / pnpm-lock.yaml
 

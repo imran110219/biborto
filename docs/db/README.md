@@ -73,7 +73,7 @@ this isn't a speculative model, it's what the UI already assumes.
   a bucket/domain change never touches stored data.
 - **Sponsors are not businesses.** 5 of the current 5 mock sponsors
   happen to match businesses by name — a sponsor is often also a
-  batchmate's business — but the site's design (see `docs/site/README.md`)
+  batchmate's business — but the design (see `docs/web/DESIGN.md`)
   treats them as separately curated. `sponsors.business_id` is an
   optional cross-link, not a hard dependency.
 - **`blood_group` is members-only, not public.** It's in the `members`

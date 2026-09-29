@@ -4,13 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repo structure
 
-Three parts, in the order the project moved through — see `docs/README.md` for the full narrative:
+Two parts — see `docs/README.md` for the full narrative:
 
-- **`site/`** — the original static HTML/CSS mockup. No backend, no build step, no JS beyond one ~10-line script. Open any `.html` file directly in a browser.
-- **`web/`** — the real Next.js (App Router) port. This is the actively developed project.
+- **`web/`** — the Next.js (App Router) app. This is the actively developed project. It began as a port of a static HTML/CSS mockup (`site/`), removed once the port fully superseded it — see `docs/web/DESIGN.md` for the design system that survived the removal.
 - **`db/`** — the Postgres schema and seed data.
 
-**Docs live in `docs/`, not next to the code.** `docs/README.md`, `docs/site/README.md` + `DESIGN.md`, `docs/web/README.md`, `docs/db/README.md`. Paths inside `docs/web/README.md` and `docs/db/README.md` are relative to `web/`/`db/` unless a `docs/` or other top-level folder is named explicitly — read the disclaimer at the top of each before trusting a bare relative path.
+**Docs live in `docs/`, not next to the code.** `docs/README.md`, `docs/web/README.md` + `DESIGN.md`, `docs/db/README.md`. Paths inside `docs/web/README.md` and `docs/db/README.md` are relative to `web/`/`db/` unless a `docs/` or other top-level folder is named explicitly — read the disclaimer at the top of each before trusting a bare relative path.
 
 ## Commands
 

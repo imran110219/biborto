@@ -13,13 +13,13 @@
 --     never a real link (see schema.sql's comment on this column) —
 --     left NULL for all 3.
 
-insert into gallery_albums (name) values
-  ('Orientation day'),
-  ('Rag day'),
-  ('Sundarbans field trip'),
-  ('Convocation'),
-  ('Sports week'),
-  ('Grand reunion');
+insert into gallery_albums (slug, name) values
+  ('orientation-day', 'Orientation day'),
+  ('rag-day', 'Rag day'),
+  ('sundarbans-field-trip', 'Sundarbans field trip'),
+  ('convocation', 'Convocation'),
+  ('sports-week', 'Sports week'),
+  ('grand-reunion', 'Grand reunion');
 
 insert into gallery_videos (title) values
   ('Rag day highlights'),

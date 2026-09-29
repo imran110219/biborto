@@ -398,6 +398,7 @@ create view public_blog_posts as
 -- ---------------------------------------------------------------------
 create table gallery_albums (
   id          uuid primary key default gen_random_uuid(),
+  slug        text not null unique,
   name        text not null,
   created_by  uuid references members (id) on delete set null,
   created_at  timestamptz not null default now(),

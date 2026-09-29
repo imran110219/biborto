@@ -170,10 +170,12 @@ CREATE TABLE "blog_posts" (
 --> statement-breakpoint
 CREATE TABLE "gallery_albums" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"slug" text NOT NULL,
 	"name" text NOT NULL,
 	"created_by" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "gallery_albums_slug_key" UNIQUE("slug")
 );
 --> statement-breakpoint
 CREATE TABLE "gallery_photos" (

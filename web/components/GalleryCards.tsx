@@ -2,9 +2,9 @@ import Link from "next/link";
 import { PlaceholderMedia } from "@/components/ui/PlaceholderMedia";
 import { PlayIcon } from "@/components/ui/icons";
 
-export function AlbumCard({ name, count }: { name: string; count: string }) {
+export function AlbumCard({ slug, name, count }: { slug: string; name: string; count: string }) {
   return (
-    <Link href="#" className="flex flex-col gap-3.5 text-text-primary">
+    <Link href={`/gallery/${slug}`} className="flex flex-col gap-3.5 text-text-primary">
       <PlaceholderMedia label="[Album cover]" className="h-[260px]" />
       <div className="flex items-baseline justify-between">
         <span className="font-serif text-xl font-medium">{name}</span>

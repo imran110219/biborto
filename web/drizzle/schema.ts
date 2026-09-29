@@ -250,6 +250,7 @@ export const blogPosts = pgTable("blog_posts", {
 
 export const galleryAlbums = pgTable("gallery_albums", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
+	slug: text().notNull(),
 	name: text().notNull(),
 	createdBy: uuid("created_by"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -260,6 +261,7 @@ export const galleryAlbums = pgTable("gallery_albums", {
 			foreignColumns: [members.id],
 			name: "gallery_albums_created_by_fkey"
 		}).onDelete("set null"),
+	unique("gallery_albums_slug_key").on(table.slug),
 ]);
 
 export const galleryPhotos = pgTable("gallery_photos", {

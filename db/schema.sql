@@ -39,7 +39,7 @@ $$;
 -- ---------------------------------------------------------------------
 -- Enums
 -- ---------------------------------------------------------------------
-create type member_platform_role as enum ('member', 'editor', 'admin');
+create type member_platform_role as enum ('member', 'admin', 'superadmin');
 create type member_status as enum ('pending', 'active', 'suspended');
 
 -- Khulna University organizes its academic units into "Schools", each

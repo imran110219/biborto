@@ -86,6 +86,12 @@ this isn't a speculative model, it's what the UI already assumes.
   yet — `Avatar` (`web/components/ui/Avatar.tsx`) only ever displays
   initials, and no R2 base URL is configured anywhere to turn a key into
   an actual image src. Data is ready; rendering isn't built.
+- **`platform_role` is `member`/`admin`/`superadmin`, not
+  `member`/`editor`/`admin`.** Changed on request; the 2 seeded
+  `'editor'`s (Rafiul Islam, Arif Khan) remapped to `'admin'` (kept their
+  elevated access, new tier name) and the 1 seeded `'admin'` (Tahmina
+  Akter) remapped to `'superadmin'` (top-level control) — see
+  `seed_members.sql`'s comment for the reasoning.
 - **Disciplines are a reference table, not an enum.** They started as a
   12-value `member_discipline` enum scoped to the mock data — reasonable
   when that was all the data available. Given Khulna University's real,

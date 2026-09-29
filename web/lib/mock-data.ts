@@ -4,12 +4,12 @@ import type { Business, BlogPost, EventItem, Member, Sponsor } from "./types";
 // — see db/seed_members.sql for the same data as SQL, for whenever a real
 // backend replaces this file.
 export const members: Member[] = [
-  { id: "1", name: "Tahmina Akter", initials: "TA", discipline: "Architecture", profession: "Architect", city: "Dhaka", email: "tahmina@example.com", platformRole: "admin", status: "active", joinedAt: "Jan 2025" },
-  { id: "2", name: "Rafiul Islam", initials: "RI", discipline: "Computer Science & Engineering", profession: "Software engineer", city: "Berlin", email: "rafiul@example.com", platformRole: "editor", status: "active", joinedAt: "Feb 2025" },
+  { id: "1", name: "Tahmina Akter", initials: "TA", discipline: "Architecture", profession: "Architect", city: "Dhaka", email: "tahmina@example.com", platformRole: "superadmin", status: "active", joinedAt: "Jan 2025" },
+  { id: "2", name: "Rafiul Islam", initials: "RI", discipline: "Computer Science & Engineering", profession: "Software engineer", city: "Berlin", email: "rafiul@example.com", platformRole: "admin", status: "active", joinedAt: "Feb 2025" },
   { id: "3", name: "Nusrat Jahan", initials: "NJ", discipline: "Pharmacy", profession: "Research scientist", city: "Khulna", email: "nusrat@example.com", platformRole: "member", status: "active", joinedAt: "Feb 2025" },
   { id: "4", name: "Mahmudul Hasan", initials: "MH", discipline: "Business Administration", profession: "Branch manager", city: "Chattogram", email: "mahmudul@example.com", platformRole: "member", status: "active", joinedAt: "Mar 2025" },
   { id: "5", name: "Sabrina Rahman", initials: "SR", discipline: "Urban & Rural Planning", profession: "Urban planner", city: "Dhaka", email: "sabrina@example.com", platformRole: "member", status: "pending", joinedAt: "Sep 2026" },
-  { id: "6", name: "Arif Khan", initials: "AK", discipline: "Forestry & Wood Technology", profession: "Forest officer", city: "Bagerhat", email: "arif@example.com", platformRole: "editor", status: "active", joinedAt: "Apr 2025" },
+  { id: "6", name: "Arif Khan", initials: "AK", discipline: "Forestry & Wood Technology", profession: "Forest officer", city: "Bagerhat", email: "arif@example.com", platformRole: "admin", status: "active", joinedAt: "Apr 2025" },
   { id: "7", name: "Farzana Sultana", initials: "FS", discipline: "English", profession: "Lecturer", city: "Jashore", email: "farzana@example.com", platformRole: "member", status: "active", joinedAt: "Jan 2025" },
   { id: "8", name: "Imran Hossain", initials: "IH", discipline: "Electronics & Communication Eng.", profession: "Network engineer", city: "Dubai", email: "imran@example.com", platformRole: "member", status: "pending", joinedAt: "Sep 2026" },
   { id: "9", name: "Lamia Noor", initials: "LN", discipline: "Environmental Science", profession: "Climate analyst", city: "Toronto", email: "lamia@example.com", platformRole: "member", status: "suspended", joinedAt: "Jun 2025" },

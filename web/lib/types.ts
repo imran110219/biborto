@@ -1,5 +1,5 @@
 export type MemberStatus = "active" | "pending" | "suspended";
-export type PlatformRole = "member" | "editor" | "admin";
+export type PlatformRole = "member" | "admin" | "superadmin";
 
 export interface Member {
   id: string;

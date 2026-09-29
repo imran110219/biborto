@@ -8,7 +8,7 @@ CREATE TYPE "public"."blood_group" AS ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-',
 CREATE TYPE "public"."business_category" AS ENUM('Food & Catering', 'Tech Services', 'Consulting', 'Education', 'Retail & Trade', 'Travel & Tourism');--> statement-breakpoint
 CREATE TYPE "public"."business_status" AS ENUM('pending', 'active', 'rejected');--> statement-breakpoint
 CREATE TYPE "public"."event_category" AS ENUM('Reunion', 'Online', 'Chapter', 'Volunteer');--> statement-breakpoint
-CREATE TYPE "public"."member_platform_role" AS ENUM('member', 'editor', 'admin');--> statement-breakpoint
+CREATE TYPE "public"."member_platform_role" AS ENUM('member', 'admin', 'superadmin');--> statement-breakpoint
 CREATE TYPE "public"."member_status" AS ENUM('pending', 'active', 'suspended');--> statement-breakpoint
 CREATE TYPE "public"."rsvp_status" AS ENUM('going', 'interested', 'declined');--> statement-breakpoint
 CREATE TYPE "public"."school_name" AS ENUM('Science, Engineering & Technology School', 'Management & Business Administration School', 'Life Science School', 'Arts & Humanities School', 'Social Science School', 'Fine Arts School', 'Law School', 'Education School');--> statement-breakpoint

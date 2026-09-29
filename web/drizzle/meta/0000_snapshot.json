@@ -1726,8 +1726,8 @@
       "name": "member_platform_role",
       "values": [
         "member",
-        "editor",
-        "admin"
+        "admin",
+        "superadmin"
       ],
       "schema": "public"
     },

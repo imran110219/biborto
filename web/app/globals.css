@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors — ported 1:1 from site/DESIGN.md */
+  --color-bg-public: #f5f2ea;
+  --color-bg-admin: #f7f5f0;
+  --color-text-primary: #1a1f1b;
+  --color-text-secondary: #5a635d;
+  --color-text-muted: #4e5751;
+  --color-text-article: #2a302c;
+
+  --color-brand-green: #1e4a38;
+  --color-brand-green-dark: #143426;
+  --color-brand-green-mid: #2c5a47;
+  --color-brand-green-tint: #e4ece6;
+
+  --color-accent-amber: #9a6414;
+  --color-accent-amber-tint: #f3e7d1;
+  --color-accent-amber-text: #7a4e0e;
+
+  --color-diamond: #1e4a8c;
+  --color-diamond-tint: #e0ecfa;
+
+  --color-border-default: #e3ddd0;
+  --color-border-input: #d6cfbf;
+
+  --color-placeholder-media: #dad4c5;
+  --color-placeholder-media-text: #4a524d;
+
+  --color-video-dark: #2b332e;
+
+  --color-status-neutral-bg: #e6e4e0;
+  --color-status-neutral-text: #3e4540;
+
+  --color-tier-silver-bg: #e8e8e8;
+  --color-tier-silver-text: #464646;
+  --color-tier-bronze-bg: #e9dccd;
+  --color-tier-bronze-text: #784a22;
+
+  --font-serif: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-instrument-sans), system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+}
+
+@keyframes diamondPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}

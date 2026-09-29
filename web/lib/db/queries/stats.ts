@@ -16,8 +16,8 @@ export async function getHomeStats(): Promise<HomeStats> {
   const [memberStats] = await db
     .select({
       registeredBatchmates: count(),
-      disciplinesRepresented: countDistinct(members.discipline),
-      countriesRepresented: countDistinct(members.country),
+      disciplinesRepresented: countDistinct(members.disciplineId),
+      countriesRepresented: countDistinct(members.countryId),
     })
     .from(members)
     .where(and(eq(members.status, "active"), eq(members.isPublic, true)));

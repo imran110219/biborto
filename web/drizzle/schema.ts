@@ -1,4 +1,4 @@
-import { pgTable, unique, uuid, text, timestamp, index, foreignKey, boolean, date, time, pgView, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, unique, uuid, text, timestamp, index, foreignKey, date, boolean, time, pgView, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blogCategory = pgEnum("blog_category", ['Reunion', 'Memories', 'Careers', 'Campus'])
@@ -8,10 +8,10 @@ export const bloodGroup = pgEnum("blood_group", ['A+', 'A-', 'B+', 'B-', 'AB+', 
 export const businessCategory = pgEnum("business_category", ['Food & Catering', 'Tech Services', 'Consulting', 'Education', 'Retail & Trade', 'Travel & Tourism'])
 export const businessStatus = pgEnum("business_status", ['pending', 'active', 'rejected'])
 export const eventCategory = pgEnum("event_category", ['Reunion', 'Online', 'Chapter', 'Volunteer'])
-export const memberDiscipline = pgEnum("member_discipline", ['Architecture', 'Computer Science & Engineering', 'Pharmacy', 'Business Administration', 'Urban & Rural Planning', 'Forestry & Wood Technology', 'English', 'Electronics & Communication Eng.', 'Environmental Science', 'Economics', 'Fisheries & Marine Resource Tech.', 'Mathematics'])
 export const memberPlatformRole = pgEnum("member_platform_role", ['member', 'editor', 'admin'])
 export const memberStatus = pgEnum("member_status", ['pending', 'active', 'suspended'])
 export const rsvpStatus = pgEnum("rsvp_status", ['going', 'interested', 'declined'])
+export const schoolName = pgEnum("school_name", ['Science, Engineering & Technology School', 'Management & Business Administration School', 'Life Science School', 'Arts & Humanities School', 'Social Science School', 'Fine Arts School', 'Law School', 'Education School'])
 export const sponsorTier = pgEnum("sponsor_tier", ['diamond', 'gold', 'silver', 'bronze'])
 
 
@@ -27,25 +27,58 @@ export const users = pgTable("users", {
 	unique("users_google_id_key").on(table.googleId),
 ]);
 
+export const disciplines = pgTable("disciplines", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	code: text().notNull(),
+	school: schoolName().notNull(),
+	name: text().notNull(),
+	shortCode: text("short_code").notNull(),
+	slug: text().notNull(),
+	websitePath: text("website_path").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("disciplines_school_idx").using("btree", table.school.asc().nullsLast().op("enum_ops")),
+	unique("disciplines_code_key").on(table.code),
+	unique("disciplines_name_key").on(table.name),
+	unique("disciplines_short_code_key").on(table.shortCode),
+	unique("disciplines_slug_key").on(table.slug),
+	unique("disciplines_website_path_key").on(table.websitePath),
+]);
+
+export const countries = pgTable("countries", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	isoCode: text("iso_code").notNull(),
+	name: text().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	unique("countries_iso_code_key").on(table.isoCode),
+	unique("countries_name_key").on(table.name),
+]);
+
 export const members = pgTable("members", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	userId: uuid("user_id"),
+	slug: text().notNull(),
 	name: text().notNull(),
-	discipline: memberDiscipline().notNull(),
+	disciplineId: uuid("discipline_id").notNull(),
 	profession: text(),
 	currentEmployer: text("current_employer"),
 	bio: text(),
 	city: text(),
-	country: text(),
+	countryId: uuid("country_id"),
 	avatarKey: text("avatar_key"),
 	linkedinUrl: text("linkedin_url"),
 	facebookUrl: text("facebook_url"),
+	websiteUrl: text("website_url"),
 	email: text().notNull(),
 	phoneNumber: text("phone_number"),
 	studentId: text("student_id"),
 	platformRole: memberPlatformRole("platform_role").default('member').notNull(),
 	status: memberStatus().default('pending').notNull(),
 	bloodGroup: bloodGroup("blood_group"),
+	dateOfBirth: date("date_of_birth"),
 	isPublic: boolean("is_public").default(true).notNull(),
 	joinedAt: timestamp("joined_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	reviewedBy: uuid("reviewed_by"),
@@ -54,7 +87,7 @@ export const members = pgTable("members", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	index("members_city_idx").using("btree", table.city.asc().nullsLast().op("text_ops")),
-	index("members_discipline_idx").using("btree", table.discipline.asc().nullsLast().op("enum_ops")),
+	index("members_discipline_idx").using("btree", table.disciplineId.asc().nullsLast().op("uuid_ops")),
 	index("members_status_idx").using("btree", table.status.asc().nullsLast().op("enum_ops")),
 	foreignKey({
 			columns: [table.userId],
@@ -62,10 +95,21 @@ export const members = pgTable("members", {
 			name: "members_user_id_fkey"
 		}).onDelete("set null"),
 	foreignKey({
+			columns: [table.disciplineId],
+			foreignColumns: [disciplines.id],
+			name: "members_discipline_id_fkey"
+		}),
+	foreignKey({
+			columns: [table.countryId],
+			foreignColumns: [countries.id],
+			name: "members_country_id_fkey"
+		}),
+	foreignKey({
 			columns: [table.reviewedBy],
 			foreignColumns: [table.id],
 			name: "members_reviewed_by_fkey"
 		}).onDelete("set null"),
+	unique("members_slug_key").on(table.slug),
 	unique("members_email_key").on(table.email),
 ]);
 
@@ -108,30 +152,6 @@ export const businesses = pgTable("businesses", {
 	unique("businesses_slug_key").on(table.slug),
 ]);
 
-export const eventRsvps = pgTable("event_rsvps", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	eventId: uuid("event_id").notNull(),
-	memberId: uuid("member_id").notNull(),
-	status: rsvpStatus().default('going').notNull(),
-	bringingFamily: boolean("bringing_family").default(false).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	index("event_rsvps_event_idx").using("btree", table.eventId.asc().nullsLast().op("uuid_ops")),
-	index("event_rsvps_member_idx").using("btree", table.memberId.asc().nullsLast().op("uuid_ops")),
-	foreignKey({
-			columns: [table.eventId],
-			foreignColumns: [events.id],
-			name: "event_rsvps_event_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.memberId],
-			foreignColumns: [members.id],
-			name: "event_rsvps_member_id_fkey"
-		}).onDelete("cascade"),
-	unique("event_rsvps_event_id_member_id_key").on(table.memberId, table.eventId),
-]);
-
 export const sponsors = pgTable("sponsors", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	businessId: uuid("business_id"),
@@ -172,6 +192,30 @@ export const events = pgTable("events", {
 			foreignColumns: [members.id],
 			name: "events_created_by_fkey"
 		}).onDelete("set null"),
+]);
+
+export const eventRsvps = pgTable("event_rsvps", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	eventId: uuid("event_id").notNull(),
+	memberId: uuid("member_id").notNull(),
+	status: rsvpStatus().default('going').notNull(),
+	bringingFamily: boolean("bringing_family").default(false).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("event_rsvps_event_idx").using("btree", table.eventId.asc().nullsLast().op("uuid_ops")),
+	index("event_rsvps_member_idx").using("btree", table.memberId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.eventId],
+			foreignColumns: [events.id],
+			name: "event_rsvps_event_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.memberId],
+			foreignColumns: [members.id],
+			name: "event_rsvps_member_id_fkey"
+		}).onDelete("cascade"),
+	unique("event_rsvps_event_id_member_id_key").on(table.memberId, table.eventId),
 ]);
 
 export const blogPosts = pgTable("blog_posts", {
@@ -268,17 +312,19 @@ export const activityLog = pgTable("activity_log", {
 		}).onDelete("set null"),
 ]);
 export const publicMembers = pgView("public_members", {	id: uuid(),
+	slug: text(),
 	name: text(),
-	discipline: memberDiscipline(),
+	disciplineId: uuid("discipline_id"),
 	profession: text(),
 	currentEmployer: text("current_employer"),
 	bio: text(),
 	city: text(),
-	country: text(),
+	countryId: uuid("country_id"),
 	avatarKey: text("avatar_key"),
 	linkedinUrl: text("linkedin_url"),
 	facebookUrl: text("facebook_url"),
-}).as(sql`SELECT id, name, discipline, profession, current_employer, bio, city, country, avatar_key, linkedin_url, facebook_url FROM members WHERE status = 'active'::member_status AND is_public = true`);
+	websiteUrl: text("website_url"),
+}).as(sql`SELECT id, slug, name, discipline_id, profession, current_employer, bio, city, country_id, avatar_key, linkedin_url, facebook_url, website_url FROM members WHERE status = 'active'::member_status AND is_public = true`);
 
 export const publicBusinesses = pgView("public_businesses", {	id: uuid(),
 	slug: text(),

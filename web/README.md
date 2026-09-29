@@ -38,6 +38,7 @@ gaps](#known-gaps-vs-the-mockup).
 app/
   page.tsx                    Home
   members/page.tsx            Member directory
+  members/[slug]/page.tsx     Member profile (dynamic route, SSG)
   events/page.tsx             Events
   gallery/page.tsx            Gallery & videos
   blog/page.tsx                → redirects to the one seeded post

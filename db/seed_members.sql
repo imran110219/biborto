@@ -3,6 +3,15 @@
 -- real rows, so the mockup data becomes the first real dataset instead
 -- of being thrown away.
 --
+-- Depends on seed_disciplines.sql having run first. discipline_id is
+-- resolved by KU's official discipline code, not by name — the mockup's
+-- discipline strings turned out to differ slightly from the real KU
+-- names for 3 of these 12 ("Urban & Rural Planning" vs "Urban and Rural
+-- Planning", "Electronics & Communication Eng." vs "Electronics and
+-- Communication Engineering", "Fisheries & Marine Resource Tech." vs
+-- "...Technology") — using the authoritative code sidesteps the mismatch
+-- entirely rather than requiring name string cleanup here.
+--
 -- Known gaps carried over from the mockup (not invented here, flagged
 -- honestly rather than backfilled with fake data):
 --   - student_id: the UI only ever showed a bracketed "[ID]" placeholder,
@@ -20,17 +29,17 @@
 --     file before any auth/login work lands.
 
 insert into members
-  (name, discipline, profession, city, email, platform_role, status, joined_at, is_public)
+  (slug, name, discipline_id, profession, city, email, platform_role, status, joined_at, is_public)
 values
-  ('Tahmina Akter',  'Architecture',                       'Architect',             'Dhaka',      'tahmina@example.com',  'admin',  'active',    '2025-01-15', true),
-  ('Rafiul Islam',   'Computer Science & Engineering',      'Software engineer',     'Berlin',     'rafiul@example.com',   'editor', 'active',    '2025-02-10', true),
-  ('Nusrat Jahan',   'Pharmacy',                            'Research scientist',    'Khulna',     'nusrat@example.com',   'member', 'active',    '2025-02-20', true),
-  ('Mahmudul Hasan', 'Business Administration',             'Branch manager',        'Chattogram', 'mahmudul@example.com','member', 'active',    '2025-03-05', true),
-  ('Sabrina Rahman', 'Urban & Rural Planning',               'Urban planner',         'Dhaka',      'sabrina@example.com', 'member', 'pending',   '2026-09-01', true),
-  ('Arif Khan',      'Forestry & Wood Technology',           'Forest officer',        'Bagerhat',   'arif@example.com',    'editor', 'active',    '2025-04-12', true),
-  ('Farzana Sultana','English',                              'Lecturer',              'Jashore',    'farzana@example.com', 'member', 'active',    '2025-01-01', true),
-  ('Imran Hossain',  'Electronics & Communication Eng.',     'Network engineer',      'Dubai',      'imran@example.com',   'member', 'pending',   '2026-09-01', true),
-  ('Lamia Noor',     'Environmental Science',                'Climate analyst',       'Toronto',    'lamia@example.com',   'member', 'suspended', '2025-06-18', true),
-  ('Shafiqul Mamun', 'Economics',                            'Policy researcher',     'Dhaka',      'shafiqul@example.com','member', 'active',    '2025-01-01', true),
-  ('Rumana Begum',   'Fisheries & Marine Resource Tech.',    'Aquaculture consultant','Satkhira',   'rumana@example.com',  'member', 'active',    '2025-01-01', true),
-  ('Tanvir Hasan',   'Mathematics',                          'Data scientist',        'Sydney',     'tanvir@example.com',  'member', 'active',    '2025-01-01', true);
+  ('tahmina-akter',   'Tahmina Akter',  (select id from disciplines where code = '01'), 'Architect',             'Dhaka',      'tahmina@example.com',  'admin',  'active',    '2025-01-15', true),
+  ('rafiul-islam',    'Rafiul Islam',   (select id from disciplines where code = '02'), 'Software engineer',     'Berlin',     'rafiul@example.com',   'editor', 'active',    '2025-02-10', true),
+  ('nusrat-jahan',    'Nusrat Jahan',   (select id from disciplines where code = '11'), 'Research scientist',    'Khulna',     'nusrat@example.com',   'member', 'active',    '2025-02-20', true),
+  ('mahmudul-hasan',  'Mahmudul Hasan', (select id from disciplines where code = '03'), 'Branch manager',        'Chattogram', 'mahmudul@example.com','member', 'active',    '2025-03-05', true),
+  ('sabrina-rahman',  'Sabrina Rahman', (select id from disciplines where code = '04'), 'Urban planner',         'Dhaka',      'sabrina@example.com', 'member', 'pending',   '2026-09-01', true),
+  ('arif-khan',       'Arif Khan',      (select id from disciplines where code = '05'), 'Forest officer',        'Bagerhat',   'arif@example.com',    'editor', 'active',    '2025-04-12', true),
+  ('farzana-sultana', 'Farzana Sultana',(select id from disciplines where code = '14'), 'Lecturer',              'Jashore',    'farzana@example.com', 'member', 'active',    '2025-01-01', true),
+  ('imran-hossain',   'Imran Hossain',  (select id from disciplines where code = '09'), 'Network engineer',      'Dubai',      'imran@example.com',   'member', 'pending',   '2026-09-01', true),
+  ('lamia-noor',      'Lamia Noor',     (select id from disciplines where code = '10'), 'Climate analyst',       'Toronto',    'lamia@example.com',   'member', 'suspended', '2025-06-18', true),
+  ('shafiqul-mamun',  'Shafiqul Mamun', (select id from disciplines where code = '15'), 'Policy researcher',     'Dhaka',      'shafiqul@example.com','member', 'active',    '2025-01-01', true),
+  ('rumana-begum',    'Rumana Begum',   (select id from disciplines where code = '06'), 'Aquaculture consultant','Satkhira',   'rumana@example.com',  'member', 'active',    '2025-01-01', true),
+  ('tanvir-hasan',    'Tanvir Hasan',   (select id from disciplines where code = '12'), 'Data scientist',        'Sydney',     'tanvir@example.com',  'member', 'active',    '2025-01-01', true);

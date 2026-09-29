@@ -13,25 +13,36 @@ this isn't a speculative model, it's what the UI already assumes.
   `updated_at` triggers, and `public_*` views that expose only
   public-safe columns. See the file's header comment for the auth,
   authorization, and file-storage decisions baked into it.
+- `seed_disciplines.sql` — Khulna University's full 29-discipline
+  reference list (code, school, name, short code, slug, website path),
+  supplied directly as authoritative data, not derived from the mockup.
+  Must run before `seed_members.sql`.
+- `seed_countries.sql` — 243 countries/territories for the "current
+  country" dropdown: ISO 3166-1 codes and English names sourced from the
+  ICU/CLDR data bundled with Node's `Intl.DisplayNames` (generated, not
+  hand-typed — see the file's own header for exactly which codes were
+  kept vs. dropped and why). Must run before `seed_members.sql`.
 - `seed_members.sql`, `seed_businesses.sql`, `seed_sponsors.sql`,
   `seed_events.sql`, `seed_blog_posts.sql`, `seed_gallery.sql` — migrate
   every entity in `web/lib/mock-data.ts` into rows, in that dependency
-  order (businesses need members to exist for `owner_member_id`,
-  sponsors need businesses for the optional `business_id` cross-link,
-  blog posts need members for `author_member_id`). Each file's header
-  comment flags what the mock data doesn't actually specify (e.g. exact
-  years for event/post dates, business contact info) rather than
-  inventing it silently. `activity_log` and `users` have no seed data —
-  neither has a source in `mock-data.ts` (activity feed text is
-  hardcoded in the dashboard page component; there's no auth data at
-  all yet).
+  order (members need disciplines to exist for `discipline_id`,
+  businesses need members to exist for `owner_member_id`, sponsors need
+  businesses for the optional `business_id` cross-link, blog posts need
+  members for `author_member_id`). Each file's header comment flags what
+  the mock data doesn't actually specify (e.g. exact years for
+  event/post dates, business contact info) rather than inventing it
+  silently. `activity_log` and `users` have no seed data — neither has a
+  source in `mock-data.ts` (activity feed text is hardcoded in the
+  dashboard page component; there's no auth data at all yet).
 
 ## Entities
 
 | Table | What it is |
 |---|---|
 | `users` | Login identity only (Phase 2, not built). Minimal on purpose — expect it to change once an auth approach is chosen. |
-| `members` | The alumni directory / profile data. `user_id` links to `users` once a member logs in; can exist without one (committee-entered). |
+| `disciplines` | Khulna University's full 29-discipline reference list, grouped by `school`. A real table, not an enum — see "Disciplines are a reference table" below. |
+| `countries` | ISO 3166-1 countries/territories for the "current country" dropdown. Same reasoning as `disciplines` — see "Countries are a reference table" below. |
+| `members` | The alumni directory / profile data. `slug` powers `web/app/members/[slug]`. `discipline_id` references `disciplines`; `country_id` (nullable) references `countries`. `user_id` links to `users` once a member logs in; can exist without one (committee-entered). |
 | `businesses` | Alumni-run Business Directory listings, self-submitted, approve/reject workflow (`status`, `reviewed_by`, `reviewed_at`). |
 | `sponsors` | Committee-curated sponsor tiers. `business_id` is an *optional* cross-link — sponsors are managed independently of the Business Directory, even though several sponsors are also listed businesses. |
 | `events`, `event_rsvps` | Reunion/chapter events and member RSVPs (`going` / `interested` / `declined`). |
@@ -64,13 +75,53 @@ this isn't a speculative model, it's what the UI already assumes.
   table but deliberately left out of `public_members` — more sensitive
   than the rest of the public directory card, meant for a members-only
   emergency-donor search, not anonymous visitors.
-- **Categorical fields are fixed enums, scoped to what's seeded.**
-  `member_discipline` (12 values), `business_category` (6 values),
-  `blog_category` (4 values), and `event_category` (4 values) all cover
-  exactly what's in the current mock/seed data, not necessarily the full
-  set each will ever need. Add new values with `alter type <type_name>
-  add value '...'` as real data needs them — see the comment above each
-  type in `schema.sql`.
+- **`date_of_birth` is admin-only, same call as `blood_group`.** Real
+  PII — identity-theft and age-discrimination risk — so it's excluded
+  from `public_members` too. A birthday-reminder feature would only need
+  month+day, not the full date; not built, so the full date stays
+  admin-only for now rather than splitting it preemptively.
+- **`avatar_key` (the member photo) is wired through the app layer, not
+  just the DB.** `PublicMember`/`PublicMemberDetail` in `web/lib/types.ts`
+  now carry it and the query layer selects it, but nothing renders it
+  yet — `Avatar` (`web/components/ui/Avatar.tsx`) only ever displays
+  initials, and no R2 base URL is configured anywhere to turn a key into
+  an actual image src. Data is ready; rendering isn't built.
+- **Disciplines are a reference table, not an enum.** They started as a
+  12-value `member_discipline` enum scoped to the mock data — reasonable
+  when that was all the data available. Given Khulna University's real,
+  authoritative 29-discipline list (code, school, name, short code, slug,
+  website path — see `seed_disciplines.sql`), a flat enum was the wrong
+  shape: `disciplines` is now a proper table, grouped by `school`
+  (`school_name` enum, 8 values — KU's own School/Discipline structure).
+  `members.discipline_id` references it. Cross-checking the mock data
+  against the real list also caught 3 near-miss discipline names that
+  had drifted from KU's actual naming ("Urban & Rural Planning" vs.
+  "Urban **and** Rural Planning", "Electronics & Communication **Eng.**"
+  vs. "...**Engineering**", "...Resource **Tech.**" vs.
+  "...**Technology**") — `seed_members.sql` resolves against the
+  authoritative `code`, not by name, specifically to sidestep this class
+  of mismatch.
+- **Countries are a reference table, for the same reason as
+  disciplines.** `countries` holds every current ISO 3166-1 country/
+  territory with a permanent civilian population (243 rows), sourced
+  from CLDR data rather than hand-typed, to avoid the transcription
+  errors a ~200-row list invites. Excludes deprecated/historical alias
+  codes (e.g. Burma→Myanmar, Zaire→DR Congo), pseudo-regions that aren't
+  places (EU, UN, Eurozone), and uninhabited territories (Antarctica,
+  Bouvet Island, etc.) — see `seed_countries.sql`'s header for the exact
+  list. Includes `XK` (Kosovo), which isn't formally ISO-assigned but is
+  CLDR/EU/SWIFT-recognized and near-universal in real country dropdowns.
+  `members.country_id` is nullable — nobody's filled it in yet (see
+  `seed_members.sql`'s known-gaps note), same as before this was a real
+  column.
+- **Other categorical fields are still fixed enums, scoped to what's
+  seeded.** `business_category` (6 values), `blog_category` (4 values),
+  and `event_category` (4 values) cover exactly what's in the current
+  mock/seed data, not necessarily the full set each will ever need — an
+  enum stays the right shape for these since (unlike disciplines) there's
+  no known larger authoritative list behind them yet. Add new values with
+  `alter type <type_name> add value '...'` as real data needs them — see
+  the comment above each type in `schema.sql`.
 - **"Invited" counts aren't modeled.** The admin dashboard shows "[00]
   going of [000] invited" per event; there's no per-event audience
   targeting yet, so "invited" should be derived as all active members
@@ -83,14 +134,16 @@ backend-as-a-service. Any Postgres 14+ instance works (self-hosted,
 Docker, RDS, etc.):
 
 1. Provision a Postgres database.
-2. Run `schema.sql`, then the `seed_*.sql` files in this order: members,
-   businesses, sponsors, events, blog_posts, gallery (e.g.
-   `psql $DATABASE_URL -f schema.sql -f seed_members.sql -f
+2. Run `schema.sql`, then the `seed_*.sql` files in this order:
+   disciplines, countries, members, businesses, sponsors, events,
+   blog_posts, gallery (e.g. `psql $DATABASE_URL -f schema.sql -f
+   seed_disciplines.sql -f seed_countries.sql -f seed_members.sql -f
    seed_businesses.sql -f seed_sponsors.sql -f seed_events.sql -f
    seed_blog_posts.sql -f seed_gallery.sql`).
 3. Confirm: `select * from public_members;` should return the 12 members
-   with only their public fields; `select count(*) from businesses;`
-   should return 8.
+   with only their public fields; `select count(*) from disciplines;`
+   should return 29; `select count(*) from countries;` should return
+   243; `select count(*) from businesses;` should return 8.
 
 ## What this does NOT include yet
 

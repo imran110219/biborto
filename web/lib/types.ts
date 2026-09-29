@@ -22,11 +22,26 @@ export interface Member {
 // them here would leak exactly what the view was designed to keep out.
 export interface PublicMember {
   id: string;
+  slug: string;
   name: string;
   initials: string;
   discipline: string;
   profession: string;
   city: string;
+  avatarKey?: string;
+}
+
+// Only the profile page needs the rest of the public card — the
+// directory/home-page cards never touch these, so they stay out of the
+// shared PublicMember type above.
+export interface PublicMemberDetail extends PublicMember {
+  currentEmployer?: string;
+  bio?: string;
+  country?: string;
+  linkedinUrl?: string;
+  facebookUrl?: string;
+  websiteUrl?: string;
+  joinedAt: string; // "Jan 2025"
 }
 
 export type BusinessStatus = "active" | "pending" | "rejected";

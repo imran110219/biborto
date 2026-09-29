@@ -71,6 +71,191 @@
       "policies": {},
       "isRLSEnabled": false
     },
+    "public.disciplines": {
+      "name": "disciplines",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "school": {
+          "name": "school",
+          "type": "school_name",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_code": {
+          "name": "short_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "website_path": {
+          "name": "website_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "disciplines_school_idx": {
+          "name": "disciplines_school_idx",
+          "columns": [
+            {
+              "expression": "school",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "enum_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "disciplines_code_key": {
+          "columns": [
+            "code"
+          ],
+          "nullsNotDistinct": false,
+          "name": "disciplines_code_key"
+        },
+        "disciplines_name_key": {
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false,
+          "name": "disciplines_name_key"
+        },
+        "disciplines_short_code_key": {
+          "columns": [
+            "short_code"
+          ],
+          "nullsNotDistinct": false,
+          "name": "disciplines_short_code_key"
+        },
+        "disciplines_slug_key": {
+          "columns": [
+            "slug"
+          ],
+          "nullsNotDistinct": false,
+          "name": "disciplines_slug_key"
+        },
+        "disciplines_website_path_key": {
+          "columns": [
+            "website_path"
+          ],
+          "nullsNotDistinct": false,
+          "name": "disciplines_website_path_key"
+        }
+      },
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.countries": {
+      "name": "countries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "iso_code": {
+          "name": "iso_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "countries_iso_code_key": {
+          "columns": [
+            "iso_code"
+          ],
+          "nullsNotDistinct": false,
+          "name": "countries_iso_code_key"
+        },
+        "countries_name_key": {
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false,
+          "name": "countries_name_key"
+        }
+      },
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
     "public.members": {
       "name": "members",
       "schema": "",
@@ -88,16 +273,21 @@
           "primaryKey": false,
           "notNull": false
         },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "discipline": {
-          "name": "discipline",
-          "type": "member_discipline",
-          "typeSchema": "public",
+        "discipline_id": {
+          "name": "discipline_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -125,9 +315,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "country": {
-          "name": "country",
-          "type": "text",
+        "country_id": {
+          "name": "country_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -145,6 +335,12 @@
         },
         "facebook_url": {
           "name": "facebook_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "website_url": {
+          "name": "website_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -187,6 +383,12 @@
           "name": "blood_group",
           "type": "blood_group",
           "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_of_birth": {
+          "name": "date_of_birth",
+          "type": "date",
           "primaryKey": false,
           "notNull": false
         },
@@ -252,10 +454,10 @@
           "name": "members_discipline_idx",
           "columns": [
             {
-              "expression": "discipline",
+              "expression": "discipline_id",
               "asc": true,
               "nulls": "last",
-              "opclass": "enum_ops",
+              "opclass": "uuid_ops",
               "isExpression": false
             }
           ],
@@ -296,6 +498,34 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
+        "members_discipline_id_fkey": {
+          "name": "members_discipline_id_fkey",
+          "tableFrom": "members",
+          "tableTo": "disciplines",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "discipline_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "members_country_id_fkey": {
+          "name": "members_country_id_fkey",
+          "tableFrom": "members",
+          "tableTo": "countries",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "country_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "members_reviewed_by_fkey": {
           "name": "members_reviewed_by_fkey",
           "tableFrom": "members",
@@ -313,6 +543,13 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
+        "members_slug_key": {
+          "columns": [
+            "slug"
+          ],
+          "nullsNotDistinct": false,
+          "name": "members_slug_key"
+        },
         "members_email_key": {
           "columns": [
             "email"
@@ -557,138 +794,6 @@
       "policies": {},
       "isRLSEnabled": false
     },
-    "public.event_rsvps": {
-      "name": "event_rsvps",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "event_id": {
-          "name": "event_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "member_id": {
-          "name": "member_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "rsvp_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'going'"
-        },
-        "bringing_family": {
-          "name": "bringing_family",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "event_rsvps_event_idx": {
-          "name": "event_rsvps_event_idx",
-          "columns": [
-            {
-              "expression": "event_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "uuid_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "event_rsvps_member_idx": {
-          "name": "event_rsvps_member_idx",
-          "columns": [
-            {
-              "expression": "member_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "uuid_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "event_rsvps_event_id_fkey": {
-          "name": "event_rsvps_event_id_fkey",
-          "tableFrom": "event_rsvps",
-          "tableTo": "events",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "event_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "event_rsvps_member_id_fkey": {
-          "name": "event_rsvps_member_id_fkey",
-          "tableFrom": "event_rsvps",
-          "tableTo": "members",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "member_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "event_rsvps_event_id_member_id_key": {
-          "columns": [
-            "member_id",
-            "event_id"
-          ],
-          "nullsNotDistinct": false,
-          "name": "event_rsvps_event_id_member_id_key"
-        }
-      },
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
     "public.sponsors": {
       "name": "sponsors",
       "schema": "",
@@ -917,6 +1022,138 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.event_rsvps": {
+      "name": "event_rsvps",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "rsvp_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'going'"
+        },
+        "bringing_family": {
+          "name": "bringing_family",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "event_rsvps_event_idx": {
+          "name": "event_rsvps_event_idx",
+          "columns": [
+            {
+              "expression": "event_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "uuid_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "event_rsvps_member_idx": {
+          "name": "event_rsvps_member_idx",
+          "columns": [
+            {
+              "expression": "member_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "uuid_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "event_rsvps_event_id_fkey": {
+          "name": "event_rsvps_event_id_fkey",
+          "tableFrom": "event_rsvps",
+          "tableTo": "events",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "event_rsvps_member_id_fkey": {
+          "name": "event_rsvps_member_id_fkey",
+          "tableFrom": "event_rsvps",
+          "tableTo": "members",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "event_rsvps_event_id_member_id_key": {
+          "columns": [
+            "member_id",
+            "event_id"
+          ],
+          "nullsNotDistinct": false,
+          "name": "event_rsvps_event_id_member_id_key"
+        }
+      },
       "checkConstraints": {},
       "policies": {},
       "isRLSEnabled": false
@@ -1485,24 +1722,6 @@
       ],
       "schema": "public"
     },
-    "public.member_discipline": {
-      "name": "member_discipline",
-      "values": [
-        "Architecture",
-        "Computer Science & Engineering",
-        "Pharmacy",
-        "Business Administration",
-        "Urban & Rural Planning",
-        "Forestry & Wood Technology",
-        "English",
-        "Electronics & Communication Eng.",
-        "Environmental Science",
-        "Economics",
-        "Fisheries & Marine Resource Tech.",
-        "Mathematics"
-      ],
-      "schema": "public"
-    },
     "public.member_platform_role": {
       "name": "member_platform_role",
       "values": [
@@ -1527,6 +1746,20 @@
         "going",
         "interested",
         "declined"
+      ],
+      "schema": "public"
+    },
+    "public.school_name": {
+      "name": "school_name",
+      "values": [
+        "Science, Engineering & Technology School",
+        "Management & Business Administration School",
+        "Life Science School",
+        "Arts & Humanities School",
+        "Social Science School",
+        "Fine Arts School",
+        "Law School",
+        "Education School"
       ],
       "schema": "public"
     },
@@ -1556,16 +1789,21 @@
           "primaryKey": false,
           "notNull": false
         },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "discipline": {
-          "name": "discipline",
-          "type": "member_discipline",
-          "typeSchema": "public",
+        "discipline_id": {
+          "name": "discipline_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -1593,9 +1831,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "country": {
-          "name": "country",
-          "type": "text",
+        "country_id": {
+          "name": "country_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -1616,10 +1854,16 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "website_url": {
+          "name": "website_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "isExisting": false,
-      "definition": "SELECT id, name, discipline, profession, current_employer, bio, city, country, avatar_key, linkedin_url, facebook_url FROM members WHERE status = 'active'::member_status AND is_public = true",
+      "definition": "SELECT id, slug, name, discipline_id, profession, current_employer, bio, city, country_id, avatar_key, linkedin_url, facebook_url, website_url FROM members WHERE status = 'active'::member_status AND is_public = true",
       "materialized": false
     },
     "public.public_businesses": {

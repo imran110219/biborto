@@ -42,24 +42,18 @@ $$;
 create type member_platform_role as enum ('member', 'editor', 'admin');
 create type member_status as enum ('pending', 'active', 'suspended');
 
--- Scoped to exactly the 12 disciplines in the current seed data, not the
--- full set Khulna University actually offers (it's organized into many
--- more "Discipline" units than that). Add new values as real members
--- from other disciplines join: `alter type member_discipline add value
--- 'New Discipline Name';`.
-create type member_discipline as enum (
-  'Architecture',
-  'Computer Science & Engineering',
-  'Pharmacy',
-  'Business Administration',
-  'Urban & Rural Planning',
-  'Forestry & Wood Technology',
-  'English',
-  'Electronics & Communication Eng.',
-  'Environmental Science',
-  'Economics',
-  'Fisheries & Marine Resource Tech.',
-  'Mathematics'
+-- Khulna University organizes its academic units into "Schools", each
+-- containing several "Disciplines" — this is the university's own
+-- structure/terminology, not a naming choice made here.
+create type school_name as enum (
+  'Science, Engineering & Technology School',
+  'Management & Business Administration School',
+  'Life Science School',
+  'Arts & Humanities School',
+  'Social Science School',
+  'Fine Arts School',
+  'Law School',
+  'Education School'
 );
 
 create type blood_group as enum ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-');
@@ -112,6 +106,52 @@ create trigger users_set_updated_at
   for each row execute function set_updated_at();
 
 -- ---------------------------------------------------------------------
+-- disciplines — Khulna University's full 29-discipline reference list
+-- (see db/README.md for provenance), not a fixed enum. `code` is KU's
+-- own 2-digit discipline code (kept as text to preserve the leading
+-- zero); `website_path` is KU's own /discipline/<short_code> URL, not
+-- necessarily this app's routing.
+-- ---------------------------------------------------------------------
+create table disciplines (
+  id            uuid primary key default gen_random_uuid(),
+  code          text not null unique,
+  school        school_name not null,
+  name          text not null unique,
+  short_code    text not null unique,
+  slug          text not null unique,
+  website_path  text not null unique,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+
+create index disciplines_school_idx on disciplines (school);
+
+create trigger disciplines_set_updated_at
+  before update on disciplines
+  for each row execute function set_updated_at();
+
+-- ---------------------------------------------------------------------
+-- countries — for the "current country" dropdown. ISO 3166-1 codes and
+-- English short names, sourced from the ICU/CLDR data bundled with
+-- Node's Intl.DisplayNames (not hand-typed, not this app's own list) —
+-- see seed_countries.sql for exactly which codes were kept/dropped and
+-- why. A real table rather than an enum for the same reason as
+-- disciplines: it's someone else's authoritative list, not a small
+-- vocabulary specific to this app.
+-- ---------------------------------------------------------------------
+create table countries (
+  id          uuid primary key default gen_random_uuid(),
+  iso_code    text not null unique,
+  name        text not null unique,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create trigger countries_set_updated_at
+  before update on countries
+  for each row execute function set_updated_at();
+
+-- ---------------------------------------------------------------------
 -- members — the alumni directory / profile data.
 -- ---------------------------------------------------------------------
 create table members (
@@ -119,16 +159,18 @@ create table members (
   user_id         uuid references users (id) on delete set null,
 
   -- Public fields (shown on the public directory card)
+  slug            text not null unique,
   name            text not null,
-  discipline      member_discipline not null,
+  discipline_id   uuid not null references disciplines (id),
   profession      text,
   current_employer text,
   bio             text,
   city            text,
-  country         text,
+  country_id      uuid references countries (id),
   avatar_key      text,
   linkedin_url    text,
   facebook_url    text,
+  website_url     text,
 
   -- Admin-only fields (shown only in admin/members.html today)
   email           text not null unique,
@@ -143,6 +185,12 @@ create table members (
   -- not to anonymous visitors.
   blood_group     blood_group,
 
+  -- Same sensitivity call as blood_group: real PII (identity-theft and
+  -- age-discrimination risk), never in public_members. A birthday
+  -- reminder feature would only need month+day, not the full date —
+  -- not built yet, so full date_of_birth stays admin-only for now.
+  date_of_birth   date,
+
   -- Consent: opt-out model — approved members are public by default,
   -- with a profile setting to go private.
   is_public       boolean not null default true,
@@ -155,7 +203,7 @@ create table members (
 );
 
 create index members_status_idx on members (status);
-create index members_discipline_idx on members (discipline);
+create index members_discipline_idx on members (discipline_id);
 create index members_city_idx on members (city);
 
 create trigger members_set_updated_at
@@ -166,8 +214,8 @@ create trigger members_set_updated_at
 -- query — never the base table directly (keeps email/student_id/
 -- phone_number/blood_group out).
 create view public_members as
-  select id, name, discipline, profession, current_employer, bio, city,
-         country, avatar_key, linkedin_url, facebook_url
+  select id, slug, name, discipline_id, profession, current_employer, bio, city,
+         country_id, avatar_key, linkedin_url, facebook_url, website_url
   from members
   where status = 'active' and is_public = true;
 

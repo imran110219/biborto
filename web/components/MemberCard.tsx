@@ -19,7 +19,7 @@ export function MemberCard({ member }: { member: PublicMember }) {
           <PinIcon /> {member.city}
         </span>
       </div>
-      <Button href="#" variant="ghost" size="sm" className="mt-1">
+      <Button href={`/members/${member.slug}`} variant="ghost" size="sm" className="mt-1">
         View profile
       </Button>
     </article>

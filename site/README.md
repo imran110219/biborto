@@ -8,16 +8,20 @@ Platform.html`) into a plain multi-page project.
 
 ```
 site/
-  index.html            Home
+  index.html            Home (includes the "Supported by our sponsors" strip)
   members.html          Member directory
-  events.html           Events
+  events.html           Events (featured event shows a "Sponsored by" credit)
   gallery.html          Gallery & videos
   blog-post.html        Blog post detail
+  business.html         Business Directory — alumni-run businesses
+  business-detail.html  Single business profile
   signin.html           Sign in
   admin/
     dashboard.html       Admin dashboard
     members.html         Admin — manage members
     edit-post.html       Admin — edit blog post
+    businesses.html       Admin — review/manage business listings
+    sponsors.html         Admin — manage sponsor logos & tiers
   assets/
     css/
       fonts.css          Shared @font-face declarations (Fraunces, Instrument Sans)
@@ -44,3 +48,11 @@ site/
   sizes reflow to a single mobile column. See `DESIGN.md` → "Mobile
   responsive layer" for how it's implemented on top of the inline-styled
   desktop markup.
+- **Advertisement feature**: two parts, see `DESIGN.md` → "Advertisement
+  feature (Sponsors + Business Directory)" for the full breakdown.
+  Sponsors are committee-curated (Home strip, event credit, `admin/sponsors.html`)
+  with no public submission flow. The Business Directory is alumni
+  self-listed (`business.html`, gated behind sign-in to submit) and
+  reviewed through the same approve/reject pattern as membership
+  requests, in `admin/businesses.html` and the dashboard's "Business
+  submissions" panel.

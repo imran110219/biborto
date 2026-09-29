@@ -186,6 +186,54 @@ different from a normal CSS build:
   since a couple (e.g. the borderless post-title field) have no explicit
   width to override.
 
+## Advertisement feature (Sponsors + Business Directory)
+
+Two related but distinct additions, sharing all existing components —
+no new visual language was introduced.
+
+**Sponsors** — committee-curated, no public submission:
+- Home page: a "Supported by our sponsors" strip (eyebrow + H2 + a
+  `repeat(5, minmax(0px, 1fr))` grid of logo-placeholder tiles, same
+  `placeholder-media` block style used everywhere else) placed just
+  before the footer.
+- Events page: the featured event card shows a small "Sponsored by
+  [logo] [name]" credit line above its CTA buttons.
+- `admin/sponsors.html`: a table (Sponsor, Tier, Website, Status) using
+  the same white-card + table pattern as `admin/members.html`. Tier is a
+  3-color badge (Gold/Silver/Bronze) parallel to, but distinct from, the
+  Active/Pending/Suspended status badge system.
+- Sponsors do **not** get a public nav item — they're supporting content,
+  not something users browse to directly.
+
+**Business Directory** — alumni self-listed, admin-approved:
+- `business.html`: identical structure to `members.html` (eyebrow/H1/
+  subcopy → filter bar → 4-col card grid → pagination), plus one addition:
+  a dark-green CTA banner ("Own a business? List it here.") above the
+  filter bar, linking to sign-in since only members can submit. Business
+  cards reuse the member-card shape exactly (circular initials avatar,
+  two meta rows with icons) with a category tag (the same amber pill used
+  for event/blog categories) swapped in for the member's profession line.
+- `business-detail.html`: identical structure to `blog-post.html` (820px
+  centered column, breadcrumb, H1, byline row with action buttons, full-
+  bleed 1120px cover image, body copy, pull-quote, "More ___" section at
+  the bottom) — a testimonial blockquote stands in for the pull-quote, and
+  a bordered contact-info card (phone/email/location rows) replaces the
+  tag row as the section before "More businesses."
+- `admin/businesses.html`: same filter-bar + table + pagination pattern as
+  `admin/members.html`, with Category replacing Discipline and a Rejected
+  status reusing the "Suspended" gray badge styling.
+- Dashboard gets a 5th stat tile ("Business listings" — the stat grid is
+  `repeat(5, ...)` here instead of the `repeat(4, ...)` used everywhere
+  else) and a new "Business submissions" panel, both direct copies of the
+  existing Members stat tile and "Membership requests" approval-row
+  pattern (avatar + name/category + reject ✕ / approve ✓ buttons).
+- "Business" was added as a 6th public nav item (after Gallery & Videos)
+  and to the footer's Explore column, on every public page. "Businesses"
+  and "Sponsors" were added to the admin sidebar (after Members), on
+  every admin page. All of this inherits the responsive layer for free —
+  new pages reuse the same inline-style patterns the CSS already targets,
+  so no changes were needed in `responsive.css` itself.
+
 ## What's explicitly NOT implemented
 
 - No client-side behavior beyond the mobile nav/sidebar toggles above —

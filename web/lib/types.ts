@@ -77,6 +77,7 @@ export interface Sponsor {
 
 export interface EventItem {
   id: string;
+  slug: string;
   title: string;
   month: string;
   day: string;

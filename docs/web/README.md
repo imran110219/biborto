@@ -44,6 +44,7 @@ app/
   members/page.tsx            Member directory
   members/[slug]/page.tsx     Member profile (dynamic route, SSG)
   events/page.tsx             Events
+  events/[slug]/page.tsx      Event detail (dynamic route, SSG)
   gallery/page.tsx            Gallery & videos
   blog/page.tsx                → redirects to the one seeded post
   blog/[slug]/page.tsx         Blog post detail (dynamic route, SSG)
@@ -106,8 +107,8 @@ a `useEffect` in `DiamondPopup.tsx` instead of a hand-written inline
 
 ## Data layer
 
-The public pages (home, members, business directory + detail, events,
-blog + detail, gallery) are Server Components that query Postgres
+The public pages (home, members + profile, business directory + detail,
+events + detail, blog + detail, gallery) are Server Components that query Postgres
 directly via `lib/db/queries/*` — no Route Handlers involved, since
 that's the idiomatic App Router pattern for a page's own read: the
 server that renders the page is the same server that can just query the

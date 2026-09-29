@@ -299,6 +299,7 @@ create trigger sponsors_set_updated_at
 -- ---------------------------------------------------------------------
 create table events (
   id              uuid primary key default gen_random_uuid(),
+  slug            text not null unique,
   title           text not null,
   event_date      date not null,
   start_time      time,

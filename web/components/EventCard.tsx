@@ -22,7 +22,7 @@ export function EventCard({ event }: { event: EventItem }) {
           <ClockIcon size={16} /> {event.timeLabel}
         </span>
       </div>
-      <Link href="/events" className="mt-auto flex items-center gap-2 text-sm font-semibold">
+      <Link href={`/events/${event.slug}`} className="mt-auto flex items-center gap-2 text-sm font-semibold">
         View details <ArrowRightIcon />
       </Link>
     </article>

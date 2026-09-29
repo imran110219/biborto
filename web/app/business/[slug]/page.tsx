@@ -8,6 +8,7 @@ import { BusinessCard } from "@/components/BusinessCard";
 import { Button } from "@/components/ui/Button";
 import { ExternalLinkIcon, MailIcon, PhoneIcon, PinIcon } from "@/components/ui/icons";
 import { getPublicBusinesses, getPublicBusinessBySlug } from "@/lib/db/queries/businesses";
+import { externalUrl } from "@/lib/url";
 
 export async function generateStaticParams() {
   const businesses = await getPublicBusinesses();
@@ -46,7 +47,7 @@ export default async function BusinessDetailPage({ params }: PageProps<"/busines
             </div>
             <div className="flex gap-2">
               {business.website && (
-                <Button href={business.website} size="sm">
+                <Button href={externalUrl(business.website)} size="sm">
                   Visit website <ExternalLinkIcon />
                 </Button>
               )}

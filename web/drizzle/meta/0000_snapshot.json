@@ -909,6 +909,12 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "title": {
           "name": "title",
           "type": "text",
@@ -1021,7 +1027,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "events_slug_key": {
+          "columns": [
+            "slug"
+          ],
+          "nullsNotDistinct": false,
+          "name": "events_slug_key"
+        }
+      },
       "checkConstraints": {},
       "policies": {},
       "isRLSEnabled": false

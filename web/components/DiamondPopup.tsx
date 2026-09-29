@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CloseIcon, ExternalLinkIcon } from "@/components/ui/icons";
+import { externalUrl } from "@/lib/url";
 import type { Sponsor } from "@/lib/types";
 
 const SEEN_KEY = "diamondSponsorSeen";
@@ -54,12 +55,16 @@ export function DiamondPopup({ sponsor }: { sponsor: Sponsor }) {
         <p className="text-sm leading-relaxed text-text-secondary">
           Proud to fuel every Batch 11 gathering — from late study nights to the Grand Reunion itself.
         </p>
-        <a
-          href="#"
-          className="mt-1.5 flex h-12 items-center gap-2 rounded-full bg-brand-green px-6 text-sm font-semibold text-white"
-        >
-          Visit website <ExternalLinkIcon />
-        </a>
+        {sponsor.website && (
+          <a
+            href={externalUrl(sponsor.website)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1.5 flex h-12 items-center gap-2 rounded-full bg-brand-green px-6 text-sm font-semibold text-white"
+          >
+            Visit website <ExternalLinkIcon />
+          </a>
+        )}
       </div>
     </div>
   );

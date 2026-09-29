@@ -122,6 +122,7 @@ CREATE TABLE "sponsors" (
 --> statement-breakpoint
 CREATE TABLE "events" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"slug" text NOT NULL,
 	"title" text NOT NULL,
 	"event_date" date NOT NULL,
 	"start_time" time,
@@ -133,7 +134,8 @@ CREATE TABLE "events" (
 	"cover_photo_key" text,
 	"created_by" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "events_slug_key" UNIQUE("slug")
 );
 --> statement-breakpoint
 CREATE TABLE "event_rsvps" (

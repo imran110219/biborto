@@ -22,10 +22,10 @@ const NAV_ITEMS = [
   { label: "Businesses", href: "/admin/businesses", icon: BriefcaseIcon },
   { label: "Sponsors", href: "/admin/sponsors", icon: StarIcon },
   { label: "Blog posts", href: "/admin/edit-post", icon: DocumentIcon },
-  { label: "Events", href: "#", icon: CalendarIcon },
-  { label: "Photos", href: "#", icon: PhotoIcon },
-  { label: "Videos", href: "#", icon: VideoIcon },
-  { label: "Settings", href: "#", icon: SettingsIcon },
+  { label: "Events", href: "/admin/events", icon: CalendarIcon },
+  { label: "Photos", href: "/admin/photos", icon: PhotoIcon },
+  { label: "Videos", href: "/admin/videos", icon: VideoIcon },
+  { label: "Settings", href: "/admin/settings", icon: SettingsIcon },
 ];
 
 export function AdminSidebar({ className = "" }: { className?: string }) {

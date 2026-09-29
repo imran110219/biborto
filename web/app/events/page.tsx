@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { PageHero } from "@/components/ui/PageHero";
 import { PlaceholderMedia } from "@/components/ui/PlaceholderMedia";
@@ -91,9 +92,9 @@ export default async function EventsPage() {
                 </span>
               </div>
               <CategoryTag>{e.category}</CategoryTag>
-              <a href="#" className="inline-flex h-11 items-center rounded-full border border-border-input px-4 text-sm font-semibold">
+              <Link href={`/events/${e.slug}`} className="inline-flex h-11 items-center rounded-full border border-border-input px-4 text-sm font-semibold">
                 Details
-              </a>
+              </Link>
             </div>
           ))}
         </div>

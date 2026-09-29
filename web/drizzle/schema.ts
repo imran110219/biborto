@@ -173,6 +173,7 @@ export const sponsors = pgTable("sponsors", {
 
 export const events = pgTable("events", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
+	slug: text().notNull(),
 	title: text().notNull(),
 	eventDate: date("event_date").notNull(),
 	startTime: time("start_time"),
@@ -192,6 +193,7 @@ export const events = pgTable("events", {
 			foreignColumns: [members.id],
 			name: "events_created_by_fkey"
 		}).onDelete("set null"),
+	unique("events_slug_key").on(table.slug),
 ]);
 
 export const eventRsvps = pgTable("event_rsvps", {

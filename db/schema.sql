@@ -1,8 +1,11 @@
 -- Batch 11 platform — Phase 1 data foundation: members.
 --
--- Target: Postgres via Supabase. Designed to sit under auth.users (Supabase
--- Auth) — auth_user_id is null until a member actually creates a login;
--- rows can exist purely as committee-entered records before that.
+-- Target: an independent Postgres database (Supabase was considered and
+-- ruled out — see README.md). auth_user_id is null until a member actually
+-- creates a login; rows can exist purely as committee-entered records
+-- before that. NOTE: the auth.users / auth.uid() references below are
+-- still Supabase-specific and need to be swapped for whatever
+-- independent auth layer is chosen — see README.md's "Known gap".
 --
 -- Field choices are grounded in what the existing static mockup already
 -- displays (see site/members.html, site/admin/members.html, site/index.html)

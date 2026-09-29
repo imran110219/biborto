@@ -13,10 +13,11 @@ markup per page, no components, no data model. This project is the
 and layout from the mockup ported into typed, reusable components, driven
 by a single mock-data file instead of copy-pasted content. It's still
 100% static output — see [Build output](#build-output) — the goal here
-was componentization, not a backend (that's the deliberately deferred
-next phase; see `../db/` for a Postgres schema sketch that's ready
-whenever a real backend is wanted, provider-agnostic — not tied to
-Supabase).
+was componentization first; the backend is Phase 3 (see [Data
+layer](#data-layer)): this same Next.js app's Route Handlers, an
+independent Postgres database (`../db/` has the schema sketch,
+provider-agnostic — not Supabase), and Cloudflare R2 for file storage
+(avatars, gallery media, business photos).
 
 ## Stack
 
@@ -82,12 +83,17 @@ a `useEffect` in `DiamondPopup.tsx` instead of a hand-written inline
 Everything renders from `lib/mock-data.ts` — the exact 12 members, 8
 businesses, 5 sponsors, and 4 events already seeded in `../db/seed_members.sql`
 for whenever a real backend exists. There is intentionally no fetching,
-no loading states, no API routes yet. When a backend is chosen (Phase 3 —
-not decided; Supabase was considered and explicitly ruled out), the swap
-is: replace the imports from `lib/mock-data` with real data-fetching
-calls in each `page.tsx`, keeping every component below the page level
-unchanged, since they were all built to take typed props, never to read
-mock data directly.
+no loading states, no API routes yet.
+
+**Phase 3 (decided, not started)**: this app becomes both frontend and
+backend — Next.js Route Handlers in this same project query an
+independent Postgres database (no Supabase; see `../db/`) directly, and
+file-type fields (avatars, gallery media, business photos) resolve to
+Cloudflare R2 object URLs instead of local placeholder paths. The swap:
+replace the imports from `lib/mock-data` with real data-fetching calls in
+each `page.tsx`, keeping every component below the page level unchanged,
+since they were all built to take typed props, never to read mock data
+directly.
 
 ## Build output
 
@@ -100,8 +106,9 @@ npm run build
 Every route in `app/` — including all `generateStaticParams()`-driven
 dynamic routes — builds as static (`○`) or SSG (`●`) output. No
 `output: "export"` in `next.config.ts` though: Route Handlers stay
-available in this same project for whenever Phase 3 needs them, without
-requiring a config change or a project restructure first.
+available in this same project for Phase 3 (see [Data
+layer](#data-layer)), without requiring a config change or a project
+restructure first.
 
 ## Known gaps vs. the mockup
 

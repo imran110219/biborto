@@ -1,6 +1,8 @@
-import { redirect } from "next/navigation";
-import { blogPosts } from "@/lib/mock-data";
+import { redirect, notFound } from "next/navigation";
+import { getPublishedPublicPosts } from "@/lib/db/queries/blog";
 
-export default function BlogIndexPage() {
-  redirect(`/blog/${blogPosts[0].slug}`);
+export default async function BlogIndexPage() {
+  const [latest] = await getPublishedPublicPosts();
+  if (!latest) notFound();
+  redirect(`/blog/${latest.slug}`);
 }

@@ -2,9 +2,11 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { PageHero } from "@/components/ui/PageHero";
 import { AlbumCard, VideoCard } from "@/components/GalleryCards";
 import { UploadIcon } from "@/components/ui/icons";
-import { albums, videos } from "@/lib/mock-data";
+import { getGalleryAlbums, getGalleryVideos } from "@/lib/db/queries/gallery";
 
-export default function GalleryPage() {
+export default async function GalleryPage() {
+  const [albums, videos] = await Promise.all([getGalleryAlbums(), getGalleryVideos()]);
+
   return (
     <PublicLayout>
       <PageHero

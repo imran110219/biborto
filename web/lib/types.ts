@@ -15,6 +15,20 @@ export interface Member {
   joinedAt: string; // "Jan 2025"
 }
 
+// The subset of Member safe to render on public (unauthenticated) pages
+// — matches db's public_members view column-for-column. Deliberately
+// excludes email/platformRole/status/studentId: those are admin-only,
+// and a Server Component prop is serialized to the client, so including
+// them here would leak exactly what the view was designed to keep out.
+export interface PublicMember {
+  id: string;
+  name: string;
+  initials: string;
+  discipline: string;
+  profession: string;
+  city: string;
+}
+
 export type BusinessStatus = "active" | "pending" | "rejected";
 
 export interface Business {
@@ -30,6 +44,9 @@ export interface Business {
   description: string;
   offerings: string[];
   testimonial: string;
+  phone?: string;
+  email?: string;
+  website?: string;
 }
 
 export type SponsorTier = "diamond" | "gold" | "silver" | "bronze";
@@ -63,4 +80,12 @@ export interface BlogPost {
   author: string;
   date: string;
   readTime: string;
+}
+
+// Only the post detail page needs the full article — BlogTeaser's
+// components (used on the home page and the blog index) never touch
+// body/tags, so those stay out of the shared BlogPost type above.
+export interface BlogPostDetail extends BlogPost {
+  body: string;
+  tags: string[];
 }

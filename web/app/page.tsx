@@ -10,14 +10,29 @@ import { AlbumCard, VideoCard } from "@/components/GalleryCards";
 import { SponsorStrip } from "@/components/SponsorStrip";
 import { DiamondPopup } from "@/components/DiamondPopup";
 import { ArrowRightIcon, CalendarIcon } from "@/components/ui/icons";
-import { events, blogPosts, members, albums, videos, sponsors } from "@/lib/mock-data";
+import { getPublicMembers } from "@/lib/db/queries/members";
+import { getActiveSponsors, getDiamondSponsor } from "@/lib/db/queries/sponsors";
+import { getUpcomingEvents } from "@/lib/db/queries/events";
+import { getPublishedPublicPosts } from "@/lib/db/queries/blog";
+import { getGalleryAlbums, getGalleryVideos } from "@/lib/db/queries/gallery";
+import { getHomeStats } from "@/lib/db/queries/stats";
 
-export default function HomePage() {
-  const diamondSponsor = sponsors.find((s) => s.tier === "diamond")!;
+export default async function HomePage() {
+  const [diamondSponsor, stats, events, blogPosts, members, albums, videos, sponsors] = await Promise.all([
+    getDiamondSponsor(),
+    getHomeStats(),
+    getUpcomingEvents(),
+    getPublishedPublicPosts(),
+    getPublicMembers(),
+    getGalleryAlbums(),
+    getGalleryVideos(),
+    getActiveSponsors(),
+  ]);
+  const [featuredPost, ...otherPosts] = blogPosts;
 
   return (
     <PublicLayout>
-      <DiamondPopup sponsor={diamondSponsor} />
+      {diamondSponsor && <DiamondPopup sponsor={diamondSponsor} />}
 
       {/* Hero */}
       <section className="grid grid-cols-1 items-center gap-14 px-5 py-16 md:grid-cols-2 md:px-20 md:py-22">
@@ -67,10 +82,10 @@ export default function HomePage() {
 
       <StatBar
         stats={[
-          { value: "[000]", label: "Registered batchmates" },
-          { value: "[00]", label: "Disciplines represented" },
-          { value: "[00]", label: "Countries we live in" },
-          { value: "[0000]", label: "Photos in the archive" },
+          { value: String(stats.registeredBatchmates), label: "Registered batchmates" },
+          { value: String(stats.disciplinesRepresented), label: "Disciplines represented" },
+          { value: String(stats.countriesRepresented), label: "Countries we live in" },
+          { value: String(stats.photosInArchive), label: "Photos in the archive" },
         ]}
       />
 
@@ -85,17 +100,19 @@ export default function HomePage() {
       </section>
 
       {/* Blog */}
-      <section className="flex flex-col gap-10 px-5 pt-24 md:px-20">
-        <SectionHeader eyebrow="From the blog" title="Stories from batchmates" viewAllHref="/blog" viewAllLabel="Read the blog" />
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-          <FeaturedBlogTeaser post={blogPosts[0]} />
-          <div className="flex flex-col">
-            {blogPosts.slice(1).map((p) => (
-              <BlogTeaserRow key={p.slug} post={p} />
-            ))}
+      {featuredPost && (
+        <section className="flex flex-col gap-10 px-5 pt-24 md:px-20">
+          <SectionHeader eyebrow="From the blog" title="Stories from batchmates" viewAllHref="/blog" viewAllLabel="Read the blog" />
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
+            <FeaturedBlogTeaser post={featuredPost} />
+            <div className="flex flex-col">
+              {otherPosts.map((p) => (
+                <BlogTeaserRow key={p.slug} post={p} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Members */}
       <section className="flex flex-col gap-10 px-5 pt-24 md:px-20">

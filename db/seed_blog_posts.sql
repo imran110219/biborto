@@ -1,7 +1,8 @@
 -- Migrates the 4 sample blog posts from web/lib/mock-data.ts into real
 -- rows. Depends on seed_members.sql — author_member_id is resolved by
 -- matching `author` against a member name where it names one (3 of 4);
--- "Reunion committee" isn't a person, so that post's author is NULL.
+-- "Reunion committee" isn't a person, so that post uses author_name
+-- instead (author_member_id stays NULL).
 --
 -- Known gaps carried over from the mockup (not invented here):
 --   - `body`: mock-data.ts's BlogPost type has no body field at all —
@@ -22,10 +23,10 @@
 --   - read time is intentionally not stored — see schema.sql.
 
 insert into blog_posts
-  (slug, category, title, author_member_id, body, tags, status, visibility, featured, published_at)
+  (slug, category, title, author_member_id, author_name, body, tags, status, visibility, featured, published_at)
 values
   ('planning-the-grand-reunion', 'Reunion', 'Planning the grand reunion: what we need from you',
-   (select id from members where name = 'Reunion committee'),
+   null, 'Reunion committee',
    $body$We are bringing Batch 11 back to campus. Here is how the day will work, and the three things the committee needs from every batchmate.
 
 The grand reunion is set for Saturday, December 12, on the Khulna University campus. It will be the first time many of us walk through Gollamari together since our final exams, and we want every batchmate who can make it to be there.
@@ -46,16 +47,16 @@ We need hands for registration, decoration, photography and the evening program.
    array['Reunion', 'Announcements', 'Volunteering'], 'published', 'public', true, '2026-09-24'),
 
   ('sundarbans-field-trip', 'Memories', 'Our first-year field trip to the Sundarbans',
-   (select id from members where name = 'Arif Khan'),
+   (select id from members where name = 'Arif Khan'), null,
    'Full story coming soon — this teaser links to a real article slug so the page structure is ready once the content team writes it up.',
    '{}', 'published', 'public', false, '2026-09-10'),
 
   ('starting-over-abroad', 'Careers', 'Starting over abroad: notes from Toronto',
-   (select id from members where name = 'Lamia Noor'),
+   (select id from members where name = 'Lamia Noor'), null,
    'Full story coming soon — this teaser links to a real article slug so the page structure is ready once the content team writes it up.',
    '{}', 'published', 'public', false, '2026-08-28'),
 
   ('gollamari-since-we-left', 'Campus', 'What has changed at Gollamari since we left',
-   (select id from members where name = 'Nusrat Jahan'),
+   (select id from members where name = 'Nusrat Jahan'), null,
    'Full story coming soon — this teaser links to a real article slug so the page structure is ready once the content team writes it up.',
    '{}', 'published', 'public', false, '2026-08-15');

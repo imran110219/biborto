@@ -3,9 +3,10 @@ import { PageHero } from "@/components/ui/PageHero";
 import { FilterBar, SearchField, SelectField } from "@/components/ui/FilterBar";
 import { Pagination } from "@/components/ui/Pagination";
 import { MemberCard } from "@/components/MemberCard";
-import { members } from "@/lib/mock-data";
+import { getPublicMembers } from "@/lib/db/queries/members";
 
-export default function MembersPage() {
+export default async function MembersPage() {
+  const members = await getPublicMembers();
   const disciplines = Array.from(new Set(members.map((m) => m.discipline)));
 
   return (

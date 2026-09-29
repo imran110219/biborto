@@ -7,18 +7,19 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { BusinessCard } from "@/components/BusinessCard";
 import { Button } from "@/components/ui/Button";
 import { ExternalLinkIcon, MailIcon, PhoneIcon, PinIcon } from "@/components/ui/icons";
-import { businesses } from "@/lib/mock-data";
+import { getPublicBusinesses, getPublicBusinessBySlug } from "@/lib/db/queries/businesses";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const businesses = await getPublicBusinesses();
   return businesses.map((b) => ({ slug: b.slug }));
 }
 
 export default async function BusinessDetailPage({ params }: PageProps<"/business/[slug]">) {
   const { slug } = await params;
-  const business = businesses.find((b) => b.slug === slug);
+  const business = await getPublicBusinessBySlug(slug);
   if (!business) notFound();
 
-  const others = businesses.filter((b) => b.slug !== business.slug).slice(0, 4);
+  const others = (await getPublicBusinesses()).filter((b) => b.slug !== business.slug).slice(0, 4);
 
   return (
     <PublicLayout>
@@ -44,9 +45,11 @@ export default async function BusinessDetailPage({ params }: PageProps<"/busines
               </div>
             </div>
             <div className="flex gap-2">
-              <Button href="#" size="sm">
-                Visit website <ExternalLinkIcon />
-              </Button>
+              {business.website && (
+                <Button href={business.website} size="sm">
+                  Visit website <ExternalLinkIcon />
+                </Button>
+              )}
               <button aria-label="Share by email" className="flex h-11 w-11 items-center justify-center rounded-full border border-border-input bg-white">
                 <MailIcon />
               </button>
@@ -76,9 +79,14 @@ export default async function BusinessDetailPage({ params }: PageProps<"/busines
 
           <h2 className="font-serif text-2xl font-medium md:text-3xl">Get in touch</h2>
           <div className="flex flex-col gap-4 rounded-[18px] border border-border-default bg-white p-7">
-            <ContactRow icon={<PhoneIcon />} text="+880 1XXX-XXXXXX" />
-            <ContactRow icon={<MailIcon size={16} />} text={`${business.slug.replace(/-/g, "")}@example.com`} />
+            {business.phone && <ContactRow icon={<PhoneIcon />} text={business.phone} />}
+            {business.email && <ContactRow icon={<MailIcon size={16} />} text={business.email} />}
             <ContactRow icon={<PinIcon size={16} />} text={business.city} />
+            {!business.phone && !business.email && (
+              <span className="text-sm text-text-secondary">
+                No contact details on file yet — reach out through the committee.
+              </span>
+            )}
           </div>
         </div>
       </article>

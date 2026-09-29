@@ -66,9 +66,31 @@ create type blood_group as enum ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-
 
 create type business_status as enum ('pending', 'active', 'rejected');
 create type sponsor_tier as enum ('diamond', 'gold', 'silver', 'bronze');
+
+-- Scoped to exactly the 6 categories in the current seed data. Add new
+-- values as new categories of business come in:
+-- `alter type business_category add value 'New Category';`.
+create type business_category as enum (
+  'Food & Catering',
+  'Tech Services',
+  'Consulting',
+  'Education',
+  'Retail & Trade',
+  'Travel & Tourism'
+);
+
 create type blog_status as enum ('draft', 'published');
 create type blog_visibility as enum ('public', 'members_only');
+
+-- Scoped to exactly the 4 categories in the current seed data. Add new
+-- values with `alter type blog_category add value 'New Category';`.
+create type blog_category as enum ('Reunion', 'Memories', 'Careers', 'Campus');
+
 create type rsvp_status as enum ('going', 'interested', 'declined');
+
+-- Scoped to exactly the 4 categories in the current seed data. Add new
+-- values with `alter type event_category add value 'New Category';`.
+create type event_category as enum ('Reunion', 'Online', 'Chapter', 'Volunteer');
 
 -- ---------------------------------------------------------------------
 -- users — login identity only (Phase 2). Deliberately minimal: no
@@ -160,13 +182,13 @@ create table businesses (
   owner_member_id uuid references members (id) on delete set null,
 
   name            text not null,
-  category        text not null,
+  category        business_category not null,
   city            text,
   status          business_status not null default 'pending',
 
   tagline         text,
   description     text,
-  offerings       text[] not null default '{}',
+  offerings       text[] not null,   -- no default '{}' — see body's comment in blog_posts below
   testimonial     text,
 
   phone           text,
@@ -234,7 +256,7 @@ create table events (
   start_time      time,
   end_time        time,
   location        text,
-  category        text,
+  category        event_category,
   description     text,
   featured        boolean not null default false,
   cover_photo_key text,
@@ -281,13 +303,19 @@ create trigger event_rsvps_set_updated_at
 create table blog_posts (
   id                uuid primary key default gen_random_uuid(),
   slug              text not null unique,
-  category          text not null,
+  category          blog_category not null,
   title             text not null,
   author_member_id  uuid references members (id) on delete set null,
+  author_name       text,       -- display byline when there's no real member author (e.g. "Reunion committee")
 
-  body              text not null default '',
+  -- No default '' / '{}' on body/tags (or offerings, above, the same
+  -- shape): drizzle-kit pull's introspection codegen mis-renders empty
+  -- string/array defaults (produces invalid syntax for '', and silently
+  -- wrong [""] instead of [] for '{}') — see web/README.md. Every insert
+  -- already supplies these explicitly, so no default is actually needed.
+  body              text not null,
   cover_photo_key   text,
-  tags              text[] not null default '{}',
+  tags              text[] not null,
 
   status            blog_status not null default 'draft',
   visibility        blog_visibility not null default 'public',
@@ -310,7 +338,7 @@ create trigger blog_posts_set_updated_at
 -- render time so it can't drift from the actual content.
 
 create view public_blog_posts as
-  select id, slug, category, title, author_member_id, body, cover_photo_key,
+  select id, slug, category, title, author_member_id, author_name, body, cover_photo_key,
          tags, featured, published_at
   from blog_posts
   where status = 'published' and visibility = 'public';

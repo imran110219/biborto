@@ -1,9 +1,9 @@
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { BriefcaseIcon, PinIcon } from "@/components/ui/icons";
-import type { Member } from "@/lib/types";
+import type { PublicMember } from "@/lib/types";
 
-export function MemberCard({ member }: { member: Member }) {
+export function MemberCard({ member }: { member: PublicMember }) {
   return (
     <article className="flex flex-col items-center gap-3.5 rounded-[18px] border border-border-default bg-white px-6 py-7 text-center">
       <Avatar initials={member.initials} size="lg" />

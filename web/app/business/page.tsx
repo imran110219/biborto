@@ -5,9 +5,10 @@ import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/Button";
 import { BusinessCard } from "@/components/BusinessCard";
 import { ArrowRightIcon } from "@/components/ui/icons";
-import { businesses } from "@/lib/mock-data";
+import { getPublicBusinesses } from "@/lib/db/queries/businesses";
 
-export default function BusinessDirectoryPage() {
+export default async function BusinessDirectoryPage() {
+  const businesses = await getPublicBusinesses();
   const categories = Array.from(new Set(businesses.map((b) => b.category)));
 
   return (

@@ -13,10 +13,10 @@ this isn't a speculative model, it's what the UI already assumes.
   `updated_at` triggers, and `public_*` views that expose only
   public-safe columns. See the file's header comment for the auth,
   authorization, and file-storage decisions baked into it.
-- `seed_disciplines.sql` — Khulna University's full 29-discipline
-  reference list (code, school, name, short code, slug, website path),
-  supplied directly as authoritative data, not derived from the mockup.
-  Must run before `seed_members.sql`.
+- `seed_disciplines.sql` — Khulna University's discipline reference
+  list, codes 01-24 (code, school, name, short code, slug, website
+  path), supplied directly as authoritative data, not derived from the
+  mockup. Must run before `seed_members.sql`.
 - `seed_countries.sql` — 243 countries/territories for the "current
   country" dropdown: ISO 3166-1 codes and English names sourced from the
   ICU/CLDR data bundled with Node's `Intl.DisplayNames` (generated, not
@@ -40,7 +40,7 @@ this isn't a speculative model, it's what the UI already assumes.
 | Table | What it is |
 |---|---|
 | `users` | Login identity only (Phase 2, not built). Minimal on purpose — expect it to change once an auth approach is chosen. |
-| `disciplines` | Khulna University's full 29-discipline reference list, grouped by `school`. A real table, not an enum — see "Disciplines are a reference table" below. |
+| `disciplines` | Khulna University's discipline reference list (codes 01-24), grouped by `school`. A real table, not an enum — see "Disciplines are a reference table" below. |
 | `countries` | ISO 3166-1 countries/territories for the "current country" dropdown. Same reasoning as `disciplines` — see "Countries are a reference table" below. |
 | `members` | The alumni directory / profile data. `slug` powers `web/app/members/[slug]`. `discipline_id` references `disciplines`; `country_id` (nullable) references `countries`. `user_id` links to `users` once a member logs in; can exist without one (committee-entered). |
 | `businesses` | Alumni-run Business Directory listings, self-submitted, approve/reject workflow (`status`, `reviewed_by`, `reviewed_at`). |
@@ -95,10 +95,11 @@ this isn't a speculative model, it's what the UI already assumes.
 - **Disciplines are a reference table, not an enum.** They started as a
   12-value `member_discipline` enum scoped to the mock data — reasonable
   when that was all the data available. Given Khulna University's real,
-  authoritative 29-discipline list (code, school, name, short code, slug,
-  website path — see `seed_disciplines.sql`), a flat enum was the wrong
-  shape: `disciplines` is now a proper table, grouped by `school`
-  (`school_name` enum, 8 values — KU's own School/Discipline structure).
+  authoritative discipline list (codes 01-24: code, school, name, short
+  code, slug, website path — see `seed_disciplines.sql`), a flat enum
+  was the wrong shape: `disciplines` is now a proper table, grouped by
+  `school` (`school_name` enum, 8 values — KU's own School/Discipline
+  structure).
   `members.discipline_id` references it. Cross-checking the mock data
   against the real list also caught 3 near-miss discipline names that
   had drifted from KU's actual naming ("Urban & Rural Planning" vs.
@@ -148,7 +149,7 @@ Docker, RDS, etc.):
    seed_blog_posts.sql -f seed_gallery.sql`).
 3. Confirm: `select * from public_members;` should return the 12 members
    with only their public fields; `select count(*) from disciplines;`
-   should return 29; `select count(*) from countries;` should return
+   should return 24; `select count(*) from countries;` should return
    243; `select count(*) from businesses;` should return 8.
 
 ## What this does NOT include yet

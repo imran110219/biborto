@@ -1,7 +1,7 @@
--- Khulna University's full discipline list — authoritative data supplied
--- directly (not derived from the mockup or invented). Must run before
--- seed_members.sql, which resolves members.discipline_id against this
--- table by code.
+-- Khulna University's discipline list (codes 01-24) — authoritative data
+-- supplied directly (not derived from the mockup or invented). Must run
+-- before seed_members.sql, which resolves members.discipline_id against
+-- this table by code.
 
 insert into disciplines (code, school, name, short_code, slug, website_path) values
   ('01', 'Science, Engineering & Technology School',   'Architecture',                              'ARCH', 'architecture',                          '/discipline/arch'),

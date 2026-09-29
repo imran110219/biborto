@@ -106,8 +106,8 @@ create trigger users_set_updated_at
   for each row execute function set_updated_at();
 
 -- ---------------------------------------------------------------------
--- disciplines — Khulna University's full 29-discipline reference list
--- (see db/README.md for provenance), not a fixed enum. `code` is KU's
+-- disciplines — Khulna University's discipline reference list (codes
+-- 01-24; see db/README.md for provenance), not a fixed enum. `code` is KU's
 -- own 2-digit discipline code (kept as text to preserve the leading
 -- zero); `website_path` is KU's own /discipline/<short_code> URL, not
 -- necessarily this app's routing.

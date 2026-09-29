@@ -8,8 +8,9 @@ Two-part repo:
 
 ```
 web/    Next.js app — real components, public pages read from a real
-        Postgres database, real sign-in gates /admin/**, admin page
-        content + every other form still on mock data.
+        Postgres database, real sign-in gates /admin/**, member/business
+        approval are real writes, most other admin content + forms
+        still on mock data.
 db/     Full Postgres data model (members, businesses, sponsors, events,
         blog, gallery, auth) — wired into web/'s public pages and login
         via Drizzle ORM / Auth.js.
@@ -25,10 +26,13 @@ component shapes) lives on in `docs/web/DESIGN.md`.
 - **`web/`** is a componentized Next.js + Tailwind app. Its public pages
   (home, members, business directory, events, blog, gallery) query the
   real database directly, and sign-in (email/password + Google) really
-  authenticates and role-gates `/admin/**`. Admin *page content* and
-  every other form (business submission, RSVP, edit-post's save) still
-  render `web/lib/mock-data.ts` and do nothing. This is the actively
-  developed project. See `docs/web/README.md` and `docs/web/DESIGN.md`.
+  authenticates and role-gates `/admin/**`. Approving/suspending a member
+  and approving/rejecting a business submission are real writes now too
+  (see `docs/web/README.md`'s Admin write surface section). Most other
+  admin *page content* and forms (business submission, RSVP, edit-post's
+  save) still render `web/lib/mock-data.ts` and do nothing. This is the
+  actively developed project. See `docs/web/README.md` and
+  `docs/web/DESIGN.md`.
 - **`db/`** is the full Postgres data model — members, businesses,
   sponsors, events/RSVPs, blog posts, gallery, plus auth (`users`,
   `accounts`, `sessions`, `verification_tokens`) — targeting an
@@ -36,12 +40,12 @@ component shapes) lives on in `docs/web/DESIGN.md`.
   See `docs/db/README.md`.
 
 The overall arc: mockup → componentized frontend → public pages wired to
-a real database → auth (current: sign-in/sign-up real, role-gates
-`/admin/**`) → the rest of the write surface (admin content, business
-submission, RSVP — `web/` becomes both frontend and backend via its own
-Next.js Route Handlers for these, building on the one already in place
-for auth) → file uploads on Cloudflare R2 instead of local paths (not
-started — no bucket wired up yet).
+a real database → auth (sign-in/sign-up real, role-gates `/admin/**`) →
+the rest of the write surface, in progress (member/business approval
+done via Server Actions; business submission, RSVP, edit-post's save/
+publish, sponsors/photos/videos/settings still mock) → file uploads on
+Cloudflare R2 instead of local paths (not started — no bucket wired up
+yet).
 
 ## Target stack
 
@@ -59,12 +63,13 @@ started — no bucket wired up yet).
 `web/` is the project to run, and it now needs a database:
 
 ```bash
-# 1. stand up Postgres + load the schema and seed data — see docs/db/README.md
+# 1. provision a Postgres database
 # 2. cd web && cp .env.example .env.local, then set DATABASE_URL and
 #    AUTH_SECRET (generate with `npx auth secret`) — see docs/web/README.md's
 #    Auth section for the optional Google OAuth vars
 cd web
-npm install   # see web/.npmrc — this network's registry mirror
+npm install       # see web/.npmrc — this network's registry mirror
+npm run db:seed   # applies db/schema.sql + db/seed_*.sql — see docs/db/README.md
 npm run db:pull   # introspects the DB into drizzle/schema.ts
 npm run dev
 ```

@@ -22,12 +22,13 @@ public, unauthenticated pages (home, members, business directory, events,
 blog, gallery) render from a real independent Postgres database (no
 Supabase) — see [Data layer](#data-layer). Sign-in/sign-up are real too
 (email+password and Google, see [Auth](#auth)) and gate `/admin/**` for
-real. But every *admin page's content* still renders from
-`lib/mock-data.ts` — signing in as an admin now genuinely controls
-*access*, but approving a member, editing a business, publishing a post,
-etc. still do nothing. File storage (avatars, gallery media, business
-photos) is Cloudflare R2 — not wired up yet, tracked in [Known
-gaps](#known-gaps-vs-the-mockup).
+real. Member and business approval are real writes now too — see
+[Admin write surface](#admin-write-surface) — but most *other* admin page
+content still renders from `lib/mock-data.ts`: signing in as an admin
+controls *access*, but e.g. publishing a blog post or editing sponsors/
+photos/videos/settings still does nothing. File storage (avatars, gallery
+media, business photos) is Cloudflare R2 — not wired up yet, tracked in
+[Known gaps](#known-gaps-vs-the-mockup).
 
 ## Stack
 
@@ -41,7 +42,9 @@ gaps](#known-gaps-vs-the-mockup).
   [Data layer](#data-layer).
 - **Auth.js v5** (`next-auth@beta` + `@auth/drizzle-adapter`) for
   sign-in — email/password and Google, JWT sessions — see [Auth](#auth).
-  Admin *pages' content* still has no backend, only their access does.
+  Member and business approval have a real backend now too — see
+  [Admin write surface](#admin-write-surface) — most other admin pages'
+  content still doesn't.
 
 ## Structure
 
@@ -69,7 +72,9 @@ app/
   admin/page.tsx               → redirects to /admin/dashboard
   admin/dashboard/page.tsx
   admin/members/page.tsx
+  admin/members/actions.ts     Server Actions: approveMember, suspendMember
   admin/businesses/page.tsx
+  admin/businesses/actions.ts  Server Actions: approveBusiness, rejectBusiness
   admin/sponsors/page.tsx
   admin/events/page.tsx
   admin/photos/page.tsx
@@ -89,9 +94,15 @@ lib/
   types.ts       Member, Business, Sponsor, EventItem, BlogPost — plus
                  PublicMember/BlogPostDetail, the narrower shapes the
                  real public pages use (see Data layer below)
-  mock-data.ts   The mockup's sample content, typed — still what admin
-                 pages and forms render from (see Why this exists)
+  mock-data.ts   The mockup's sample content, typed — still what most
+                 admin pages and forms render from (see Why this exists)
   fonts.ts       next/font/google setup
+  auth/
+    require-admin.ts   requireAdminMemberId() — shared by every admin
+                       Server Action (members, businesses, ...); restates
+                       proxy.ts's role check since a Server Action is
+                       directly callable, not just reachable through the
+                       page that renders its bound form
   db/
     client.ts    Drizzle instance + pooled postgres-js connection
                  (cached on globalThis so Next dev's hot-reload doesn't
@@ -100,7 +111,10 @@ lib/
                  date formatting, read-time estimation)
     queries/     One file per entity (members, businesses, sponsors,
                  events, blog, gallery, stats) — each maps rows onto the
-                 types in lib/types.ts, so components need zero changes
+                 types in lib/types.ts, so components need zero changes.
+                 members.ts and businesses.ts also export admin-facing
+                 getAdminMembers()/getAdminBusinesses() (every status,
+                 not just the public-safe rows) — see Admin write surface.
     auth-schema.ts   users/accounts/sessions/verification_tokens, hand-written
                      to match @auth/drizzle-adapter's exact expected shape —
                      see Auth below for why this one file isn't generated
@@ -211,12 +225,51 @@ wired up. Every avatar/cover/logo in the seed data is `NULL` anyway (no
 files have actually been uploaded), so this hasn't been needed yet;
 tracked as a gap, not silently faked.
 
-**Still on mock data**: `lib/mock-data.ts` remains what every admin
-page's *content* renders from, and what every form besides sign-in/
-sign-up still does nothing with (business submission, RSVP, edit-post's
-save/publish). Auth existing unlocks *building* these — approving a
-member for real, submitting a business for real — it doesn't build them
-by itself. See [Auth](#auth).
+**Still on mock data**: `lib/mock-data.ts` remains what most admin page
+*content* renders from, and what every form besides sign-in/sign-up
+still does nothing with (business submission, RSVP, edit-post's
+save/publish) — member and business approval are the first two
+exceptions, see [Admin write surface](#admin-write-surface) below.
+
+## Admin write surface
+
+The first real mutations past auth: approving/suspending a member and
+approving/rejecting a business submission, both from the dashboard's
+approval-queue panels and each entity's admin list page.
+
+- **`lib/db/queries/{members,businesses}.ts`** export `getAdminMembers()`/
+  `getAdminBusinesses()` alongside the existing public-facing queries —
+  every row regardless of status, plus the admin-only columns
+  (`email`, `studentId`, `platformRole` for members) `public_members`
+  excludes. Safe here since these never flow to a public page — unlike
+  `PublicMember`, there's no separate narrower type to enforce it, so
+  don't wire one of these into a Server Component that passes props to
+  a Client Component without checking first.
+- **`app/admin/{members,businesses}/actions.ts`** — `"use server"`
+  mutations (`approveMember`, `suspendMember`, `approveBusiness`,
+  `rejectBusiness`). Each sets `reviewed_by` (the acting admin's own
+  `members.id`, resolved from the session) and `reviewed_at` alongside
+  `status`, then `revalidatePath()`s every route the change affects —
+  the admin list page, the dashboard, and (for approvals) the public
+  page the row now appears on or disappears from (`/members`,
+  `/business`).
+- **`lib/auth/require-admin.ts`** — every action above calls
+  `requireAdminMemberId()` first. `proxy.ts` already keeps non-admins off
+  `/admin/**`, but a Server Action is directly callable — reachable
+  without ever rendering the page that binds it to a form — so the role
+  check (and the acting-admin lookup) is restated here rather than
+  assumed from the page having rendered.
+- **`components/admin/ApprovalRow.tsx`** — `onApprove`/`onReject` are now
+  optional props, each a Server Action pre-bound to a row's id
+  (`approveMember.bind(null, m.id)`). Passed where the backing mutation
+  exists (members, businesses); omitted elsewhere (e.g. the dashboard has
+  no "Event RSVPs" approval queue yet), where the buttons render inert,
+  same as before this existed.
+
+Not yet extended to: event RSVP, blog post publish/save, sponsors,
+photos, videos, settings, or the member/business table rows' Edit/Delete
+buttons (only the approval-queue actions are wired) — same shape of work,
+not yet done.
 
 ## Auth
 
@@ -309,8 +362,13 @@ restructure first.
   mockup); the other 3 seeded posts render the same "coming soon"
   placeholder body the mockup always showed for them — see
   `db/seed_blog_posts.sql`.
-- Sign-in/sign-up are real now (see [Auth](#auth)); business submission,
-  RSVP, and search/filter forms are still inert, same as the mockup.
+- Sign-in/sign-up are real now (see [Auth](#auth)), and so is approving/
+  rejecting an existing pending member or business (see [Admin write
+  surface](#admin-write-surface)). The public *submission* form (an
+  alumnus listing a new business) and RSVP are still inert, same as the
+  mockup — approval has a backend now, the thing being approved doesn't
+  yet have a way to be submitted for real. Search/filter forms are still
+  inert too.
 - Real data is thin by design (9 active members, 0 photos, 0 countries
   captured) — the home page's stat bar and directories will look sparse
   compared to the polished mockup's bracketed placeholders until real

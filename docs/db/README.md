@@ -173,16 +173,19 @@ then seeds from scratch.
 
 ## What this does NOT include yet
 
-- **Wired into `web/` for reads and login, not the rest of the write
-  surface.** The public pages query this schema directly via Drizzle ORM
-  (see `docs/web/README.md`'s Data layer section), and sign-in/claim-
-  account are now real writes against `users`/`members.user_id`. But
-  every *admin* page still renders from `web/lib/mock-data.ts` — signing
-  in as an admin now genuinely gates *access* to `/admin/**`, but the
-  content those pages show still isn't real. Approving a member, editing
-  a business, publishing a blog post, etc. still do nothing.
-- No admin UI wired to this yet — a generic Postgres client (psql,
-  pgAdmin, TablePlus, etc.) works until a real admin panel exists.
+- **Wired into `web/` for reads, login, and approval — not the rest of
+  the write surface.** The public pages query this schema directly via
+  Drizzle ORM (see `docs/web/README.md`'s Data layer section), sign-in/
+  claim-account are real writes against `users`/`members.user_id`, and
+  approving/suspending a member or approving/rejecting a business are
+  real writes against `members.status`/`businesses.status` (+
+  `reviewed_by`/`reviewed_at`) — see `docs/web/README.md`'s Admin write
+  surface section. But most *other* admin page content still renders
+  from `web/lib/mock-data.ts` — publishing a blog post, submitting a
+  business, RSVPing to an event, etc. still do nothing.
+- No admin UI wired to this yet beyond member/business approval — a
+  generic Postgres client (psql, pgAdmin, TablePlus, etc.) still works
+  for everything else until a real admin panel exists for it.
 - No `activity_log` seed data — no source for it in `mock-data.ts` (the
   dashboard's activity feed text is hardcoded in the page component).
 - No R2 wiring — `*_key` columns aren't resolved to real URLs anywhere

@@ -53,7 +53,7 @@ export default function AdminDashboardPage() {
         <div className="overflow-hidden rounded-2xl border border-border-default bg-white">
           <div className="flex items-center justify-between border-b border-[#EFEAE0] px-6 py-5">
             <h2 className="text-lg font-semibold">Event RSVPs</h2>
-            <a href="#" className="text-sm font-semibold">
+            <a href="/admin/events" className="text-sm font-semibold">
               Manage events
             </a>
           </div>

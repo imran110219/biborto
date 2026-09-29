@@ -1,4 +1,4 @@
-import { pgTable, unique, uuid, text, timestamp, index, foreignKey, date, boolean, time, pgView, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, unique, uuid, text, timestamp, foreignKey, index, date, boolean, time, primaryKey, integer, pgView, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blogCategory = pgEnum("blog_category", ['Reunion', 'Memories', 'Careers', 'Campus'])
@@ -19,12 +19,25 @@ export const users = pgTable("users", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	email: text().notNull(),
 	passwordHash: text("password_hash"),
-	googleId: text("google_id"),
+	name: text(),
+	image: text(),
+	emailVerified: timestamp("email_verified", { withTimezone: true, mode: 'string' }),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	unique("users_email_key").on(table.email),
-	unique("users_google_id_key").on(table.googleId),
+]);
+
+export const sessions = pgTable("sessions", {
+	sessionToken: text("session_token").primaryKey().notNull(),
+	userId: uuid("user_id").notNull(),
+	expires: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "sessions_user_id_fkey"
+		}).onDelete("cascade"),
 ]);
 
 export const disciplines = pgTable("disciplines", {
@@ -314,6 +327,35 @@ export const activityLog = pgTable("activity_log", {
 			foreignColumns: [members.id],
 			name: "activity_log_actor_member_id_fkey"
 		}).onDelete("set null"),
+]);
+
+export const verificationTokens = pgTable("verification_tokens", {
+	identifier: text().notNull(),
+	token: text().notNull(),
+	expires: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
+}, (table) => [
+	primaryKey({ columns: [table.token, table.identifier], name: "verification_tokens_pkey"}),
+]);
+
+export const accounts = pgTable("accounts", {
+	userId: uuid("user_id").notNull(),
+	type: text().notNull(),
+	provider: text().notNull(),
+	providerAccountId: text("provider_account_id").notNull(),
+	refreshToken: text("refresh_token"),
+	accessToken: text("access_token"),
+	expiresAt: integer("expires_at"),
+	tokenType: text("token_type"),
+	scope: text(),
+	idToken: text("id_token"),
+	sessionState: text("session_state"),
+}, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "accounts_user_id_fkey"
+		}).onDelete("cascade"),
+	primaryKey({ columns: [table.providerAccountId, table.provider], name: "accounts_pkey"}),
 ]);
 export const publicMembers = pgView("public_members", {	id: uuid(),
 	slug: text(),

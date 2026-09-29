@@ -87,23 +87,59 @@ create type rsvp_status as enum ('going', 'interested', 'declined');
 create type event_category as enum ('Reunion', 'Online', 'Chapter', 'Volunteer');
 
 -- ---------------------------------------------------------------------
--- users — login identity only (Phase 2). Deliberately minimal: no
--- sessions/OAuth-account tables yet, since the actual auth approach
--- (library vs. hand-rolled, Google OAuth flow) isn't chosen. Profile
--- data lives on `members`, not here.
+-- users, accounts, sessions, verification_tokens — login identity
+-- (Phase 2), shaped to match @auth/drizzle-adapter's expected Postgres
+-- schema (Auth.js / next-auth v5) rather than a bespoke shape, so the
+-- adapter can be pointed at these tables directly. `password_hash` is
+-- the one addition beyond what the adapter expects — Auth.js's
+-- Credentials provider has no built-in password storage, so this app
+-- owns it. Profile data lives on `members`, not here; `members.user_id`
+-- links the two once a member claims their account (see below).
 -- ---------------------------------------------------------------------
 create table users (
-  id            uuid primary key default gen_random_uuid(),
-  email         text not null unique,
-  password_hash text,             -- null for Google-OAuth-only accounts
-  google_id     text unique,
-  created_at    timestamptz not null default now(),
-  updated_at    timestamptz not null default now()
+  id             uuid primary key default gen_random_uuid(),
+  email          text not null unique,
+  password_hash  text,             -- null for Google-OAuth-only accounts
+  name           text,
+  image          text,             -- OAuth provider's avatar URL, not an R2 key
+  email_verified timestamptz,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
 );
 
 create trigger users_set_updated_at
   before update on users
   for each row execute function set_updated_at();
+
+create table accounts (
+  user_id             uuid not null references users (id) on delete cascade,
+  type                text not null,
+  provider            text not null,
+  provider_account_id text not null,
+  refresh_token       text,
+  access_token        text,
+  expires_at          integer,
+  token_type          text,
+  scope               text,
+  id_token            text,
+  session_state       text,
+
+  primary key (provider, provider_account_id)
+);
+
+create table sessions (
+  session_token text primary key,
+  user_id       uuid not null references users (id) on delete cascade,
+  expires       timestamptz not null
+);
+
+create table verification_tokens (
+  identifier text not null,
+  token      text not null,
+  expires    timestamptz not null,
+
+  primary key (identifier, token)
+);
 
 -- ---------------------------------------------------------------------
 -- disciplines — Khulna University's discipline reference list (codes

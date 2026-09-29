@@ -79,7 +79,7 @@ export default function AdminEditPostPage() {
                 Publish
               </Button>
             </div>
-            <a href="#" className="text-center text-sm font-semibold text-brand-green">
+            <a href={`/blog/${post.slug}`} className="text-center text-sm font-semibold text-brand-green">
               Preview on site
             </a>
           </div>

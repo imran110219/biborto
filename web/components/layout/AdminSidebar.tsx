@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import {
   DashboardIcon,
   MembersIcon,
@@ -15,6 +16,7 @@ import {
   EyeIcon,
   LogoutIcon,
 } from "@/components/ui/icons";
+import { initialsOf } from "@/lib/db/format";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/admin/dashboard", icon: DashboardIcon },
@@ -28,8 +30,13 @@ const NAV_ITEMS = [
   { label: "Settings", href: "/admin/settings", icon: SettingsIcon },
 ];
 
+const ROLE_LABELS = { member: "Member", admin: "Admin", superadmin: "Superadmin" };
+
 export function AdminSidebar({ className = "" }: { className?: string }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const name = session?.user?.name ?? "…";
+  const role = session?.user?.platformRole;
 
   return (
     <aside className={`flex flex-col gap-9 bg-brand-green-dark p-5 text-bg-public ${className}`}>
@@ -69,15 +76,20 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
         </Link>
         <div className="flex items-center gap-3 rounded-xl bg-brand-green p-3.5">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-amber-tint text-sm font-bold text-accent-amber-text">
-            SA
+            {initialsOf(name)}
           </div>
           <div className="flex flex-1 flex-col">
-            <span className="text-sm font-semibold text-white">Sadman</span>
-            <span className="text-xs text-brand-green-tint">Committee admin</span>
+            <span className="text-sm font-semibold text-white">{name}</span>
+            <span className="text-xs text-brand-green-tint">{role ? ROLE_LABELS[role] : ""}</span>
           </div>
-          <Link href="/signin" aria-label="Sign out" className="text-brand-green-tint">
+          <button
+            type="button"
+            aria-label="Sign out"
+            onClick={() => signOut({ redirectTo: "/" })}
+            className="text-brand-green-tint"
+          >
             <LogoutIcon />
-          </Link>
+          </button>
         </div>
       </div>
     </aside>

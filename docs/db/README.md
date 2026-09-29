@@ -34,15 +34,17 @@ this isn't a speculative model, it's what the UI already assumes.
   members for `author_member_id`). Each file's header comment flags what
   the mock data doesn't actually specify (e.g. exact years for
   event/post dates, business contact info) rather than inventing it
-  silently. `activity_log` and `users` have no seed data — neither has a
-  source in `mock-data.ts` (activity feed text is hardcoded in the
-  dashboard page component; there's no auth data at all yet).
+  silently. `activity_log` has no seed data — no source for it in
+  `mock-data.ts` (activity feed text is hardcoded in the dashboard page
+  component). `users`/`accounts`/`sessions` are deliberately never
+  seeded either — they're populated at runtime by actually claiming an
+  account or signing in, not by a SQL script.
 
 ## Entities
 
 | Table | What it is |
 |---|---|
-| `users` | Login identity only (Phase 2, not built). Minimal on purpose — expect it to change once an auth approach is chosen. |
+| `users`, `accounts`, `sessions`, `verification_tokens` | Login identity (Phase 2, built) — shaped to match `@auth/drizzle-adapter`'s expected schema so Auth.js (next-auth v5) can be pointed at them directly, plus `password_hash` on `users` for credentials sign-in, which the adapter doesn't provide. See `docs/web/README.md`'s Auth section. |
 | `disciplines` | Khulna University's discipline reference list (codes 01-24), grouped by `school`. A real table, not an enum — see "Disciplines are a reference table" below. |
 | `countries` | ISO 3166-1 countries/territories for the "current country" dropdown. Same reasoning as `disciplines` — see "Countries are a reference table" below. |
 | `members` | The alumni directory / profile data. `slug` powers `web/app/members/[slug]`. `discipline_id` references `disciplines`; `country_id` (nullable) references `countries`. `user_id` links to `users` once a member logs in; can exist without one (committee-entered). |
@@ -60,11 +62,11 @@ this isn't a speculative model, it's what the UI already assumes.
   into every connection. A plain Postgres connection doesn't get that for
   free — reproducing it would mean `SET LOCAL` session variables per
   request. Simpler default: authorization lives in application code —
-  Server Components querying Postgres directly for reads, Route Handlers
-  for writes once Phase 2 auth exists — same as any other Postgres-backed
-  app. `users` is a new, minimal placeholder table for login identity
-  instead. See `docs/web/README.md`'s Data layer section for how the public
-  read paths actually enforce this today.
+  Server Components querying Postgres directly for reads, and now (Phase
+  2, built) a `proxy.ts` (Next.js 16's renamed `middleware.ts`) reading
+  `platform_role` off the session JWT to gate `/admin/**` for writes —
+  same as any other Postgres-backed app. See `docs/web/README.md`'s Auth
+  section for how sign-in and role-gating actually work.
 - **Files live in R2, not Postgres.** Columns named `*_key` (`avatar_key`,
   `cover_photo_key`, `logo_key`, `r2_key`) store the Cloudflare R2 object
   key, not a full URL — the app resolves keys to URLs at render time, so
@@ -158,17 +160,18 @@ Docker, RDS, etc.):
 
 ## What this does NOT include yet
 
-- **Wired into `web/` for reads, not writes.** The public pages (home,
-  members, business directory, events, blog, gallery) query this schema
-  directly via Drizzle ORM — see `docs/web/README.md`'s Data layer
-  section for how. Admin pages and every form still render `web/lib/mock-data.ts`;
-  none of them can actually write to this schema without Phase 2 auth.
+- **Wired into `web/` for reads and login, not the rest of the write
+  surface.** The public pages query this schema directly via Drizzle ORM
+  (see `docs/web/README.md`'s Data layer section), and sign-in/claim-
+  account are now real writes against `users`/`members.user_id`. But
+  every *admin* page still renders from `web/lib/mock-data.ts` — signing
+  in as an admin now genuinely gates *access* to `/admin/**`, but the
+  content those pages show still isn't real. Approving a member, editing
+  a business, publishing a blog post, etc. still do nothing.
 - No admin UI wired to this yet — a generic Postgres client (psql,
   pgAdmin, TablePlus, etc.) works until a real admin panel exists.
-- No login (`site/signin.html` is still a static mockup) — that's Phase 2
-  (email/password + Google, matching the "Continue with Google" button
-  already in the mockup), pending the auth-layer decision in `users`.
-- No `activity_log` or `users` seed data — see "Files" above for why.
+- No `activity_log` seed data — no source for it in `mock-data.ts` (the
+  dashboard's activity feed text is hardcoded in the page component).
 - No R2 wiring — `*_key` columns aren't resolved to real URLs anywhere
   yet, and every one is `NULL` in the seed data (no files have actually
   been uploaded).

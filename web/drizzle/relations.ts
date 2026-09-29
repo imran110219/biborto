@@ -1,5 +1,18 @@
 import { relations } from "drizzle-orm/relations";
-import { users, members, disciplines, countries, businesses, sponsors, events, eventRsvps, blogPosts, galleryAlbums, galleryPhotos, galleryVideos, activityLog } from "./schema";
+import { users, sessions, members, disciplines, countries, businesses, sponsors, events, eventRsvps, blogPosts, galleryAlbums, galleryPhotos, galleryVideos, activityLog, accounts } from "./schema";
+
+export const sessionsRelations = relations(sessions, ({one}) => ({
+	user: one(users, {
+		fields: [sessions.userId],
+		references: [users.id]
+	}),
+}));
+
+export const usersRelations = relations(users, ({many}) => ({
+	sessions: many(sessions),
+	members: many(members),
+	accounts: many(accounts),
+}));
 
 export const membersRelations = relations(members, ({one, many}) => ({
 	user: one(users, {
@@ -35,10 +48,6 @@ export const membersRelations = relations(members, ({one, many}) => ({
 	galleryPhotos: many(galleryPhotos),
 	galleryVideos: many(galleryVideos),
 	activityLogs: many(activityLog),
-}));
-
-export const usersRelations = relations(users, ({many}) => ({
-	members: many(members),
 }));
 
 export const disciplinesRelations = relations(disciplines, ({many}) => ({
@@ -126,5 +135,12 @@ export const activityLogRelations = relations(activityLog, ({one}) => ({
 	member: one(members, {
 		fields: [activityLog.actorMemberId],
 		references: [members.id]
+	}),
+}));
+
+export const accountsRelations = relations(accounts, ({one}) => ({
+	user: one(users, {
+		fields: [accounts.userId],
+		references: [users.id]
 	}),
 }));

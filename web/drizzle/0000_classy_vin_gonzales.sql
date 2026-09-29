@@ -17,11 +17,18 @@ CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"email" text NOT NULL,
 	"password_hash" text,
-	"google_id" text,
+	"name" text,
+	"image" text,
+	"email_verified" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "users_email_key" UNIQUE("email"),
-	CONSTRAINT "users_google_id_key" UNIQUE("google_id")
+	CONSTRAINT "users_email_key" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "sessions" (
+	"session_token" text PRIMARY KEY NOT NULL,
+	"user_id" uuid NOT NULL,
+	"expires" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "disciplines" (
@@ -205,6 +212,29 @@ CREATE TABLE "activity_log" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "verification_tokens" (
+	"identifier" text NOT NULL,
+	"token" text NOT NULL,
+	"expires" timestamp with time zone NOT NULL,
+	CONSTRAINT "verification_tokens_pkey" PRIMARY KEY("token","identifier")
+);
+--> statement-breakpoint
+CREATE TABLE "accounts" (
+	"user_id" uuid NOT NULL,
+	"type" text NOT NULL,
+	"provider" text NOT NULL,
+	"provider_account_id" text NOT NULL,
+	"refresh_token" text,
+	"access_token" text,
+	"expires_at" integer,
+	"token_type" text,
+	"scope" text,
+	"id_token" text,
+	"session_state" text,
+	CONSTRAINT "accounts_pkey" PRIMARY KEY("provider_account_id","provider")
+);
+--> statement-breakpoint
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "members" ADD CONSTRAINT "members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "members" ADD CONSTRAINT "members_discipline_id_fkey" FOREIGN KEY ("discipline_id") REFERENCES "public"."disciplines"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "members" ADD CONSTRAINT "members_country_id_fkey" FOREIGN KEY ("country_id") REFERENCES "public"."countries"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -221,6 +251,7 @@ ALTER TABLE "gallery_photos" ADD CONSTRAINT "gallery_photos_album_id_fkey" FOREI
 ALTER TABLE "gallery_photos" ADD CONSTRAINT "gallery_photos_uploaded_by_fkey" FOREIGN KEY ("uploaded_by") REFERENCES "public"."members"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gallery_videos" ADD CONSTRAINT "gallery_videos_added_by_fkey" FOREIGN KEY ("added_by") REFERENCES "public"."members"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activity_log" ADD CONSTRAINT "activity_log_actor_member_id_fkey" FOREIGN KEY ("actor_member_id") REFERENCES "public"."members"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "disciplines_school_idx" ON "disciplines" USING btree ("school" enum_ops);--> statement-breakpoint
 CREATE INDEX "members_city_idx" ON "members" USING btree ("city" text_ops);--> statement-breakpoint
 CREATE INDEX "members_discipline_idx" ON "members" USING btree ("discipline_id" uuid_ops);--> statement-breakpoint

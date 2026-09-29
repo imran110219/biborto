@@ -9,9 +9,11 @@ Three-part repo, in the order the project actually moved through:
 ```
 site/   Static HTML/CSS mockup — the original design, no backend, no build step.
 web/    Next.js port of that mockup — real components, public pages read
-        from a real Postgres database, admin/forms still on mock data.
+        from a real Postgres database, real sign-in gates /admin/**,
+        admin page content + every other form still on mock data.
 db/     Full Postgres data model (members, businesses, sponsors, events,
-        blog, gallery) — wired into web/'s public pages via Drizzle ORM.
+        blog, gallery, auth) — wired into web/'s public pages and login
+        via Drizzle ORM / Auth.js.
 ```
 
 ## How the pieces relate
@@ -21,20 +23,24 @@ db/     Full Postgres data model (members, businesses, sponsors, events,
   `docs/site/README.md` and `docs/site/DESIGN.md`.
 - **`web/`** is the "build it properly" step: every page and component from
   `site/` ported into a componentized Next.js + Tailwind app. Its public
-  pages (home, members, business directory, events, blog, gallery) now
-  query the real database directly; admin pages and every form still
-  render `web/lib/mock-data.ts`, pending Phase 2 auth. This is the
+  pages (home, members, business directory, events, blog, gallery) query
+  the real database directly, and sign-in (email/password + Google)
+  really authenticates and role-gates `/admin/**`. Admin *page content*
+  and every other form (business submission, RSVP, edit-post's save)
+  still render `web/lib/mock-data.ts` and do nothing. This is the
   actively developed project. See `docs/web/README.md`.
 - **`db/`** is the full Postgres data model — members, businesses,
-  sponsors, events/RSVPs, blog posts, gallery — targeting an independent
-  Postgres database (Supabase was considered and ruled out). See
-  `docs/db/README.md`.
+  sponsors, events/RSVPs, blog posts, gallery, plus auth (`users`,
+  `accounts`, `sessions`, `verification_tokens`) — targeting an
+  independent Postgres database (Supabase was considered and ruled out).
+  See `docs/db/README.md`.
 
 The overall arc: mockup → componentized frontend → public pages wired to
-a real database (current) → auth + write paths (Phase 2, not started —
-sign-in, RSVP, submitting a business, admin approvals; `web/` becomes
-both frontend and backend via its own Next.js Route Handlers once that
-lands) → file uploads on Cloudflare R2 instead of local paths (also not
+a real database → auth (current: sign-in/sign-up real, role-gates
+`/admin/**`) → the rest of the write surface (admin content, business
+submission, RSVP — `web/` becomes both frontend and backend via its own
+Next.js Route Handlers for these, building on the one already in place
+for auth) → file uploads on Cloudflare R2 instead of local paths (not
 started — no bucket wired up yet).
 
 ## Target stack
@@ -43,6 +49,8 @@ started — no bucket wired up yet).
   Route Handlers serve the API, no separate backend service.
 - **Database**: independent Postgres (self-hosted/managed — not
   Supabase).
+- **Auth**: Auth.js v5 (email/password + Google), JWT sessions — built,
+  see `docs/web/README.md`'s Auth section.
 - **File storage**: Cloudflare R2 (avatars, gallery media, business
   photos).
 
@@ -52,7 +60,9 @@ started — no bucket wired up yet).
 
 ```bash
 # 1. stand up Postgres + load the schema and seed data — see docs/db/README.md
-# 2. cd web && cp .env.example .env.local, then set DATABASE_URL
+# 2. cd web && cp .env.example .env.local, then set DATABASE_URL and
+#    AUTH_SECRET (generate with `npx auth secret`) — see docs/web/README.md's
+#    Auth section for the optional Google OAuth vars
 cd web
 npm install   # see web/.npmrc — this network's registry mirror
 npm run db:pull   # introspects the DB into drizzle/schema.ts

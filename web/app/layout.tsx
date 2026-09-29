@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SessionProvider } from "next-auth/react";
 import { fraunces, instrumentSans } from "@/lib/fonts";
 import "./globals.css";
 
@@ -11,7 +12,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${fraunces.variable} ${instrumentSans.variable}`}>
       <body className="min-h-screen bg-bg-public font-sans text-text-primary antialiased">
-        {children}
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );

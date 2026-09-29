@@ -200,8 +200,34 @@ no new visual language was introduced.
   [logo] [name]" credit line above its CTA buttons.
 - `admin/sponsors.html`: a table (Sponsor, Tier, Website, Status) using
   the same white-card + table pattern as `admin/members.html`. Tier is a
-  3-color badge (Gold/Silver/Bronze) parallel to, but distinct from, the
-  Active/Pending/Suspended status badge system.
+  4-color badge (Diamond/Gold/Silver/Bronze) parallel to, but distinct
+  from, the Active/Pending/Suspended status badge system.
+- **Diamond tier**: a single exclusive top tier above Gold, currently
+  held by Gollamari Coffee Roasters. Badge color is a cool icy-blue
+  (`background: rgb(224, 236, 250)`, `color: rgb(30, 74, 140)`) to read
+  as more premium than the warm Gold/Silver/Bronze palette. Exclusivity
+  ("only one Diamond sponsor") is a content convention, not an enforced
+  rule — this is a static mockup with no validation logic anywhere.
+- **Diamond welcome popup** (`assets/css/diamond-popup.css`, linked only
+  from `index.html`): the Diamond sponsor gets a modal on Home. The
+  show/hide mechanism is CSS-only — same hidden-checkbox-plus-`<label>`
+  technique as the mobile nav/sidebar toggles in `responsive.css`, but
+  inverted: the checkbox starts unchecked so the overlay is visible by
+  default, and checking it (via the ✕ button or a click on the backdrop,
+  both `<label for="diamondPopupClose">`) hides it. A `@keyframes`
+  fade+scale-in animation plays automatically on load since CSS
+  animations don't need JS to start.
+- **Once-per-visit memory**: this is the one deliberate exception to
+  "no JavaScript" anywhere on the site (see `README.md`). A ~10-line
+  inline `<script>` sits between the checkbox and the overlay markup in
+  `index.html`: on load it checks `sessionStorage.getItem("diamondSponsorSeen")`
+  and pre-checks the checkbox if it's set (so the popup never even
+  flashes on repeat visits — the script runs and blocks rendering of the
+  overlay markup that follows it, since it has no `async`/`defer`), and
+  a `change` listener on the checkbox sets that flag the moment the
+  popup is dismissed. `sessionStorage` means "once per browser tab
+  session" — a new tab or a closed-and-reopened browser sees it again;
+  it does not persist like a cookie would.
 - Sponsors do **not** get a public nav item — they're supporting content,
   not something users browse to directly.
 

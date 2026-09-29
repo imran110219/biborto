@@ -3,9 +3,11 @@ import { Avatar } from "@/components/ui/Avatar";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { DownloadIcon, EditIcon, PlusIcon, SearchIcon, TrashIcon } from "@/components/ui/icons";
-import { businesses } from "@/lib/mock-data";
+import { getAdminBusinesses } from "@/lib/db/queries/businesses";
 
-export default function AdminBusinessesPage() {
+export default async function AdminBusinessesPage() {
+  const businesses = await getAdminBusinesses();
+
   return (
     <AdminLayout>
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -40,7 +42,7 @@ export default function AdminBusinessesPage() {
           <select className="h-11 rounded-[10px] border border-border-input px-3 text-sm">
             <option>All categories</option>
           </select>
-          <span className="ml-auto text-sm text-text-secondary">[{businesses.length}] listings</span>
+          <span className="ml-auto text-sm text-text-secondary">{businesses.length} listings</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -90,7 +92,7 @@ export default function AdminBusinessesPage() {
         </div>
 
         <div className="flex items-center justify-between border-t border-[#EFEAE0] px-5 py-3.5 text-sm text-text-secondary">
-          <span>Rows 1–{businesses.length} of [00]</span>
+          <span>Rows 1–{businesses.length} of {businesses.length}</span>
           <div className="flex gap-2">
             <button className="h-11 rounded-[10px] border border-border-input px-4 text-sm font-semibold">Previous</button>
             <button className="h-11 rounded-[10px] border border-border-input px-4 text-sm font-semibold">Next</button>

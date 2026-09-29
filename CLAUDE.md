@@ -22,13 +22,15 @@ npm run dev           # dev server
 npm run build         # production build — requires a live DATABASE_URL, see "Data layer" below
 npm run lint          # eslint
 npm run db:pull       # regenerate web/drizzle/schema.ts + relations.ts by introspecting the live DB
+npm run db:seed       # apply db/schema.sql + db/seed_*.sql to $DATABASE_URL (fails fast on a non-empty DB)
+npm run db:reset      # drop schema public cascade, then db:seed — safe to rerun anytime
 ```
 
 There is no test suite in this repo (no test runner installed, no test files).
 
-Database setup (see `docs/db/README.md` for detail): provision Postgres, then run `db/schema.sql` followed by the `db/seed_*.sql` files **in this order** — `disciplines`, `countries`, `members`, `businesses`, `sponsors`, `events`, `blog_posts`, `gallery` — since later ones FK into earlier ones. Point `web/.env.local`'s `DATABASE_URL` at it, then `npm run db:pull`. Also set `AUTH_SECRET` (generate with `npx auth secret`) — required for auth to work at all, see "Auth" below.
+Database setup (see `docs/db/README.md` for detail): provision Postgres, point `web/.env.local`'s `DATABASE_URL` at it, then `npm run db:seed` (or `npm run db:reset` if it's not empty) — this runs `db/seed.sh`, which applies `db/schema.sql` followed by the `db/seed_*.sql` files **in dependency order** — `disciplines`, `countries`, `members`, `businesses`, `sponsors`, `events`, `blog_posts`, `gallery` — since later ones FK into earlier ones. Then `npm run db:pull`. Also set `AUTH_SECRET` (generate with `npx auth secret`) — required for auth to work at all, see "Auth" below.
 
-**Killing a dev/prod Next.js server**: `pkill -f "next start"` / matching on the npm script name does **not** work — the actual process is named `next-server`. Use `pkill -f "next-server"`. A leftover `next-server` process holds a live Postgres connection open and will silently block `dropdb`/schema-reload attempts on a subsequent session.
+**Killing a dev/prod Next.js server**: `pkill -f "next start"` / matching on the npm script name does **not** work — the actual process is named `next-server`. Use `pkill -f "next-server"`. A leftover `next-server` process holds a live Postgres connection open and will silently block `dropdb`/schema-reload attempts on a subsequent session — `npm run db:reset` sidesteps this entirely since it only drops the `public` schema, not the database.
 
 ## Architecture
 

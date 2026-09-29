@@ -81,3 +81,17 @@ export async function getPublicBusinessBySlug(slug: string): Promise<Business | 
 
   return row ? toBusiness(row) : undefined;
 }
+
+// Admin-only: every business regardless of status, with the real status
+// (toBusiness() above always hardcodes "active" for the public queries,
+// since their where clause guarantees it — this one carries the real
+// column instead).
+export async function getAdminBusinesses(): Promise<Business[]> {
+  const rows = await db
+    .select({ ...publicBusinessSelection, status: businesses.status })
+    .from(businesses)
+    .leftJoin(members, eq(members.id, businesses.ownerMemberId))
+    .orderBy(businesses.name);
+
+  return rows.map((row) => ({ ...toBusiness(row), status: row.status }));
+}

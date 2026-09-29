@@ -16,6 +16,10 @@ this isn't a speculative model, it's what the UI already assumes.
   `updated_at` triggers, and `public_*` views that expose only
   public-safe columns. See the file's header comment for the auth,
   authorization, and file-storage decisions baked into it.
+- `db/seed.sh` — runs `schema.sql` then every `seed_*.sql` below against
+  `$DATABASE_URL` (or `web/.env.local`'s, if unset), in the required
+  order. Wired up as `npm run db:seed` / `npm run db:reset` from `web/`
+  — see "How to run this" below.
 - `db/seed_disciplines.sql` — Khulna University's discipline reference
   list, codes 01-24 (code, school, name, short code, slug, website
   path), supplied directly as authoritative data, not derived from the
@@ -145,18 +149,27 @@ Target is an independent Postgres database, not a managed
 backend-as-a-service. Any Postgres 14+ instance works (self-hosted,
 Docker, RDS, etc.):
 
-1. Provision a Postgres database.
-2. Run `db/schema.sql`, then the `db/seed_*.sql` files in this order:
-   disciplines, countries, members, businesses, sponsors, events,
-   blog_posts, gallery (e.g., from the repo root: `psql $DATABASE_URL -f
-   db/schema.sql -f db/seed_disciplines.sql -f db/seed_countries.sql -f
-   db/seed_members.sql -f db/seed_businesses.sql -f db/seed_sponsors.sql
-   -f db/seed_events.sql -f db/seed_blog_posts.sql -f
-   db/seed_gallery.sql`).
+1. Provision a Postgres database, point `web/.env.local`'s
+   `DATABASE_URL` at it (see `web/.env.example`).
+2. From `web/`: `npm run db:seed` — applies `db/schema.sql` then every
+   `db/seed_*.sql` file via `db/seed.sh`, in the dependency order above
+   (disciplines/countries → members → businesses/sponsors/blog_posts →
+   events/gallery). `db/seed.sh` reads `DATABASE_URL` from the
+   environment, falling back to `web/.env.local` if unset.
 3. Confirm: `select * from public_members;` should return the 12 members
    with only their public fields; `select count(*) from disciplines;`
    should return 24; `select count(*) from countries;` should return
    243; `select count(*) from businesses;` should return 8.
+
+**Re-seeding a non-empty database**: `npm run db:seed` applies
+`schema.sql` and the seed files as plain `INSERT`s (not idempotent
+upserts) and fails fast (`ON_ERROR_STOP=1`) the moment anything already
+exists — by design, so a partial/duplicate seed can't silently happen.
+Use `npm run db:reset` instead: it runs `drop schema public cascade;
+create schema public;` first (safe even without `DROP DATABASE`
+privileges — no `dropdb` needed, so this also sidesteps the
+`next-server`-holds-the-connection-open gotcha in the root `CLAUDE.md`),
+then seeds from scratch.
 
 ## What this does NOT include yet
 

@@ -11,14 +11,17 @@ import {
   MembersIcon,
   PhotoIcon,
 } from "@/components/ui/icons";
-import { businesses, events } from "@/lib/mock-data";
+import { events } from "@/lib/mock-data";
 import { getAdminMembers } from "@/lib/db/queries/members";
+import { getAdminBusinesses } from "@/lib/db/queries/businesses";
 import { approveMember, suspendMember } from "@/app/admin/members/actions";
+import { approveBusiness, rejectBusiness } from "@/app/admin/businesses/actions";
 
 export default async function AdminDashboardPage() {
   const allMembers = await getAdminMembers();
   const pendingMembers = allMembers.filter((m) => m.status === "pending");
-  const pendingBusinesses = businesses.filter((b) => b.status === "pending");
+  const allBusinesses = await getAdminBusinesses();
+  const pendingBusinesses = allBusinesses.filter((b) => b.status === "pending");
 
   return (
     <AdminLayout>
@@ -37,7 +40,7 @@ export default async function AdminDashboardPage() {
         <AdminStatCard label="Blog posts" value="[00]" caption="[0] drafts in review" icon={<DocumentIcon />} />
         <AdminStatCard label="Upcoming events" value={`[${events.length}]`} caption="Next: Grand Reunion, Dec 12" icon={<CalendarIcon />} />
         <AdminStatCard label="Photos & videos" value="[000]" caption="[00] uploads this month" icon={<PhotoIcon />} />
-        <AdminStatCard label="Business listings" value="[00]" caption={`[${pendingBusinesses.length.toString().padStart(2, "0")}] waiting for approval`} icon={<BriefcaseIcon />} />
+        <AdminStatCard label="Business listings" value={String(allBusinesses.length)} caption={`${pendingBusinesses.length} waiting for approval`} icon={<BriefcaseIcon />} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
@@ -92,7 +95,14 @@ export default async function AdminDashboardPage() {
           </a>
         </div>
         {pendingBusinesses.map((b) => (
-          <ApprovalRow key={b.slug} initials={b.initials} title={b.name} subtitle={`${b.category} · Owner: ${b.ownerName}`} />
+          <ApprovalRow
+            key={b.slug}
+            initials={b.initials}
+            title={b.name}
+            subtitle={`${b.category} · Owner: ${b.ownerName}`}
+            onApprove={approveBusiness.bind(null, b.slug)}
+            onReject={rejectBusiness.bind(null, b.slug)}
+          />
         ))}
       </div>
 

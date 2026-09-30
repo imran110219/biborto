@@ -201,6 +201,14 @@ directory were rendering *every* mock row regardless of status —
 pending/suspended members and pending/rejected businesses included. Real
 data now correctly filters them out.
 
+Member queries use a left join for disciplines because Google membership
+requests can enter the approval queue before a discipline is known
+(`members.discipline_id` is nullable; see the migration noted in
+[`docs/db/README.md`](../db/README.md)). The public directory, public
+profile, and admin member list display `Not provided` when that relation
+is missing, so they can represent these requests without inventing a
+discipline.
+
 **Fabricated data replaced with real (empty) fields**: `business/[slug]`
 used to fake a phone number and email address at render time (no such
 fields existed on the mock `Business` type). Now that `businesses.phone`/
@@ -270,6 +278,12 @@ Not yet extended to: event RSVP, blog post publish/save, sponsors,
 photos, videos, settings, or the member/business table rows' Edit/Delete
 buttons (only the approval-queue actions are wired) — same shape of work,
 not yet done.
+
+**Suggested next task**: wire the public business submission form to a
+Server Action that creates a `pending` business row for the signed-in
+member, then revalidate the admin business queue. The review actions are
+already real, so this completes the submission-to-review path for
+businesses.
 
 ## Auth
 

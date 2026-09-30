@@ -2,7 +2,8 @@
 
 This file lives in `docs/`. Other docs are at `docs/web/`, `docs/db/` —
 but `web/`, `db/` mentioned below still mean the actual top-level project
-folders (the code), not their docs.
+folders (the code), not their docs. `docs/ROADMAP.md` tracks what's real
+vs. mock across both, in build order.
 
 Two-part repo:
 

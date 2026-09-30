@@ -22,7 +22,7 @@ export async function getPublicMembers(): Promise<PublicMember[]> {
       avatarKey: members.avatarKey,
     })
     .from(members)
-    .innerJoin(disciplines, eq(disciplines.id, members.disciplineId))
+    .leftJoin(disciplines, eq(disciplines.id, members.disciplineId))
     .where(and(eq(members.status, "active"), eq(members.isPublic, true)))
     .orderBy(members.name);
 
@@ -31,7 +31,7 @@ export async function getPublicMembers(): Promise<PublicMember[]> {
     slug: row.slug,
     name: row.name,
     initials: initialsOf(row.name),
-    discipline: row.discipline,
+    discipline: row.discipline ?? "Not provided",
     profession: row.profession ?? "",
     city: row.city ?? "",
     avatarKey: row.avatarKey ?? undefined,
@@ -57,7 +57,7 @@ export async function getPublicMemberBySlug(slug: string): Promise<PublicMemberD
       joinedAt: members.joinedAt,
     })
     .from(members)
-    .innerJoin(disciplines, eq(disciplines.id, members.disciplineId))
+    .leftJoin(disciplines, eq(disciplines.id, members.disciplineId))
     .leftJoin(countries, eq(countries.id, members.countryId))
     .where(and(eq(members.slug, slug), eq(members.status, "active"), eq(members.isPublic, true)))
     .limit(1);

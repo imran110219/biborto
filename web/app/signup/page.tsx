@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { SignUpForm } from "./SignUpForm";
 
-export default function SignUpPage() {
+export default async function SignUpPage({ searchParams }: PageProps<"/signup">) {
+  const { request } = await searchParams;
   return (
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-2">
       <div className="flex flex-col justify-between gap-10 bg-brand-green-dark p-9 text-bg-public md:p-[72px]">
@@ -20,8 +21,8 @@ export default function SignUpPage() {
             Claim your account.
           </h1>
           <p className="max-w-[480px] text-lg leading-relaxed text-brand-green-tint">
-            The committee already has your name, discipline and city on file. This step just sets a password
-            so you can sign in — not a new application.
+            Sign in with your committee-listed email to access your member profile. If we don&apos;t have your
+            record yet, your Google sign-in will send a request to the admins for review.
           </p>
         </div>
 
@@ -31,7 +32,7 @@ export default function SignUpPage() {
       </div>
 
       <div className="flex items-center justify-center bg-bg-public p-9 md:p-14">
-        <SignUpForm />
+        <SignUpForm requestPending={request === "pending"} />
       </div>
     </div>
   );

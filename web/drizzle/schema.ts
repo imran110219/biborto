@@ -75,7 +75,7 @@ export const members = pgTable("members", {
 	userId: uuid("user_id"),
 	slug: text().notNull(),
 	name: text().notNull(),
-	disciplineId: uuid("discipline_id").notNull(),
+	disciplineId: uuid("discipline_id"),
 	profession: text(),
 	currentEmployer: text("current_employer"),
 	bio: text(),

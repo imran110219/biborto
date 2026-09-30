@@ -1,7 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/auth-schema";
 import { members } from "@/drizzle/schema";
@@ -29,7 +29,12 @@ export async function claimAccount(_prevState: string | undefined, formData: For
   if (password.length < 8) return "Password must be at least 8 characters.";
   if (password !== confirmPassword) return "Passwords don't match.";
 
-  const [member] = await db.select().from(members).where(eq(members.email, email)).limit(1);
+  const normalizedEmail = email.trim().toLowerCase();
+  const [member] = await db
+    .select()
+    .from(members)
+    .where(sql`lower(${members.email}) = ${normalizedEmail}`)
+    .limit(1);
   if (!member) return "No member record found for this email — contact the committee.";
   if (member.status === "suspended") return "This account has been suspended — contact the committee.";
   if (member.userId) return "This account has already been claimed. Sign in instead.";
@@ -37,14 +42,14 @@ export async function claimAccount(_prevState: string | undefined, formData: For
   const passwordHash = await bcrypt.hash(password, 10);
 
   try {
-    const [user] = await db.insert(users).values({ email, passwordHash, name: member.name }).returning();
+    const [user] = await db.insert(users).values({ email: normalizedEmail, passwordHash, name: member.name }).returning();
     await db.update(members).set({ userId: user.id }).where(eq(members.id, member.id));
   } catch {
     return "Something went wrong claiming this account. Try again.";
   }
 
   try {
-    await signIn("credentials", { email, password, redirectTo: "/" });
+    await signIn("credentials", { email: normalizedEmail, password, redirectTo: "/" });
   } catch (error) {
     if (error instanceof AuthError) {
       // Claimed successfully but sign-in was rejected — the only way

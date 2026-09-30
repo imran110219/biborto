@@ -16,6 +16,9 @@ this isn't a speculative model, it's what the UI already assumes.
   `updated_at` triggers, and `public_*` views that expose only
   public-safe columns. See the file's header comment for the auth,
   authorization, and file-storage decisions baked into it.
+- `db/migrations/001_google_membership_requests.sql` — one-time migration
+  for an existing database, allowing pending Google membership requests
+  to omit discipline until an admin collects it.
 - `db/seed.sh` — runs `schema.sql` then every `seed_*.sql` below against
   `$DATABASE_URL` (or `web/.env.local`'s, if unset), in the required
   order. Wired up as `npm run db:seed` / `npm run db:reset` from `web/`
@@ -29,7 +32,8 @@ this isn't a speculative model, it's what the UI already assumes.
   ICU/CLDR data bundled with Node's `Intl.DisplayNames` (generated, not
   hand-typed — see the file's own header for exactly which codes were
   kept vs. dropped and why). Must run before `db/seed_members.sql`.
-- `db/seed_members.sql`, `db/seed_businesses.sql`, `db/seed_sponsors.sql`,
+- `db/seed_members.sql`, `db/seed_superadmin.sql`,
+  `db/seed_businesses.sql`, `db/seed_sponsors.sql`,
   `db/seed_events.sql`, `db/seed_blog_posts.sql`, `db/seed_gallery.sql` — migrate
   every entity in `web/lib/mock-data.ts` into rows, in that dependency
   order (members need disciplines to exist for `discipline_id`,
@@ -153,13 +157,20 @@ Docker, RDS, etc.):
    `DATABASE_URL` at it (see `web/.env.example`).
 2. From `web/`: `npm run db:seed` — applies `db/schema.sql` then every
    `db/seed_*.sql` file via `db/seed.sh`, in the dependency order above
-   (disciplines/countries → members → businesses/sponsors/blog_posts →
+   (disciplines/countries → members/superadmin → businesses/sponsors/blog_posts →
    events/gallery). `db/seed.sh` reads `DATABASE_URL` from the
    environment, falling back to `web/.env.local` if unset.
 3. Confirm: `select * from public_members;` should return the 12 members
    with only their public fields; `select count(*) from disciplines;`
    should return 24; `select count(*) from countries;` should return
    243; `select count(*) from businesses;` should return 8.
+
+The initial platform superadmin is seeded separately as an active,
+non-public member with email `superadmin@biborto11.com`. After seeding,
+claim that email at `/signup` to create the login and set its password.
+For an already-seeded database, apply
+`db/migrations/001_google_membership_requests.sql` once before deploying
+the Google membership-request flow.
 
 **Re-seeding a non-empty database**: `npm run db:seed` applies
 `schema.sql` and the seed files as plain `INSERT`s (not idempotent

@@ -1,6 +1,7 @@
 "use server";
 
 import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 
 export async function credentialsSignIn(_prevState: string | undefined, formData: FormData) {
@@ -21,5 +22,12 @@ export async function credentialsSignIn(_prevState: string | undefined, formData
 }
 
 export async function googleSignIn(formData: FormData) {
-  await signIn("google", { redirectTo: (formData.get("callbackUrl") as string) || "/" });
+  try {
+    await signIn("google", { redirectTo: (formData.get("callbackUrl") as string) || "/" });
+  } catch (error) {
+    if (error instanceof AuthError && error.type === "AccessDenied") {
+      redirect("/signup?request=pending");
+    }
+    throw error;
+  }
 }

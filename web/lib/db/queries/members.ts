@@ -69,7 +69,7 @@ export async function getPublicMemberBySlug(slug: string): Promise<PublicMemberD
     slug: row.slug,
     name: row.name,
     initials: initialsOf(row.name),
-    discipline: row.discipline,
+    discipline: row.discipline ?? "Not provided",
     profession: row.profession ?? "",
     currentEmployer: row.currentEmployer ?? undefined,
     bio: row.bio ?? undefined,
@@ -101,14 +101,14 @@ export async function getAdminMembers(): Promise<Member[]> {
       joinedAt: members.joinedAt,
     })
     .from(members)
-    .innerJoin(disciplines, eq(disciplines.id, members.disciplineId))
+    .leftJoin(disciplines, eq(disciplines.id, members.disciplineId))
     .orderBy(members.name);
 
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
     initials: initialsOf(row.name),
-    discipline: row.discipline,
+    discipline: row.discipline ?? "Not provided",
     profession: row.profession ?? "",
     city: row.city ?? "",
     email: row.email,

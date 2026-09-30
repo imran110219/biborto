@@ -197,7 +197,9 @@ create table members (
   -- Public fields (shown on the public directory card)
   slug            text not null unique,
   name            text not null,
-  discipline_id   uuid not null references disciplines (id),
+  -- Nullable while a Google sign-in is awaiting membership review; the
+  -- admin can collect the missing academic details before making it public.
+  discipline_id   uuid references disciplines (id),
   profession      text,
   current_employer text,
   bio             text,

@@ -289,13 +289,19 @@ but actually signing in requires `status='active'` — a newly-claimed
 pending member's first sign-in attempt correctly fails until approved,
 not a bug. A `'suspended'` member can neither claim nor sign in.
 
-Google sign-in has no separate claim step — `auth.ts`'s `signIn`
-callback checks the incoming email against `members` (must exist,
-`status='active'`) *before* letting the adapter create a `users` row,
-so an unrecognized Google account is rejected outright rather than
-silently creating an orphaned login with no member profile. On success,
-the `events.createUser` callback links `members.user_id` the same way
-the credentials claim flow does — both paths converge on the same state.
+Google sign-in has no separate claim step. For an active matching member,
+the `events.createUser` callback links `members.user_id` the same way the
+credentials claim flow does. If no member matches, the sign-in callback
+creates a pending member request but does not create an Auth.js user or
+session; see the membership request behavior below.
+The sign-up page offers Google sign-in as well: a verified Google email
+matching an active committee member finds that existing profile. Google
+email matching is case-insensitive, and a Google account can link to a
+previously password-claimed account with the same verified email. If no
+member record matches, the app creates a private `pending` member request
+using the Google name and email, then denies sign-in until an admin
+approves it from the member queue. The initial request has no discipline
+or public profile details; admins can collect those before publishing it.
 
 **Role-gating `/admin/**`**: `proxy.ts` (Next.js 16 renamed
 `middleware.ts` — the deprecation warning is real, don't ignore it) reads

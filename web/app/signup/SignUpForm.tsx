@@ -3,9 +3,10 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { LockIcon, MailIcon } from "@/components/ui/icons";
+import { googleSignIn } from "@/app/signin/actions";
 import { claimAccount } from "./actions";
 
-export function SignUpForm() {
+export function SignUpForm({ requestPending = false }: { requestPending?: boolean }) {
   const [message, formAction, pending] = useActionState(claimAccount, undefined);
 
   return (
@@ -13,14 +14,19 @@ export function SignUpForm() {
       <div>
         <h2 className="font-serif text-3xl font-medium">Request membership</h2>
         <p className="mt-1 text-text-secondary">
-          Use the email the committee already has on file for you — this claims your existing member record,
-          it doesn&apos;t create a new one.
+          Google will match your email to an existing member record or send a new membership request for admin review.
         </p>
       </div>
 
       {message && (
         <p role="alert" className="rounded-xl bg-[#F8ECE4] px-4 py-3 text-sm text-[#9C3D10]">
           {message}
+        </p>
+      )}
+
+      {requestPending && (
+        <p role="status" className="rounded-xl bg-[#F8F3E6] px-4 py-3 text-sm text-text-primary">
+          Access is waiting on admin review. A first-time Google sign-in sends a membership request; existing pending members can sign in after approval. If you already have an active membership, contact the committee for help.
         </p>
       )}
 
@@ -81,6 +87,20 @@ export function SignUpForm() {
           className="flex h-[52px] items-center justify-center rounded-xl bg-brand-green text-white font-semibold disabled:opacity-60"
         >
           {pending ? "Claiming…" : "Claim account"}
+        </button>
+      </form>
+
+      <div className="flex items-center gap-3 text-xs text-text-secondary">
+        <span className="h-px flex-1 bg-border-input" />
+        <span>OR</span>
+        <span className="h-px flex-1 bg-border-input" />
+      </div>
+      <form action={googleSignIn}>
+        <button
+          type="submit"
+          className="flex h-[52px] w-full items-center justify-center rounded-xl border border-border-input bg-white font-semibold text-text-primary"
+        >
+          Continue with Google
         </button>
       </form>
 

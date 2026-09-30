@@ -27,52 +27,61 @@ named.
   `db/migrations/001_google_membership_requests.sql` and a superadmin
   seed (`db/seed_superadmin.sql`).
 
-## 3. Closing the gaps it opened (in progress)
+## 3. Closing the gaps it opened (shipped)
 
-Nullable discipline and pending-Google-requests are new surface area;
-this is what it shook loose.
+- `getPublicMembers`/`getPublicMemberBySlug` inner-joined `disciplines`
+  (a published member with no discipline would silently 404) — now
+  `leftJoin` (`lib/db/queries/members.ts`).
+- Member edit page — sets discipline, platform role, profession,
+  employer, city, and the public-directory toggle
+  (`app/admin/members/[id]/edit`). Covers the "set discipline on a
+  Google-origin request" and "publish toggle" gaps in one form.
+- Reactivate action for suspended members, plus per-row
+  approve/reject/suspend/reactivate directly on the members list, not
+  just the dashboard widget.
+- Bulk activate/suspend for members, bulk approve/reject for
+  businesses — both via a `form`-attribute checkbox pattern, no client
+  JS (`app/admin/members/page.tsx`, `app/admin/businesses/page.tsx`).
+- Business edit page for all listing fields
+  (`app/admin/businesses/[slug]/edit`).
+- Still open: no field-level audit trail beyond `reviewedBy`/
+  `reviewedAt`; `approveMember` still doesn't hard-require a discipline
+  before activating (mitigated today only because a Google-origin
+  request is created with `is_public = false`, so an incomplete profile
+  can't reach the public directory regardless).
 
-- Fixed — `getPublicMembers`/`getPublicMemberBySlug` were still
-  inner-joining `disciplines`, so a published member with no
-  discipline would silently 404 (`lib/db/queries/members.ts`).
-- Open — no admin UI to set a discipline on a Google-origin request,
-  or to flip a member public once it's ready.
-- Open — `approveMember` doesn't require a discipline before
-  activating a request (`app/admin/members/actions.ts`).
-- Open — no reject-and-reactivate path for suspended members, no
-  field editing after creation, no audit trail beyond `reviewedBy`/
-  `reviewedAt`, no bulk actions.
+## 4. Public-facing write forms (shipped)
 
-## 4. Public-facing write forms (planned)
+- Business submission — `/business/submit`, gated to signed-in members,
+  inserts a `pending` listing (`app/business/submit/`).
+- Event RSVP — real going/cancel toggle on the event detail page, and a
+  live "N batchmates going" count fed by actual `event_rsvps` rows
+  (`app/events/[slug]/actions.ts`, `lib/db/queries/rsvps.ts`).
 
-Neither of these exists yet, mock included.
+## 5. Remaining admin surfaces (mostly shipped)
 
-- Business submission — "List your business" is a plain link to
-  `/signin`, no form (`app/business/page.tsx`).
-- Event RSVP — "I'm going" is a plain link to `/signin`, no action
-  (`app/events/[slug]/page.tsx`).
+- Events, Sponsors, Videos, Blog posts all now have real list pages,
+  create/edit forms, and delete actions
+  (`app/admin/{events,sponsors,videos,edit-post}/`). Blog's
+  save-draft/publish split preserves `published_at` on re-saves via
+  `coalesce(published_at, now())` rather than overwriting it.
+- Dashboard's events widget, blog-post count, and RSVP progress bars
+  now read live data instead of `lib/mock-data.ts`.
+- **Photos (gallery) admin is the one exception, and stays mock**:
+  `gallery_photos.r2_key` is `not null`, so an individual photo row
+  can't be created without Cloudflare R2 wired up (see §6). Album
+  metadata CRUD could ship without R2, but was left alongside Photos
+  rather than split out, since "add a photo" is the point of the page.
 
-## 5. Remaining admin surfaces (planned)
+## 6. Infrastructure (explicitly deferred)
 
-Members and businesses have real reads and writes. Every other admin
-section is still the mockup.
-
-- Events, Photos, Videos, Sponsors admin all still render
-  `lib/mock-data.ts`; none has an `actions.ts`.
-- Blog edit-post — mock post, "Save draft"/"Publish" are inert
-  buttons (`app/admin/edit-post/page.tsx`).
-- Dashboard's events widget still reads mock data alongside the real
-  member/business counts (`app/admin/dashboard/page.tsx`).
-- No "create new" flow exists anywhere in admin yet — every Add
-  button, in every section, is inert.
-
-## 6. Infrastructure (planned)
-
-Schema-ready, nothing wired up.
+Deferred by decision, not oversight — nothing else in this repo
+depends on either being done first except Photos admin (§5).
 
 - Cloudflare R2 file storage — every `*_key` column is `NULL` in seed
   data, no bucket configured, `components/ui/Avatar.tsx` only ever
   draws initials.
 - Google OAuth — code-complete but unverified; `AUTH_GOOGLE_ID`/
   `AUTH_GOOGLE_SECRET` are blank in `.env.example`, no real client
-  configured in this environment.
+  configured in this environment. Doesn't block anything else — a
+  session only ever comes from an already-active member either way.

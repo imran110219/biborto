@@ -11,9 +11,11 @@ import {
   MembersIcon,
   PhotoIcon,
 } from "@/components/ui/icons";
-import { events } from "@/lib/mock-data";
 import { getAdminMembers } from "@/lib/db/queries/members";
 import { getAdminBusinesses } from "@/lib/db/queries/businesses";
+import { getUpcomingEvents } from "@/lib/db/queries/events";
+import { getRsvpSummary } from "@/lib/db/queries/rsvps";
+import { getAdminPosts } from "@/lib/db/queries/blog";
 import { approveMember, suspendMember } from "@/app/admin/members/actions";
 import { approveBusiness, rejectBusiness } from "@/app/admin/businesses/actions";
 
@@ -22,6 +24,10 @@ export default async function AdminDashboardPage() {
   const pendingMembers = allMembers.filter((m) => m.status === "pending");
   const allBusinesses = await getAdminBusinesses();
   const pendingBusinesses = allBusinesses.filter((b) => b.status === "pending");
+  const events = await getUpcomingEvents();
+  const eventRsvpSummaries = await Promise.all(events.slice(0, 3).map((e) => getRsvpSummary(e.id)));
+  const posts = await getAdminPosts();
+  const draftPosts = posts.filter((p) => p.status === "draft");
 
   return (
     <AdminLayout>
@@ -37,8 +43,13 @@ export default async function AdminDashboardPage() {
 
       <div className="grid grid-cols-2 gap-5 md:grid-cols-5">
         <AdminStatCard label="Members" value={String(allMembers.length)} caption={`${pendingMembers.length} waiting for approval`} icon={<MembersIcon />} />
-        <AdminStatCard label="Blog posts" value="[00]" caption="[0] drafts in review" icon={<DocumentIcon />} />
-        <AdminStatCard label="Upcoming events" value={`[${events.length}]`} caption="Next: Grand Reunion, Dec 12" icon={<CalendarIcon />} />
+        <AdminStatCard label="Blog posts" value={String(posts.length)} caption={`${draftPosts.length} drafts in review`} icon={<DocumentIcon />} />
+        <AdminStatCard
+          label="Upcoming events"
+          value={String(events.length)}
+          caption={events[0] ? `Next: ${events[0].title}, ${events[0].dateLabel}` : "None scheduled"}
+          icon={<CalendarIcon />}
+        />
         <AdminStatCard label="Photos & videos" value="[000]" caption="[00] uploads this month" icon={<PhotoIcon />} />
         <AdminStatCard label="Business listings" value={String(allBusinesses.length)} caption={`${pendingBusinesses.length} waiting for approval`} icon={<BriefcaseIcon />} />
       </div>
@@ -71,18 +82,22 @@ export default async function AdminDashboardPage() {
             </a>
           </div>
           <div className="flex flex-col px-6 py-2">
-            {events.slice(0, 3).map((e, i) => (
-              <div key={e.id} className="flex flex-col gap-2.5 border-b border-[#EFEAE0] py-4 last:border-0">
-                <div className="flex justify-between text-[15px]">
-                  <span className="font-semibold">{e.title}</span>
-                  <span className="text-text-secondary">{e.dateLabel}</span>
+            {events.slice(0, 3).map((e, i) => {
+              const { going, total } = eventRsvpSummaries[i];
+              const width = total === 0 ? 0 : Math.round((going / total) * 100);
+              return (
+                <div key={e.id} className="flex flex-col gap-2.5 border-b border-[#EFEAE0] py-4 last:border-0">
+                  <div className="flex justify-between text-[15px]">
+                    <span className="font-semibold">{e.title}</span>
+                    <span className="text-text-secondary">{e.dateLabel}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-[#EFEAE0]">
+                    <div className="h-2 rounded-full bg-brand-green" style={{ width: `${width}%` }} />
+                  </div>
+                  <span className="text-[13px] text-text-secondary">{going} going of {total} responded</span>
                 </div>
-                <div className="h-2 rounded-full bg-[#EFEAE0]">
-                  <div className="h-2 rounded-full bg-brand-green" style={{ width: `${68 - i * 27}%` }} />
-                </div>
-                <span className="text-[13px] text-text-secondary">[00] going of [000] invited</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

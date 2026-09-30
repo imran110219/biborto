@@ -1,11 +1,15 @@
+import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Avatar } from "@/components/ui/Avatar";
 import { TierBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EditIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
-import { sponsors } from "@/lib/mock-data";
+import { getAdminSponsors } from "@/lib/db/queries/sponsors";
+import { deleteSponsor, toggleSponsorActive } from "./actions";
 
-export default function AdminSponsorsPage() {
+export default async function AdminSponsorsPage() {
+  const sponsors = await getAdminSponsors();
+
   return (
     <AdminLayout>
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -13,7 +17,7 @@ export default function AdminSponsorsPage() {
           <h1 className="font-serif text-4xl font-medium">Sponsors</h1>
           <p className="text-text-secondary">Manage the partner logos shown on the public site and on event pages.</p>
         </div>
-        <Button size="sm">
+        <Button href="/admin/sponsors/new" size="sm">
           <PlusIcon /> Add sponsor
         </Button>
       </div>
@@ -43,22 +47,33 @@ export default function AdminSponsorsPage() {
                   <td className="px-4 py-3.5"><TierBadge tier={s.tier} /></td>
                   <td className="px-4 py-3.5 text-sm text-text-secondary">{s.website}</td>
                   <td className="px-4 py-3.5">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        s.active ? "bg-brand-green-tint text-brand-green" : "bg-status-neutral-bg text-status-neutral-text"
-                      }`}
-                    >
-                      {s.active ? "Active" : "Inactive"}
-                    </span>
+                    <form action={toggleSponsorActive.bind(null, s.id, s.active)}>
+                      <button
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          s.active ? "bg-brand-green-tint text-brand-green" : "bg-status-neutral-bg text-status-neutral-text"
+                        }`}
+                      >
+                        {s.active ? "Active" : "Inactive"}
+                      </button>
+                    </form>
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex gap-1.5">
-                      <button aria-label={`Edit ${s.name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white">
+                      <Link
+                        href={`/admin/sponsors/${s.id}/edit`}
+                        aria-label={`Edit ${s.name}`}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white"
+                      >
                         <EditIcon />
-                      </button>
-                      <button aria-label={`Remove ${s.name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white text-[#9C3D10]">
-                        <TrashIcon />
-                      </button>
+                      </Link>
+                      <form action={deleteSponsor.bind(null, s.id)}>
+                        <button
+                          aria-label={`Remove ${s.name}`}
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white text-[#9C3D10]"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </form>
                     </div>
                   </td>
                 </tr>

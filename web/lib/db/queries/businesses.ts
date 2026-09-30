@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { businesses, members } from "@/drizzle/schema";
 import { initialsOf } from "@/lib/db/format";
-import type { Business } from "@/lib/types";
+import type { AdminBusinessDetail, Business } from "@/lib/types";
 
 // public_businesses (db/schema.sql) doesn't carry owner_member_id — it's
 // a pure public-safe column projection. Owner name needs a join, so
@@ -94,4 +94,43 @@ export async function getAdminBusinesses(): Promise<Business[]> {
     .orderBy(businesses.name);
 
   return rows.map((row) => ({ ...toBusiness(row), status: row.status }));
+}
+
+// Backs the admin business edit form.
+export async function getAdminBusinessBySlug(slug: string): Promise<AdminBusinessDetail | undefined> {
+  const [row] = await db
+    .select({
+      slug: businesses.slug,
+      name: businesses.name,
+      category: businesses.category,
+      city: businesses.city,
+      status: businesses.status,
+      tagline: businesses.tagline,
+      description: businesses.description,
+      offerings: businesses.offerings,
+      testimonial: businesses.testimonial,
+      phone: businesses.phone,
+      email: businesses.email,
+      website: businesses.website,
+    })
+    .from(businesses)
+    .where(eq(businesses.slug, slug))
+    .limit(1);
+
+  if (!row) return undefined;
+
+  return {
+    slug: row.slug,
+    name: row.name,
+    category: row.category,
+    city: row.city ?? "",
+    status: row.status,
+    tagline: row.tagline ?? "",
+    description: row.description ?? "",
+    offerings: row.offerings,
+    testimonial: row.testimonial ?? "",
+    phone: row.phone ?? "",
+    email: row.email ?? "",
+    website: row.website ?? "",
+  };
 }

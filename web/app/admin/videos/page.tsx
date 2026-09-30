@@ -1,9 +1,13 @@
+import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import { EditIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
-import { videos } from "@/lib/mock-data";
+import { getVideos } from "@/lib/db/queries/videos";
+import { deleteVideo } from "./actions";
 
-export default function AdminVideosPage() {
+export default async function AdminVideosPage() {
+  const videos = await getVideos();
+
   return (
     <AdminLayout>
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -11,7 +15,7 @@ export default function AdminVideosPage() {
           <h1 className="font-serif text-4xl font-medium">Videos</h1>
           <p className="text-text-secondary">Manage the videos linked from the Batch 11 YouTube channel.</p>
         </div>
-        <Button size="sm">
+        <Button href="/admin/videos/new" size="sm">
           <PlusIcon /> Add video
         </Button>
       </div>
@@ -31,17 +35,26 @@ export default function AdminVideosPage() {
             </thead>
             <tbody>
               {videos.map((v) => (
-                <tr key={v.title} className="border-t border-[#EFEAE0]">
+                <tr key={v.id} className="border-t border-[#EFEAE0]">
                   <td className="px-4 py-3.5 pl-5 text-[15px] font-semibold">{v.title}</td>
                   <td className="px-4 py-3.5 text-sm text-text-secondary">YouTube · Batch 11 channel</td>
                   <td className="px-4 py-3.5">
                     <div className="flex gap-1.5">
-                      <button aria-label={`Edit ${v.title}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white">
+                      <Link
+                        href={`/admin/videos/${v.id}/edit`}
+                        aria-label={`Edit ${v.title}`}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white"
+                      >
                         <EditIcon />
-                      </button>
-                      <button aria-label={`Remove ${v.title}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white text-[#9C3D10]">
-                        <TrashIcon />
-                      </button>
+                      </Link>
+                      <form action={deleteVideo.bind(null, v.id)}>
+                        <button
+                          aria-label={`Remove ${v.title}`}
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white text-[#9C3D10]"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </form>
                     </div>
                   </td>
                 </tr>

@@ -9,6 +9,9 @@ import { EventCard } from "@/components/EventCard";
 import { ArrowRightIcon, CalendarIcon, ClockIcon, MembersIcon, PinIcon } from "@/components/ui/icons";
 import { getUpcomingEvents, getEventBySlug } from "@/lib/db/queries/events";
 import { getDiamondSponsor } from "@/lib/db/queries/sponsors";
+import { getGoingCount, getMemberRsvpStatus } from "@/lib/db/queries/rsvps";
+import { getSessionMemberId } from "@/lib/auth/session-member";
+import { rsvpGoing, cancelRsvp } from "./actions";
 
 export async function generateStaticParams() {
   const events = await getUpcomingEvents();
@@ -22,6 +25,11 @@ export default async function EventDetailPage({ params }: PageProps<"/events/[sl
 
   const others = (await getUpcomingEvents()).filter((e) => e.slug !== event.slug).slice(0, 3);
   const sponsor = event.featured ? await getDiamondSponsor() : undefined;
+  const memberId = await getSessionMemberId();
+  const [goingCount, rsvpStatus] = await Promise.all([
+    getGoingCount(event.id),
+    memberId ? getMemberRsvpStatus(event.id, memberId) : Promise.resolve(undefined),
+  ]);
 
   return (
     <PublicLayout>
@@ -47,7 +55,7 @@ export default async function EventDetailPage({ params }: PageProps<"/events/[sl
               <PinIcon className="text-brand-green" size={18} /> {event.location}
             </span>
             <span className="flex items-center gap-2.5">
-              <MembersIcon className="text-brand-green" /> [00] batchmates going
+              <MembersIcon className="text-brand-green" /> {goingCount} batchmate{goingCount === 1 ? "" : "s"} going
             </span>
           </div>
         </div>
@@ -68,9 +76,23 @@ export default async function EventDetailPage({ params }: PageProps<"/events/[sl
           )}
 
           <div className="flex flex-wrap gap-3">
-            <Button href="/signin">
-              RSVP, I&apos;m going <ArrowRightIcon />
-            </Button>
+            {!memberId ? (
+              <Button href={`/signin?callbackUrl=/events/${event.slug}`}>
+                RSVP, I&apos;m going <ArrowRightIcon />
+              </Button>
+            ) : rsvpStatus === "going" ? (
+              <form action={cancelRsvp.bind(null, event.id, event.slug)}>
+                <Button type="submit" variant="secondary">
+                  You&apos;re going · Cancel RSVP
+                </Button>
+              </form>
+            ) : (
+              <form action={rsvpGoing.bind(null, event.id, event.slug)}>
+                <Button type="submit">
+                  RSVP, I&apos;m going <ArrowRightIcon />
+                </Button>
+              </form>
+            )}
             <Button href="#" variant="secondary">
               Add to calendar
             </Button>

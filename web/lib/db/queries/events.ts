@@ -1,8 +1,8 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { events } from "@/drizzle/schema";
 import { eventMonthAbbrev, eventDayPadded, eventDateLabel, eventTimeLabel } from "@/lib/db/format";
-import type { EventItem } from "@/lib/types";
+import type { AdminEventDetail, EventItem } from "@/lib/types";
 
 function toEventItem(row: typeof events.$inferSelect): EventItem {
   return {
@@ -46,4 +46,30 @@ export async function getEventBySlug(slug: string): Promise<EventItem | undefine
     .limit(1);
 
   return row ? toEventItem(row) : undefined;
+}
+
+// Admin-only: every event regardless of date, newest first — unlike the
+// two queries above, this backs a management list, not "what's upcoming
+// to show a visitor".
+export async function getAdminEvents(): Promise<EventItem[]> {
+  const rows = await db.select().from(events).orderBy(desc(events.eventDate));
+  return rows.map(toEventItem);
+}
+
+export async function getAdminEventById(id: string): Promise<AdminEventDetail | undefined> {
+  const [row] = await db.select().from(events).where(eq(events.id, id)).limit(1);
+  if (!row) return undefined;
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    eventDate: row.eventDate,
+    startTime: row.startTime?.slice(0, 5) ?? "",
+    endTime: row.endTime?.slice(0, 5) ?? "",
+    location: row.location ?? "",
+    category: row.category ?? "",
+    description: row.description ?? "",
+    featured: row.featured,
+  };
 }

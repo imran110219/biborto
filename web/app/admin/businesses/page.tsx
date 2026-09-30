@@ -1,9 +1,13 @@
+import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Avatar } from "@/components/ui/Avatar";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { DownloadIcon, EditIcon, PlusIcon, SearchIcon, TrashIcon } from "@/components/ui/icons";
+import { DownloadIcon, EditIcon, PlusIcon, SearchIcon } from "@/components/ui/icons";
 import { getAdminBusinesses } from "@/lib/db/queries/businesses";
+import { approveBusiness, bulkApproveBusinesses, bulkRejectBusinesses, rejectBusiness } from "./actions";
+
+const BULK_FORM_ID = "businesses-bulk-form";
 
 export default async function AdminBusinessesPage() {
   const businesses = await getAdminBusinesses();
@@ -45,23 +49,43 @@ export default async function AdminBusinessesPage() {
           <span className="ml-auto text-sm text-text-secondary">{businesses.length} listings</span>
         </div>
 
+        <form id={BULK_FORM_ID} className="flex flex-wrap items-center gap-2.5 border-b border-[#EFEAE0] bg-[#FAF8F3] px-4 py-2.5 text-sm">
+          <span className="mr-1 font-semibold text-text-secondary">Selected:</span>
+          <button
+            type="submit"
+            formAction={bulkApproveBusinesses}
+            className="h-9 rounded-lg bg-brand-green px-3.5 font-semibold text-white"
+          >
+            Approve
+          </button>
+          <button
+            type="submit"
+            formAction={bulkRejectBusinesses}
+            className="h-9 rounded-lg border border-border-input bg-white px-3.5 font-semibold"
+          >
+            Reject
+          </button>
+        </form>
+
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse">
             <thead className="bg-[#FAF8F3]">
               <tr>
-                <th className="w-12 py-3.5 pl-5"><input type="checkbox" /></th>
+                <th className="w-12 py-3.5 pl-5" />
                 {["Business", "Category", "City", "Status", "Submitted"].map((h) => (
                   <th key={h} className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-[0.04em] text-text-secondary">
                     {h}
                   </th>
                 ))}
-                <th className="w-[104px] px-4 py-3.5" />
+                <th className="w-[176px] px-4 py-3.5" />
               </tr>
             </thead>
             <tbody>
               {businesses.map((b) => (
                 <tr key={b.slug} className="border-t border-[#EFEAE0]">
-                  <td className="py-3.5 pl-5"><input type="checkbox" /></td>
+                  <td className="py-3.5 pl-5">
+                    <input type="checkbox" name="businessSlugs" value={b.slug} form={BULK_FORM_ID} />
+                  </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
                       <Avatar initials={b.initials} size="sm" />
@@ -76,13 +100,28 @@ export default async function AdminBusinessesPage() {
                   <td className="px-4 py-3.5"><StatusBadge status={b.status} /></td>
                   <td className="px-4 py-3.5 text-sm text-text-secondary">{b.submittedAt}</td>
                   <td className="px-4 py-3.5">
-                    <div className="flex gap-1.5">
-                      <button aria-label={`Edit ${b.name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white">
+                    <div className="flex justify-end gap-1.5">
+                      <Link
+                        href={`/admin/businesses/${b.slug}/edit`}
+                        aria-label={`Edit ${b.name}`}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white"
+                      >
                         <EditIcon />
-                      </button>
-                      <button aria-label={`Remove ${b.name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white text-[#9C3D10]">
-                        <TrashIcon />
-                      </button>
+                      </Link>
+                      {b.status !== "active" && (
+                        <form action={approveBusiness.bind(null, b.slug)}>
+                          <button className="h-9 rounded-lg bg-brand-green px-3 text-xs font-semibold text-white">
+                            Approve
+                          </button>
+                        </form>
+                      )}
+                      {b.status !== "rejected" && (
+                        <form action={rejectBusiness.bind(null, b.slug)}>
+                          <button className="h-9 rounded-lg border border-border-input bg-white px-3 text-xs font-semibold text-[#9C3D10]">
+                            Reject
+                          </button>
+                        </form>
+                      )}
                     </div>
                   </td>
                 </tr>

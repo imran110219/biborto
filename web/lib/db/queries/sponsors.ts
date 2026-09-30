@@ -20,6 +20,34 @@ export async function getActiveSponsors(): Promise<Sponsor[]> {
   }));
 }
 
+// Admin-only: every sponsor regardless of active status.
+export async function getAdminSponsors(): Promise<Sponsor[]> {
+  const rows = await db.select().from(sponsors).orderBy(sponsors.tier, sponsors.name);
+
+  return rows.map((row) => ({
+    id: row.id,
+    initials: initialsOf(row.name),
+    name: row.name,
+    tier: row.tier,
+    website: row.website ?? "",
+    active: row.active,
+  }));
+}
+
+export async function getAdminSponsorById(id: string): Promise<Sponsor | undefined> {
+  const [row] = await db.select().from(sponsors).where(eq(sponsors.id, id)).limit(1);
+  if (!row) return undefined;
+
+  return {
+    id: row.id,
+    initials: initialsOf(row.name),
+    name: row.name,
+    tier: row.tier,
+    website: row.website ?? "",
+    active: row.active,
+  };
+}
+
 export async function getDiamondSponsor(): Promise<Sponsor | undefined> {
   const [row] = await db
     .select()

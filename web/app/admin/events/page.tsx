@@ -1,10 +1,14 @@
+import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { CategoryTag } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EditIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
-import { events } from "@/lib/mock-data";
+import { getAdminEvents } from "@/lib/db/queries/events";
+import { deleteEvent } from "./actions";
 
-export default function AdminEventsPage() {
+export default async function AdminEventsPage() {
+  const events = await getAdminEvents();
+
   return (
     <AdminLayout>
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -12,7 +16,7 @@ export default function AdminEventsPage() {
           <h1 className="font-serif text-4xl font-medium">Events</h1>
           <p className="text-text-secondary">Manage reunions, chapter meetups and online talks.</p>
         </div>
-        <Button size="sm">
+        <Button href="/admin/events/new" size="sm">
           <PlusIcon /> Add event
         </Button>
       </div>
@@ -53,12 +57,21 @@ export default function AdminEventsPage() {
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex gap-1.5">
-                      <button aria-label={`Edit ${e.title}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white">
+                      <Link
+                        href={`/admin/events/${e.id}/edit`}
+                        aria-label={`Edit ${e.title}`}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white"
+                      >
                         <EditIcon />
-                      </button>
-                      <button aria-label={`Remove ${e.title}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white text-[#9C3D10]">
-                        <TrashIcon />
-                      </button>
+                      </Link>
+                      <form action={deleteEvent.bind(null, e.id)}>
+                        <button
+                          aria-label={`Remove ${e.title}`}
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white text-[#9C3D10]"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </form>
                     </div>
                   </td>
                 </tr>

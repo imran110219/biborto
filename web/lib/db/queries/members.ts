@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { members, disciplines, countries } from "@/drizzle/schema";
 import { initialsOf, formatMonthYear } from "@/lib/db/format";
-import type { Member, PublicMember, PublicMemberDetail } from "@/lib/types";
+import type { AdminMemberDetail, Member, PublicMember, PublicMemberDetail } from "@/lib/types";
 
 // Same filter public_members (db/schema.sql) encodes — replicated here
 // rather than selecting from the view directly, since this query also
@@ -117,4 +117,40 @@ export async function getAdminMembers(): Promise<Member[]> {
     status: row.status,
     joinedAt: formatMonthYear(row.joinedAt),
   }));
+}
+
+// Backs the admin member edit form — the one place admin-only fields
+// are read individually rather than as part of the full list above.
+export async function getAdminMemberById(id: string): Promise<AdminMemberDetail | undefined> {
+  const [row] = await db
+    .select({
+      id: members.id,
+      name: members.name,
+      disciplineId: members.disciplineId,
+      profession: members.profession,
+      currentEmployer: members.currentEmployer,
+      city: members.city,
+      email: members.email,
+      platformRole: members.platformRole,
+      status: members.status,
+      isPublic: members.isPublic,
+    })
+    .from(members)
+    .where(eq(members.id, id))
+    .limit(1);
+
+  if (!row) return undefined;
+
+  return {
+    id: row.id,
+    name: row.name,
+    disciplineId: row.disciplineId,
+    profession: row.profession ?? "",
+    currentEmployer: row.currentEmployer ?? "",
+    city: row.city ?? "",
+    email: row.email,
+    platformRole: row.platformRole,
+    status: row.status,
+    isPublic: row.isPublic,
+  };
 }

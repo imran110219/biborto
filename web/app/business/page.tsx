@@ -7,7 +7,8 @@ import { BusinessCard } from "@/components/BusinessCard";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { getPublicBusinesses } from "@/lib/db/queries/businesses";
 
-export default async function BusinessDirectoryPage() {
+export default async function BusinessDirectoryPage({ searchParams }: PageProps<"/business">) {
+  const { submitted } = await searchParams;
   const businesses = await getPublicBusinesses();
   const categories = Array.from(new Set(businesses.map((b) => b.category)));
 
@@ -20,6 +21,12 @@ export default async function BusinessDirectoryPage() {
       />
 
       <section className="flex flex-col gap-7 px-5 pb-24 md:px-20">
+        {submitted === "1" && (
+          <p role="status" className="rounded-xl bg-[#F8F3E6] px-4 py-3 text-sm text-text-primary">
+            Thanks — your listing was submitted and is waiting on committee review.
+          </p>
+        )}
+
         <div className="flex flex-col items-start justify-between gap-6 rounded-[20px] bg-brand-green p-8 text-bg-public sm:flex-row sm:items-center">
           <div className="flex flex-col gap-1.5">
             <h2 className="font-serif text-2xl font-medium">Own a business? List it here.</h2>
@@ -27,7 +34,7 @@ export default async function BusinessDirectoryPage() {
               Free for verified batchmates. Listings are reviewed by the committee before they go live.
             </p>
           </div>
-          <Button href="/signin" variant="onDark" className="shrink-0">
+          <Button href="/business/submit" variant="onDark" className="shrink-0">
             List your business <ArrowRightIcon />
           </Button>
         </div>

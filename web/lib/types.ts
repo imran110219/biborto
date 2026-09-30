@@ -15,6 +15,23 @@ export interface Member {
   joinedAt: string; // "Jan 2025"
 }
 
+// The editable form of a member's admin-only record — everything the
+// edit page's <select>/<input>s need, including the raw disciplineId
+// (Member.discipline above is already the resolved display name and
+// can't round-trip into a <select>'s value).
+export interface AdminMemberDetail {
+  id: string;
+  name: string;
+  disciplineId: string | null;
+  profession: string;
+  currentEmployer: string;
+  city: string;
+  email: string;
+  platformRole: PlatformRole;
+  status: MemberStatus;
+  isPublic: boolean;
+}
+
 // The subset of Member safe to render on public (unauthenticated) pages
 // — matches db's public_members view column-for-column. Deliberately
 // excludes email/platformRole/status/studentId: those are admin-only,
@@ -64,6 +81,32 @@ export interface Business {
   website?: string;
 }
 
+export const BUSINESS_CATEGORIES = [
+  "Food & Catering",
+  "Tech Services",
+  "Consulting",
+  "Education",
+  "Retail & Trade",
+  "Travel & Tourism",
+] as const;
+export type BusinessCategory = (typeof BUSINESS_CATEGORIES)[number];
+
+// The editable form of a business listing's admin-only record.
+export interface AdminBusinessDetail {
+  slug: string;
+  name: string;
+  category: string;
+  city: string;
+  status: BusinessStatus;
+  tagline: string;
+  description: string;
+  offerings: string[];
+  testimonial: string;
+  phone: string;
+  email: string;
+  website: string;
+}
+
 export type SponsorTier = "diamond" | "gold" | "silver" | "bronze";
 
 export interface Sponsor {
@@ -73,6 +116,14 @@ export interface Sponsor {
   tier: SponsorTier;
   website: string;
   active: boolean;
+}
+
+export type RsvpStatus = "going" | "interested" | "declined";
+
+export interface Video {
+  id: string;
+  title: string;
+  youtubeUrl: string;
 }
 
 export interface EventItem {
@@ -87,6 +138,25 @@ export interface EventItem {
   category: string;
   description: string;
   featured?: boolean;
+}
+
+export const EVENT_CATEGORIES = ["Reunion", "Online", "Chapter", "Volunteer"] as const;
+export type EventCategory = (typeof EVENT_CATEGORIES)[number];
+
+// Raw (non-display-formatted) fields the admin create/edit form needs —
+// EventItem above is already formatted for display (dateLabel, timeLabel)
+// and can't round-trip into <input type="date">/<input type="time">.
+export interface AdminEventDetail {
+  id: string;
+  slug: string;
+  title: string;
+  eventDate: string; // "YYYY-MM-DD"
+  startTime: string; // "HH:MM" or ""
+  endTime: string; // "HH:MM" or ""
+  location: string;
+  category: string;
+  description: string;
+  featured: boolean;
 }
 
 export interface BlogPost {
@@ -104,4 +174,34 @@ export interface BlogPost {
 export interface BlogPostDetail extends BlogPost {
   body: string;
   tags: string[];
+}
+
+export const BLOG_CATEGORIES = ["Reunion", "Memories", "Careers", "Campus"] as const;
+export type BlogCategoryOption = (typeof BLOG_CATEGORIES)[number];
+export type BlogPostStatus = "draft" | "published";
+export type BlogVisibility = "public" | "members_only";
+
+// Admin list row — every post regardless of status/visibility.
+export interface AdminBlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  authorName: string;
+  status: BlogPostStatus;
+  updatedAt: string;
+}
+
+// The editable form of a post's full record.
+export interface AdminBlogPostDetail {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  authorName: string;
+  body: string;
+  tags: string[];
+  status: BlogPostStatus;
+  visibility: BlogVisibility;
+  featured: boolean;
 }

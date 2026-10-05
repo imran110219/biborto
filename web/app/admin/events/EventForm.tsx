@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { retainedFormSubmit } from "@/lib/use-retained-form";
 import Link from "next/link";
 import { EVENT_CATEGORIES, type AdminEventDetail } from "@/lib/types";
 
@@ -14,7 +15,7 @@ export function EventForm({ event, action, submitLabel }: { event?: AdminEventDe
   const [error, formAction, pending] = useActionState(action, undefined);
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-5">
       {error && <p className="rounded-xl bg-[#FBEAE3] px-4 py-3 text-sm text-[#9C3D10]">{error}</p>}
 
       <label className={labelClasses}>

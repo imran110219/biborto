@@ -83,7 +83,9 @@ export default async function BusinessDetailPage({ params }: PageProps<"/busines
             {business.phone && <ContactRow icon={<PhoneIcon />} text={business.phone} />}
             {business.email && <ContactRow icon={<MailIcon size={16} />} text={business.email} />}
             <ContactRow icon={<PinIcon size={16} />} text={business.city} />
-            {!business.phone && !business.email && (
+            {business.linkedinUrl && <LinkRow href={externalUrl(business.linkedinUrl)} label="LinkedIn" />}
+            {business.facebookUrl && <LinkRow href={externalUrl(business.facebookUrl)} label="Facebook" />}
+            {!business.phone && !business.email && !business.linkedinUrl && !business.facebookUrl && (
               <span className="text-sm text-text-secondary">
                 No contact details on file yet — reach out through the committee.
               </span>
@@ -101,6 +103,17 @@ export default async function BusinessDetailPage({ params }: PageProps<"/busines
         </div>
       </section>
     </PublicLayout>
+  );
+}
+
+function LinkRow({ href, label }: { href: string; label: string }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-[15px] hover:underline">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-brand-green-tint text-brand-green">
+        <ExternalLinkIcon size={16} />
+      </span>
+      {label}
+    </a>
   );
 }
 

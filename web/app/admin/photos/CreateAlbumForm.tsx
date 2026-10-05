@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef } from "react";
+import { retainedFormSubmit } from "@/lib/use-retained-form";
 import { createAlbum } from "./actions";
 
 const inputClasses = "h-12 w-full rounded-xl border border-border-input bg-white px-3 font-normal";
@@ -21,7 +22,7 @@ export function CreateAlbumForm({
   }, undefined);
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
+    <form ref={formRef} onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-4">
       {error && <p role="alert" className="rounded-xl bg-[#FBEAE3] px-4 py-3 text-sm text-[#9C3D10]">{error}</p>}
       <div className="grid gap-4 md:grid-cols-3">
         <label className={labelClasses}>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { retainedFormSubmit } from "@/lib/use-retained-form";
 import Link from "next/link";
 import { updateBusiness } from "@/app/admin/businesses/actions";
 import { BUSINESS_CATEGORIES, type AdminBusinessDetail } from "@/lib/types";
@@ -13,7 +14,7 @@ export function EditBusinessForm({ business }: { business: AdminBusinessDetail }
   const [error, formAction, pending] = useActionState(updateBusiness.bind(null, business.slug), undefined);
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-5">
       {error && <p className="rounded-xl bg-[#FBEAE3] px-4 py-3 text-sm text-[#9C3D10]">{error}</p>}
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

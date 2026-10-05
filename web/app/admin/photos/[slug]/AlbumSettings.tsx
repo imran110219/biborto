@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { retainedFormSubmit } from "@/lib/use-retained-form";
 import { updateAlbum, deleteAlbum } from "../actions";
 
 const inputClasses = "h-11 w-full rounded-[10px] border border-border-input px-3 text-sm";
@@ -21,7 +22,7 @@ export function AlbumSettings({
   return (
     <section className="flex flex-col gap-5 rounded-2xl border border-border-default bg-white p-6">
       <h2 className="text-lg font-semibold">Album details</h2>
-      <form action={saveAction} className="flex flex-col gap-4">
+      <form onSubmit={retainedFormSubmit(saveAction)} className="flex flex-col gap-4">
         <label className={labelClasses}>
           Album name
           <input name="name" defaultValue={album.name} required maxLength={120} className={inputClasses} />

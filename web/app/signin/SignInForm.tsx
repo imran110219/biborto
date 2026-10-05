@@ -1,12 +1,19 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
+import { retainedFormSubmit } from "@/lib/use-retained-form";
 import Link from "next/link";
 import { LockIcon, MailIcon } from "@/components/ui/icons";
 import { credentialsSignIn, devSuperadminSignIn, googleSignIn } from "./actions";
 
 export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
   const [error, formAction, pending] = useActionState(credentialsSignIn, undefined);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  // The email stays after a failed attempt (retainedFormSubmit), the password doesn't.
+  useEffect(() => {
+    if (!pending && error && passwordRef.current) passwordRef.current.value = "";
+  }, [pending, error]);
 
   return (
     <div className="flex w-full max-w-[420px] flex-col gap-[22px]">
@@ -21,7 +28,7 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
         </p>
       )}
 
-      <form action={formAction} className="flex flex-col gap-[22px]">
+      <form onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-[22px]">
         <input type="hidden" name="callbackUrl" value={callbackUrl} />
 
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
@@ -47,6 +54,7 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
               <LockIcon size={16} />
             </span>
             <input
+              ref={passwordRef}
               type="password"
               name="password"
               required

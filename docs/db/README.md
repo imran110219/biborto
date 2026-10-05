@@ -27,6 +27,10 @@ this isn't a speculative model, it's what the UI assumes.
   links for gallery albums and videos.
 - `db/migrations/007_gallery_videos.sql` — creates the video table for an
   existing database that predates gallery videos.
+- `db/migrations/008_business_social_links.sql` — adds optional
+  `businesses.linkedin_url` / `facebook_url` and appends them to the
+  `public_businesses` view. Apply to an existing database, then
+  `npm run db:pull`.
 - `db/seed.sh` — runs `schema.sql` then every `seed_*.sql` below against
   `$DATABASE_URL` (or `web/.env.local`'s, if unset), in the required
   order. Wired up as `npm run db:seed` / `npm run db:reset` from `web/`
@@ -66,7 +70,7 @@ this isn't a speculative model, it's what the UI assumes.
 | `disciplines` | Khulna University's discipline reference list (codes 01-24), grouped by `school`. A real table, not an enum — see "Disciplines are a reference table" below. |
 | `countries` | ISO 3166-1 countries/territories for the "current country" dropdown. Same reasoning as `disciplines` — see "Countries are a reference table" below. |
 | `members` | The alumni directory / profile data. `slug` powers `web/app/members/[slug]`. `discipline_id` references `disciplines`; `country_id` (nullable) references `countries`. `user_id` links to `users` once a member logs in; a roster row can exist without a login. |
-| `businesses` | Alumni-run Business Directory listings, self-submitted, approve/reject workflow (`status`, `reviewed_by`, `reviewed_at`). |
+| `businesses` | Alumni-run Business Directory listings, self-submitted, approve/reject workflow (`status`, `reviewed_by`, `reviewed_at`). Optional contact links: `website`, `linkedin_url`, `facebook_url`. |
 | `sponsors` | Committee-curated sponsor tiers. `business_id` is an *optional* cross-link — sponsors are managed independently of the Business Directory, even though several sponsors are also listed businesses. |
 | `events`, `event_rsvps` | Reunion/chapter events and member RSVPs (`going` / `interested` / `declined`). |
 | `blog_posts` | Draft/published, public/members-only visibility, tags. `body` holds the full article; read time is computed at render time, not stored. `author_name` is a free-text byline fallback for posts with no real member author (e.g. "Reunion committee"). |

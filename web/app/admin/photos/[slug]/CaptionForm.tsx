@@ -1,13 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
+import { retainedFormSubmit } from "@/lib/use-retained-form";
 import { updatePhotoCaption } from "../actions";
 
 export function CaptionForm({ photoId, albumSlug, caption }: { photoId: string; albumSlug: string; caption: string }) {
   const [message, formAction, pending] = useActionState(updatePhotoCaption.bind(null, photoId, albumSlug), undefined);
 
   return (
-    <form action={formAction} className="flex flex-col gap-2">
+    <form onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-2">
       <input
         name="caption"
         defaultValue={caption}

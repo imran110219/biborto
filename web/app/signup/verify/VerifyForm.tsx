@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { retainedFormSubmit } from "@/lib/use-retained-form";
 import Link from "next/link";
 import { LockIcon } from "@/components/ui/icons";
 import { completeClaim } from "../actions";
@@ -21,7 +22,7 @@ export function VerifyForm({ token, email }: { token: string; email: string }) {
         </p>
       )}
 
-      <form action={formAction} className="flex flex-col gap-[22px]">
+      <form onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-[22px]">
         <input type="hidden" name="token" value={token} />
         <input type="hidden" name="email" value={email} />
         {(["password", "confirmPassword"] as const).map((name) => (

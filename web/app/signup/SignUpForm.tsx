@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { retainedFormSubmit } from "@/lib/use-retained-form";
 import Link from "next/link";
 import { MailIcon } from "@/components/ui/icons";
 import { googleSignIn } from "@/app/signin/actions";
@@ -30,7 +31,7 @@ export function SignUpForm({ requestPending = false }: { requestPending?: boolea
         </p>
       )}
 
-      <form action={formAction} className="flex flex-col gap-[22px]">
+      <form onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-[22px]">
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
           Email
           <span className="relative flex items-center">

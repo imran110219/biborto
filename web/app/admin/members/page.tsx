@@ -4,14 +4,47 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Avatar } from "@/components/ui/Avatar";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { DownloadIcon, EditIcon, EyeIcon, PlusIcon, SearchIcon } from "@/components/ui/icons";
-import { getAdminMembers } from "@/lib/db/queries/members";
+import { DownloadIcon, EditIcon, EyeIcon, PlusIcon } from "@/components/ui/icons";
+import { ADMIN_MEMBERS_PAGE_SIZE, getAdminMembersPage } from "@/lib/db/queries/members";
+import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
+import type { MemberStatus, PlatformRole } from "@/lib/types";
+import { MemberFilters } from "./MemberFilters";
 import { approveMember, bulkActivateMembers, bulkSuspendMembers, reactivateMember, suspendMember } from "./actions";
 
 const BULK_FORM_ID = "members-bulk-form";
 
-export default async function AdminMembersPage() {
-  const [members, session] = await Promise.all([getAdminMembers(), auth()]);
+const STATUSES: MemberStatus[] = ["active", "pending", "suspended"];
+const ROLES: PlatformRole[] = ["member", "admin", "superadmin"];
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+
+export default async function AdminMembersPage({ searchParams }: PageProps<"/admin/members">) {
+  const sp = await searchParams;
+  const q = first(sp.q).slice(0, 100);
+  const status = STATUSES.find((s) => s === first(sp.status));
+  const role = ROLES.find((r) => r === first(sp.role));
+  const discipline = first(sp.discipline);
+  const disciplineId = UUID.test(discipline) ? discipline : undefined;
+  const requestedPage = Number.parseInt(first(sp.page), 10);
+
+  const [{ items: members, total, page, pageCount }, disciplines, session] = await Promise.all([
+    getAdminMembersPage({ q, status, role, disciplineId, page: Number.isFinite(requestedPage) ? requestedPage : 1 }),
+    getDisciplineOptions(),
+    auth(),
+  ]);
+  const rangeStart = total === 0 ? 0 : (page - 1) * ADMIN_MEMBERS_PAGE_SIZE + 1;
+  const rangeEnd = (page - 1) * ADMIN_MEMBERS_PAGE_SIZE + members.length;
+  const pageHref = (n: number) => {
+    const next = new URLSearchParams();
+    if (q) next.set("q", q);
+    if (status) next.set("status", status);
+    if (disciplineId) next.set("discipline", disciplineId);
+    if (role) next.set("role", role);
+    if (n > 1) next.set("page", String(n));
+    const qs = next.toString();
+    return qs ? `/admin/members?${qs}` : "/admin/members";
+  };
   const canEdit = session?.user?.platformRole === "superadmin";
 
   return (
@@ -32,30 +65,7 @@ export default async function AdminMembersPage() {
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border-default bg-white">
-        <div className="flex flex-wrap items-center gap-3 border-b border-[#EFEAE0] p-4">
-          <div className="relative flex w-full items-center sm:w-80">
-            <span className="absolute left-3 text-text-secondary">
-              <SearchIcon size={16} />
-            </span>
-            <input placeholder="Search by name or email" className="h-11 w-full rounded-[10px] border border-border-input pl-9 pr-3 text-sm" />
-          </div>
-          <select className="h-11 rounded-[10px] border border-border-input px-3 text-sm">
-            <option>All statuses</option>
-            <option>Active</option>
-            <option>Pending</option>
-            <option>Suspended</option>
-          </select>
-          <select className="h-11 rounded-[10px] border border-border-input px-3 text-sm">
-            <option>All disciplines</option>
-          </select>
-          <select className="h-11 rounded-[10px] border border-border-input px-3 text-sm">
-            <option>All roles</option>
-            <option>Member</option>
-            <option>Editor</option>
-            <option>Admin</option>
-          </select>
-          <span className="ml-auto text-sm text-text-secondary">{members.length} members</span>
-        </div>
+        <MemberFilters disciplines={disciplines} total={total} />
 
         {canEdit && (
           <form id={BULK_FORM_ID} className="flex flex-wrap items-center gap-2.5 border-b border-[#EFEAE0] bg-[#FAF8F3] px-4 py-2.5 text-sm">
@@ -91,6 +101,16 @@ export default async function AdminMembersPage() {
               </tr>
             </thead>
             <tbody>
+              {members.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-14 text-center text-sm text-text-secondary">
+                    No members match these filters.{" "}
+                    <Link href="/admin/members" className="font-semibold text-brand-green">
+                      Clear filters
+                    </Link>
+                  </td>
+                </tr>
+              )}
               {members.map((m) => (
                 <tr key={m.id} className="border-t border-[#EFEAE0]">
                   {canEdit && (
@@ -169,10 +189,27 @@ export default async function AdminMembersPage() {
         </div>
 
         <div className="flex items-center justify-between border-t border-[#EFEAE0] px-5 py-3.5 text-sm text-text-secondary">
-          <span>Rows 1–{members.length} of {members.length}</span>
-          <div className="flex gap-2">
-            <button className="h-11 rounded-[10px] border border-border-input px-4 text-sm font-semibold">Previous</button>
-            <button className="h-11 rounded-[10px] border border-border-input px-4 text-sm font-semibold">Next</button>
+          <span>
+            Rows {rangeStart}–{rangeEnd} of {total}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="mr-1">
+              Page {page} of {pageCount}
+            </span>
+            {page > 1 ? (
+              <Link href={pageHref(page - 1)} className="flex h-11 items-center rounded-[10px] border border-border-input px-4 text-sm font-semibold text-text-primary">
+                Previous
+              </Link>
+            ) : (
+              <span aria-disabled className="flex h-11 items-center rounded-[10px] border border-border-input px-4 text-sm font-semibold opacity-40">Previous</span>
+            )}
+            {page < pageCount ? (
+              <Link href={pageHref(page + 1)} className="flex h-11 items-center rounded-[10px] border border-border-input px-4 text-sm font-semibold text-text-primary">
+                Next
+              </Link>
+            ) : (
+              <span aria-disabled className="flex h-11 items-center rounded-[10px] border border-border-input px-4 text-sm font-semibold opacity-40">Next</span>
+            )}
           </div>
         </div>
       </div>

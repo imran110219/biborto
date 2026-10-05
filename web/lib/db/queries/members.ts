@@ -1,8 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { members, disciplines, countries } from "@/drizzle/schema";
 import { initialsOf, formatMonthYear } from "@/lib/db/format";
-import type { AdminMemberDetail, Member, PublicMember, PublicMemberDetail } from "@/lib/types";
+import type { AdminMemberDetail, MemberStatus, PlatformRole, Member, PublicMember, PublicMemberDetail } from "@/lib/types";
 import { getR2PublicUrl } from "@/lib/r2";
 
 // Same filter public_members (db/schema.sql) encodes — replicated here
@@ -130,6 +130,79 @@ export async function getAdminMembers(): Promise<Member[]> {
     status: row.status,
     joinedAt: formatMonthYear(row.joinedAt),
   }));
+}
+
+export const ADMIN_MEMBERS_PAGE_SIZE = 25;
+
+export interface AdminMemberFilters {
+  q?: string;
+  status?: MemberStatus;
+  disciplineId?: string;
+  role?: PlatformRole;
+  page: number;
+}
+
+// Filtered, paginated variant of getAdminMembers for the admin members list.
+// (The dashboard still uses getAdminMembers — it needs every row.)
+export async function getAdminMembersPage(filters: AdminMemberFilters) {
+  const conditions: (SQL | undefined)[] = [];
+  const q = filters.q?.trim();
+  if (q) {
+    // Escape LIKE wildcards so a literal % or _ in the search isn't a pattern.
+    const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
+    conditions.push(
+      or(
+        ilike(members.name, pattern),
+        ilike(members.email, pattern),
+        ilike(members.studentId, pattern),
+        ilike(members.city, pattern),
+      ),
+    );
+  }
+  if (filters.status) conditions.push(eq(members.status, filters.status));
+  if (filters.disciplineId) conditions.push(eq(members.disciplineId, filters.disciplineId));
+  if (filters.role) conditions.push(eq(members.platformRole, filters.role));
+  const where = and(...conditions);
+
+  const [{ total }] = await db.select({ total: count() }).from(members).where(where);
+  const pageCount = Math.max(1, Math.ceil(total / ADMIN_MEMBERS_PAGE_SIZE));
+  const page = Math.min(Math.max(1, filters.page), pageCount);
+
+  const rows = await db
+    .select({
+      id: members.id,
+      name: members.name,
+      discipline: disciplines.name,
+      profession: members.profession,
+      city: members.city,
+      email: members.email,
+      studentId: members.studentId,
+      platformRole: members.platformRole,
+      status: members.status,
+      joinedAt: members.joinedAt,
+    })
+    .from(members)
+    .leftJoin(disciplines, eq(disciplines.id, members.disciplineId))
+    .where(where)
+    .orderBy(members.name)
+    .limit(ADMIN_MEMBERS_PAGE_SIZE)
+    .offset((page - 1) * ADMIN_MEMBERS_PAGE_SIZE);
+
+  const items: Member[] = rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    initials: initialsOf(row.name),
+    discipline: row.discipline ?? "Not provided",
+    profession: row.profession ?? "",
+    city: row.city ?? "",
+    email: row.email,
+    studentId: row.studentId ?? undefined,
+    platformRole: row.platformRole,
+    status: row.status,
+    joinedAt: formatMonthYear(row.joinedAt),
+  }));
+
+  return { items, total, page, pageCount };
 }
 
 // Backs the admin member edit form — the one place admin-only fields

@@ -68,7 +68,7 @@ app/
   signin/actions.ts           Server Actions: credentialsSignIn, googleSignIn
   signup/page.tsx             "Claim your account" — not open registration,
                                see Auth below
-  signup/actions.ts           Server Action: claimAccount
+  signup/actions.ts           Server Actions: requestClaim + completeClaim
   api/auth/[...nextauth]/route.ts   Auth.js's own HTTP endpoints (session,
                                      callback, csrf, etc.) — re-exports
                                      handlers from ../../auth.ts
@@ -304,8 +304,13 @@ membership" in the UI) lets a person claim an existing `members` row by
 email; it does not create an active member account. The committee-managed
 roster is currently loaded from `active-voter-list.csv` via
 `db/seed_members.sql`; admin manual member creation and CSV import are
-planned, but not implemented. Claiming: enter the email on file and a
-password → creates the `users` row → sets `members.user_id`. Works for
+planned, but not implemented. Claiming is email-verified: enter the email on
+file → a one-time link (sha256-hashed token in `verification_tokens`, 1 hour,
+single use, sent via Resend — see `lib/email.ts`; without `RESEND_API_KEY` in
+dev the link is logged to the server console) → `/signup/verify` sets the
+password → creates the `users` row → sets `members.user_id`. The response
+never reveals whether an email is on the roster. Gmail members can skip all
+this with Google sign-in, which already asserts a verified email. Works for
 `status='pending'` as well as
 `'active'` (so a member awaiting approval can have a password ready),
 but actually signing in requires `status='active'` — a newly-claimed

@@ -77,9 +77,11 @@ this isn't a speculative model, it's what the UI assumes.
   `platform_role` off the session JWT to gate `/admin/**` for writes —
   same as any other Postgres-backed app. See `docs/web/README.md`'s Auth
   section for how sign-in and role-gating actually work.
-- **Files are intended for R2, not Postgres.** Columns named `*_key`
+- **Files are stored in R2, not Postgres.** Columns named `*_key`
   (`avatar_key`, `cover_photo_key`, `logo_key`, `r2_key`) store an object
-  key. R2 is not connected yet, and no code resolves keys to URLs.
+  key. Gallery photo upload writes to R2 and stores the key in
+  `gallery_photos`; public gallery pages resolve it through
+  `R2_PUBLIC_URL`. Other media upload flows are not implemented.
 - **Sponsors are not businesses.** 5 of the current 5 mock sponsors
   happen to match businesses by name — a sponsor is often also a
   batchmate's business — but the design (see `docs/web/DESIGN.md`)
@@ -97,9 +99,9 @@ this isn't a speculative model, it's what the UI assumes.
 - **`avatar_key` (the member photo) is wired through the app layer, not
   just the DB.** `PublicMember`/`PublicMemberDetail` in `web/lib/types.ts`
   now carry it and the query layer selects it, but nothing renders it
-  yet — `Avatar` (`web/components/ui/Avatar.tsx`) only ever displays
-  initials, and no R2 base URL is configured anywhere to turn a key into
-  an actual image src. Data is ready; rendering isn't built.
+  yet — `Avatar` (`web/components/ui/Avatar.tsx`) still displays initials.
+  Member photo upload/rendering is separate from the implemented gallery
+  upload path.
 - **`platform_role` has three values:** `member`, `admin`, `superadmin`.
   All 241 roster rows are ordinary members. The separate bootstrap
   superadmin has no discipline; admin roles are assigned by the committee,
@@ -153,6 +155,11 @@ Docker, RDS, etc.):
    (disciplines/countries → members/superadmin → businesses/sponsors/blog_posts →
    events/gallery). `db/seed.sh` reads `DATABASE_URL` from the
    environment, falling back to `web/.env.local` if unset.
+   To enable gallery uploads, also set `R2_ACCOUNT_ID`,
+   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and
+   `R2_PUBLIC_URL` in `web/.env.local`. Scope the access key to Object
+   Read & Write for the gallery bucket; `R2_PUBLIC_URL` should be that
+   bucket's public custom domain (or development URL).
 3. Confirm: `select count(*) from public_members;` should return 241
    roster members (the separate superadmin is private); `select count(*)
    from disciplines;` should return 24; `select count(*) from countries;`
@@ -185,6 +192,7 @@ then seeds from scratch.
   account registration.
 - No `activity_log` seed data — no source for it in `mock-data.ts` (the
   dashboard's activity feed text is hardcoded in the page component).
-- No R2 wiring — `*_key` columns aren't resolved to real URLs anywhere
-  yet, and seed media keys are empty. Gallery upload remains unbuilt;
-  when added, only admins and superadmins may upload images.
+- Gallery R2 configuration is per environment: credentials, bucket name,
+  and a public bucket URL must be set before uploads and image display
+  work. Gallery upload is restricted to admins and superadmins in the
+  server route.

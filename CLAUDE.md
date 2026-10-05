@@ -36,7 +36,7 @@ Database setup (see `docs/db/README.md` for detail): provision Postgres, point `
 
 ### Current phase: database-backed public pages and most write paths
 
-Public pages query Postgres. Auth supports credentials and Google providers and gates `/admin/**`. Member review/edit, business review/edit/submission, event RSVP and admin CRUD for events, sponsors, videos and blog posts write to Postgres. Check imports/actions before assuming an admin page is live: Photos and Settings still contain mock UI, member creation/CSV import is not built, and dashboard activity has mock placeholders.
+Public pages query Postgres. Auth supports credentials and Google providers and gates `/admin/**`. Member review/edit, business review/edit/submission, event RSVP and admin CRUD for events, sponsors, videos and blog posts write to Postgres. Gallery upload and public image display use R2 when configured. Check imports/actions before assuming an admin page is live: Settings still contains mock UI, member creation/CSV import is not built, and dashboard activity has mock placeholders.
 
 The member seed comes from `active-voter-list.csv` (241 roster rows), with all CSV members assigned the `member` role. The committee-managed workflow has no public account registration. Admin manual member creation and CSV import are planned. Google sign-in for an unknown email currently creates a private pending membership request and grants no account/session until approval.
 
@@ -72,4 +72,4 @@ Config is `web/auth.ts`; full writeup in `docs/web/README.md`'s Auth section. Th
 
 ### File storage
 
-Columns named `*_key` (`avatar_key`, `cover_photo_key`, `logo_key`, `r2_key`) are intended to store Cloudflare R2 object keys, not URLs. R2 has no client, upload route, or key-to-URL rendering wired up yet. Gallery image upload is planned for admins and superadmins only; enforce that in the server action/route, not only in the UI. No gallery photos are seeded; `Avatar` still draws initials.
+Columns named `*_key` (`avatar_key`, `cover_photo_key`, `logo_key`, `r2_key`) store Cloudflare R2 object keys, not URLs. Gallery uploads go through `web/app/api/admin/gallery/photos/route.ts`, which checks admin/superadmin access, and public gallery pages resolve keys through `R2_PUBLIC_URL`. Set the `R2_*` variables in ignored `web/.env.local`; the route needs Object Read & Write credentials and a public bucket domain. Member avatars and business images are not wired up; `Avatar` still draws initials.

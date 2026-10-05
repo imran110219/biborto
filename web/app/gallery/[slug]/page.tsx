@@ -4,7 +4,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { PlaceholderMedia } from "@/components/ui/PlaceholderMedia";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { AlbumCard } from "@/components/GalleryCards";
-import { UploadIcon } from "@/components/ui/icons";
+import Image from "next/image";
 import { getGalleryAlbums, getAlbumBySlug } from "@/lib/db/queries/gallery";
 
 export async function generateStaticParams() {
@@ -35,21 +35,29 @@ export default async function AlbumDetailPage({ params }: PageProps<"/gallery/[s
               {album.photos.length} photo{album.photos.length === 1 ? "" : "s"}
             </p>
           </div>
-          <button className="flex h-12 items-center gap-2 rounded-full bg-brand-green px-5 text-sm font-semibold text-white">
-            Upload photos <UploadIcon />
-          </button>
         </div>
 
         {album.photos.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 pb-24 sm:grid-cols-2 md:grid-cols-3">
             {album.photos.map((photo) => (
-              <PlaceholderMedia key={photo.id} label={photo.caption ?? "[Photo]"} className="h-[260px]" />
+              <figure key={photo.id} className="flex flex-col gap-2">
+                <div className="relative h-[260px] overflow-hidden rounded-2xl bg-placeholder-media">
+                  <Image
+                    src={photo.imageUrl}
+                    alt={photo.caption || `Photo from ${album.name}`}
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+                {photo.caption && <figcaption className="text-sm text-text-secondary">{photo.caption}</figcaption>}
+              </figure>
             ))}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border-default py-16 text-center text-text-secondary">
             <span>No photos uploaded to this album yet.</span>
-            <span className="text-sm">Members can add photos from their account once uploads are enabled.</span>
+            <span className="text-sm">Gallery photos are shared by the Batch 11 committee.</span>
           </div>
         )}
       </section>
@@ -59,7 +67,7 @@ export default async function AlbumDetailPage({ params }: PageProps<"/gallery/[s
           <SectionHeader eyebrow="Keep browsing" title="More albums" viewAllHref="/gallery" viewAllLabel="All albums" />
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {others.map((a) => (
-              <AlbumCard key={a.slug} slug={a.slug} name={a.name} count={a.count} />
+            <AlbumCard key={a.slug} slug={a.slug} name={a.name} count={a.count} coverImageUrl={a.coverImageUrl} />
             ))}
           </div>
         </section>

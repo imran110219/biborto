@@ -11,8 +11,8 @@ Two-part repo:
 web/    Next.js app — public pages read from Postgres; Auth.js signs in
         existing members and gates /admin/**. Member/business review,
         event/sponsor/video/blog editing, business submissions and RSVPs
-        have real writes. Member creation/import and gallery photo upload
-        are not implemented yet.
+        have real writes. Gallery image upload/display is implemented;
+        member creation/import and photo deletion are not.
 db/     Full Postgres data model and seed data, including the current
         active-voter roster (members, businesses, sponsors, events,
         blog, gallery, auth) — wired into web/'s public pages and login
@@ -31,7 +31,8 @@ component shapes) lives on in `docs/web/DESIGN.md`.
   existing members and role-gates `/admin/**`. Member and business
   review/edit, business submissions, event RSVPs, and admin editing for
   events, sponsors, videos and blog posts write to Postgres. Admin member
-  creation/CSV import and gallery photo upload remain unimplemented.
+  creation/CSV import and gallery album creation/photo deletion remain
+  unimplemented.
   See `docs/web/README.md` and `docs/web/DESIGN.md`.
 - **`db/`** is the full Postgres data model — members, businesses,
   sponsors, events/RSVPs, blog posts, gallery, plus auth (`users`,
@@ -44,10 +45,10 @@ current source for the member seed, with all roster members assigned the
 `member` role. There is no self-service account registration. Admin CSV
 import and manual member creation are planned but not implemented.
 
-The remaining gallery media work is Cloudflare R2 integration. Gallery
-image uploads must be limited to admins and superadmins; public pages can
-display uploaded images. The bucket and upload/display code are not wired
-up yet.
+Gallery image upload and public display are wired through Cloudflare R2.
+The application still needs R2 account credentials and a public bucket
+domain in `web/.env.local`. Uploads are restricted to admins and
+superadmins by a server-side role check.
 
 ## Target stack
 

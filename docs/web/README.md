@@ -27,9 +27,10 @@ real. Member and business approval are real writes now too — see
 events, sponsors, videos and blog posts; business submission and event
 RSVP are real. The 241-member seed is based on the active-voter CSV.
 There is no open account registration; admin manual member creation and
-CSV import are planned but not built. File storage (avatars, gallery
-media, business photos) is intended for Cloudflare R2 and is not wired
-up. Gallery uploads are planned for admins and superadmins only.
+CSV import are planned but not built. Gallery images upload to Cloudflare
+R2 through an admin-only server route and display from the bucket's public
+domain. Configure R2 variables in `.env.local` before uploading. Other
+media types are not wired to R2 yet.
 
 ## Stack
 
@@ -45,7 +46,8 @@ up. Gallery uploads are planned for admins and superadmins only.
   sign-in — email/password and Google, JWT sessions — see [Auth](#auth).
   Member/business workflows, business submission, event RSVP and admin
   CRUD for events, sponsors, videos and blog posts have real database
-  writes. Member import and gallery media are still unbuilt.
+  writes. Admin member import and non-gallery media uploads are still
+  unbuilt.
 
 ## Structure
 
@@ -228,15 +230,18 @@ became `default([""])` (an array containing one empty string) instead of
 supplies them explicitly, so nothing depends on it. If you hit the same
 codegen error after a schema change, this is almost certainly why.
 
-**File storage (R2)**: `*_key` columns (`avatar_key`, `cover_photo_key`,
-etc.) aren't resolved to actual URLs anywhere yet — no R2 bucket or upload
-flow is wired up. Gallery uploads are intended for admins and
-superadmins only; that check must be enforced in the server action/route,
-not only by hiding the UI. No gallery photos are seeded. This is a known
-gap, not silently faked.
+**File storage (R2)**: gallery uploads are implemented in
+`app/api/admin/gallery/photos/route.ts`. The route independently checks
+the member's `admin`/`superadmin` role, allows JPEG/PNG/WebP/GIF up to
+15 MB, uploads with server-only R2 credentials, then saves the object key
+and uploader in Postgres. Album pages turn keys into image URLs using
+`R2_PUBLIC_URL`. Configure an R2 bucket, an Object Read & Write API token
+scoped to that bucket, and a public custom domain (or `r2.dev` for local
+development). The app does not create the bucket or configure its domain.
+Avatars, business images and other media are not implemented.
 
 **Still on mock data**: `lib/mock-data.ts` remains in use for dashboard
-activity placeholders, admin photos and settings, and some inert
+activity placeholders, settings, and some inert
 controls. Admin member creation and CSV import are not implemented;
 members currently come from seed data or a pending request created by an
 unmatched Google sign-in. That request does not create an account or
@@ -247,8 +252,9 @@ grant access until an admin approves it.
 Real admin writes include member approval, suspension/reactivation and
 editing; business approval/rejection/editing; and CRUD for events,
 sponsors, videos and blog posts. The public business submission form and
-event RSVP also write to Postgres. Admin member creation and CSV import,
-gallery album/photo management, R2 uploads and settings persistence are
+event RSVP also write to Postgres. Gallery images can be uploaded from
+`/admin/photos` by admins and superadmins; gallery album creation, photo
+deletion, admin member creation/CSV import, and settings persistence are
 not implemented.
 
 - **`lib/db/queries/{members,businesses}.ts`** export `getAdminMembers()`/
@@ -280,13 +286,11 @@ not implemented.
   no "Event RSVPs" approval queue yet), where the buttons render inert,
   same as before this existed.
 
-The gallery upload flow, when implemented, must authorize `admin` and
-`superadmin` in its server action or route. Hiding an upload button alone
-is not an access control check.
+The gallery upload route independently checks `admin` and `superadmin`
+roles; the Photos page is also behind the `/admin/**` role gate.
 
 **Suggested next tasks**: build admin-only manual member creation and
-CSV import, then connect gallery image uploads to R2 with server-side
-admin/superadmin authorization.
+CSV import, then add gallery album management and photo deletion.
 
 ## Auth
 
@@ -350,7 +354,8 @@ blocked from signing in even with the right password, role-based
 `/admin/**` gating, sign-out actually clearing the session. Google
 sign-in is code-complete but has not been verified end-to-end. Local
 OAuth client values belong in ignored `.env.local`; `.env.example` keeps
-these variables blank.
+these variables blank. R2 credentials and the public bucket URL also
+belong in `.env.local`, using the `R2_*` variables from the example.
 
 **Not built**: forgot-password (needs an email-sending provider — a
 separate infrastructure decision, same shape of gap as R2), and any
@@ -388,7 +393,8 @@ restructure first.
   `db/seed_blog_posts.sql`.
 - Sign-in/sign-up, member and business review, business submission,
   event RSVP, and admin CRUD for events, sponsors, videos and blog posts
-  use real database writes. Search/filter controls, settings persistence,
-  member creation/import and gallery photo management remain unbuilt.
+  use real database writes. Gallery image upload and public display also
+  use R2. Search/filter controls, settings persistence, member
+  creation/import, album management and photo deletion remain unbuilt.
 - The seed has 241 active roster members and 0 gallery photos. Country
   reference data has 243 rows, while member country fields remain empty.

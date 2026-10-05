@@ -73,20 +73,19 @@ named.
   records come from seed data, with pending records also created by
   unmatched Google sign-in attempts. No open account registration is
   available.
-- **Photos (gallery) admin is still a mock page.** There is no R2 client,
-  upload route/action, or image URL resolution. The agreed access rule
-  for the future upload flow is admin and superadmin only. Album metadata
-  editing is also not implemented.
+- Gallery image uploads now go through a Node Route Handler that checks
+  for `admin`/`superadmin`, validates JPEG/PNG/WebP/GIF signatures and a
+  15 MB limit, stores the object in R2, and inserts its key into
+  `gallery_photos`. Public album pages resolve keys through
+  `R2_PUBLIC_URL`. R2 credentials and a readable bucket domain still need
+  configuration for the feature to work. Album metadata editing and
+  photo deletion are not implemented.
 
-## 6. Infrastructure (explicitly deferred)
+## 6. Infrastructure and remaining media work
 
-Deferred by decision, not oversight — nothing else in this repo
-depends on either being done first except Photos admin (§5).
-
-- Cloudflare R2 file storage — no bucket/client configuration, upload
-  flow, or URL resolution. Seed media keys are empty; avatars still show
-  initials. Gallery upload access must be restricted to admins and
-  superadmins.
+- Cloudflare R2 — gallery upload and display code are implemented, but
+  credentials and the public bucket domain must be configured. Avatar,
+  business and other media upload/rendering are not implemented.
 - Google OAuth — provider code exists and local client settings are in
   the ignored `.env.local`; the flow still needs end-to-end verification.
   Keep `.env.example` as a placeholder, with no client secret.

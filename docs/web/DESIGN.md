@@ -153,10 +153,10 @@ joins.
   structure — a testimonial blockquote stands in for the pull-quote, and a
   bordered contact-info card (phone/email/location) replaces the tag row.
 - **Gallery** (`GalleryCards.tsx`): pill tab switcher ("Photo albums" /
-  "Videos") + an "Upload photos" primary button; album cards (image + title +
-  count); video cards (dark thumbnail, circular play button, duration badge).
-  The upload button is part of the visual design only; the feature is not
-  implemented. When built, only admins and superadmins may upload images.
+  "Videos"); album cards (image + title + count); video cards (dark
+  thumbnail, circular play button, duration badge). Upload controls live
+  in the admin Photos page; the server accepts uploads only from admins
+  and superadmins.
 - **Stats bar**: full-bleed `brand-green` background band, 4-column grid
   (5-column on the admin dashboard, for the Business listings tile) of
   Fraunces numbers over small caption labels in a lighter green tint.

@@ -32,9 +32,11 @@ named.
 - `getPublicMembers`/`getPublicMemberBySlug` inner-joined `disciplines`
   (a published member with no discipline would silently 404) — now
   `leftJoin` (`lib/db/queries/members.ts`).
-- Member edit page — sets discipline, platform role, profession,
-  employer, city, and the public-directory toggle
-  (`app/admin/members/[id]/edit`). Covers the "set discipline on a
+- Member edit page — covers every editable `members` column: profile,
+  work/location, links, admin-only private details (phone, student ID,
+  blood group, date of birth), status, platform role and the
+  public-directory toggle (`app/admin/members/[id]/edit`), with photo
+  upload. Covers the "set discipline on a
   Google-origin request" and "publish toggle" gaps in one form.
 - Reactivate action for suspended members, plus per-row
   approve/reject/suspend/reactivate directly on the members list, not
@@ -42,6 +44,19 @@ named.
 - Bulk activate/suspend for members, bulk approve/reject for
   businesses — both via a `form`-attribute checkbox pattern, no client
   JS (`app/admin/members/page.tsx`, `app/admin/businesses/page.tsx`).
+- Member permissions: admins have **view-only** access
+  (`/admin/members/[id]`); editing, creating, photo upload, approve/
+  reject/suspend/reactivate, bulk actions and CSV export are
+  **superadmin-only**, enforced in the Server Actions/route
+  (`requireSuperadmin`), not just hidden in the UI.
+- Member list search, status/discipline/role filters and 25-per-page
+  pagination, all driven by URL params (`lib/members/filters.ts`,
+  `getAdminMembersPage`).
+- Manual member creation (`/admin/members/new`, `createMember`) and
+  filtered CSV export (`/api/admin/members/export`).
+- Admin account menu (avatar dropdown: My profile, View public site,
+  Sign out) and a development-only one-click superadmin sign-in on
+  `/signin`.
 - Business edit page for all listing fields
   (`app/admin/businesses/[slug]/edit`).
 - Still open: no field-level audit trail beyond `reviewedBy`/
@@ -67,12 +82,12 @@ named.
   `coalesce(published_at, now())` rather than overwriting it.
 - Dashboard's events widget, blog-post count, and RSVP progress bars
   now read live data instead of `lib/mock-data.ts`.
-- **Member creation/import is still missing.** `db/seed_members.sql`
-  contains the 241-row active-voter roster, but there is no admin UI for
-  creating a member manually or importing an updated CSV. Current member
-  records come from seed data, with pending records also created by
-  unmatched Google sign-in attempts. No open account registration is
-  available.
+- **Member CSV import is still missing.** `db/seed_members.sql`
+  contains the 241-row active-voter roster. Superadmins can now add a
+  member manually (`/admin/members/new`) and export the filtered list as
+  CSV, but there is no importing of an updated CSV. Other member records
+  come from seed data, with pending records also created by unmatched
+  Google sign-in attempts. No open account registration is available.
 - Gallery image uploads now go through a Node Route Handler that checks
   for `admin`/`superadmin`, validates JPEG/PNG/WebP/GIF signatures and a
   15 MB limit, stores the object in R2, and inserts its key into

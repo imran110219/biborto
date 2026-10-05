@@ -144,7 +144,7 @@ export interface AdminMemberFilters {
 
 // Filtered, paginated variant of getAdminMembers for the admin members list.
 // (The dashboard still uses getAdminMembers — it needs every row.)
-export async function getAdminMembersPage(filters: AdminMemberFilters) {
+function adminMemberWhere(filters: Omit<AdminMemberFilters, "page">) {
   const conditions: (SQL | undefined)[] = [];
   const q = filters.q?.trim();
   if (q) {
@@ -162,7 +162,11 @@ export async function getAdminMembersPage(filters: AdminMemberFilters) {
   if (filters.status) conditions.push(eq(members.status, filters.status));
   if (filters.disciplineId) conditions.push(eq(members.disciplineId, filters.disciplineId));
   if (filters.role) conditions.push(eq(members.platformRole, filters.role));
-  const where = and(...conditions);
+  return and(...conditions);
+}
+
+export async function getAdminMembersPage(filters: AdminMemberFilters) {
+  const where = adminMemberWhere(filters);
 
   const [{ total }] = await db.select({ total: count() }).from(members).where(where);
   const pageCount = Math.max(1, Math.ceil(total / ADMIN_MEMBERS_PAGE_SIZE));
@@ -203,6 +207,55 @@ export async function getAdminMembersPage(filters: AdminMemberFilters) {
   }));
 
   return { items, total, page, pageCount };
+}
+
+export interface MemberExportRow {
+  name: string;
+  email: string;
+  phoneNumber: string | null;
+  studentId: string | null;
+  discipline: string | null;
+  campusName: string | null;
+  profession: string | null;
+  currentEmployer: string | null;
+  city: string | null;
+  country: string | null;
+  bloodGroup: string | null;
+  dateOfBirth: string | null;
+  platformRole: PlatformRole;
+  status: MemberStatus;
+  isPublic: boolean;
+  joinedAt: string;
+}
+
+// Every row matching the filters (no pagination), including admin-only
+// fields — callers must be superadmin-gated.
+export async function getAdminMembersForExport(filters: Omit<AdminMemberFilters, "page">): Promise<MemberExportRow[]> {
+  const rows = await db
+    .select({
+      name: members.name,
+      email: members.email,
+      phoneNumber: members.phoneNumber,
+      studentId: members.studentId,
+      discipline: disciplines.name,
+      campusName: members.campusName,
+      profession: members.profession,
+      currentEmployer: members.currentEmployer,
+      city: members.city,
+      country: countries.name,
+      bloodGroup: members.bloodGroup,
+      dateOfBirth: members.dateOfBirth,
+      platformRole: members.platformRole,
+      status: members.status,
+      isPublic: members.isPublic,
+      joinedAt: members.joinedAt,
+    })
+    .from(members)
+    .leftJoin(disciplines, eq(disciplines.id, members.disciplineId))
+    .leftJoin(countries, eq(countries.id, members.countryId))
+    .where(adminMemberWhere(filters))
+    .orderBy(members.name);
+  return rows.map((r) => ({ ...r, joinedAt: new Date(r.joinedAt).toISOString().slice(0, 10) }));
 }
 
 // Backs the admin member edit form — the one place admin-only fields

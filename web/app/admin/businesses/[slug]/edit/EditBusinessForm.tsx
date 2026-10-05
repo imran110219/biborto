@@ -57,6 +57,16 @@ export function EditBusinessForm({ business }: { business: AdminBusinessDetail }
           Website
           <input name="website" defaultValue={business.website} className={inputClasses} />
         </label>
+
+        <label className={labelClasses}>
+          LinkedIn
+          <input name="linkedinUrl" defaultValue={business.linkedinUrl} placeholder="https://linkedin.com/company/…" className={inputClasses} />
+        </label>
+
+        <label className={labelClasses}>
+          Facebook
+          <input name="facebookUrl" defaultValue={business.facebookUrl} placeholder="https://facebook.com/…" className={inputClasses} />
+        </label>
       </div>
 
       <label className={labelClasses}>

@@ -286,6 +286,8 @@ create table businesses (
   phone           text,
   email           text,
   website         text,
+  linkedin_url    text,
+  facebook_url    text,
   cover_photo_key text,
   logo_key        text,
 
@@ -307,7 +309,7 @@ create trigger businesses_set_updated_at
 create view public_businesses as
   select id, slug, name, category, city, tagline, description, offerings,
          testimonial, phone, email, website, cover_photo_key, logo_key,
-         submitted_at
+         submitted_at, linkedin_url, facebook_url
   from businesses
   where status = 'active';
 

@@ -7,44 +7,33 @@ import { Button } from "@/components/ui/Button";
 import { DownloadIcon, EditIcon, EyeIcon, PlusIcon } from "@/components/ui/icons";
 import { ADMIN_MEMBERS_PAGE_SIZE, getAdminMembersPage } from "@/lib/db/queries/members";
 import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
-import type { MemberStatus, PlatformRole } from "@/lib/types";
+import { memberFiltersToQuery, parseMemberFilters } from "@/lib/members/filters";
 import { MemberFilters } from "./MemberFilters";
 import { approveMember, bulkActivateMembers, bulkSuspendMembers, reactivateMember, suspendMember } from "./actions";
 
 const BULK_FORM_ID = "members-bulk-form";
 
-const STATUSES: MemberStatus[] = ["active", "pending", "suspended"];
-const ROLES: PlatformRole[] = ["member", "admin", "superadmin"];
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
-
 export default async function AdminMembersPage({ searchParams }: PageProps<"/admin/members">) {
   const sp = await searchParams;
-  const q = first(sp.q).slice(0, 100);
-  const status = STATUSES.find((s) => s === first(sp.status));
-  const role = ROLES.find((r) => r === first(sp.role));
-  const discipline = first(sp.discipline);
-  const disciplineId = UUID.test(discipline) ? discipline : undefined;
-  const requestedPage = Number.parseInt(first(sp.page), 10);
+  const filters = parseMemberFilters(sp);
+  const { q, status, role, disciplineId } = filters;
 
   const [{ items: members, total, page, pageCount }, disciplines, session] = await Promise.all([
-    getAdminMembersPage({ q, status, role, disciplineId, page: Number.isFinite(requestedPage) ? requestedPage : 1 }),
+    getAdminMembersPage(filters),
     getDisciplineOptions(),
     auth(),
   ]);
   const rangeStart = total === 0 ? 0 : (page - 1) * ADMIN_MEMBERS_PAGE_SIZE + 1;
   const rangeEnd = (page - 1) * ADMIN_MEMBERS_PAGE_SIZE + members.length;
+  const baseQuery = memberFiltersToQuery(filters);
   const pageHref = (n: number) => {
-    const next = new URLSearchParams();
-    if (q) next.set("q", q);
-    if (status) next.set("status", status);
-    if (disciplineId) next.set("discipline", disciplineId);
-    if (role) next.set("role", role);
+    const next = new URLSearchParams(baseQuery);
     if (n > 1) next.set("page", String(n));
     const qs = next.toString();
     return qs ? `/admin/members?${qs}` : "/admin/members";
   };
+  const exportQuery = baseQuery.toString();
+
   const canEdit = session?.user?.platformRole === "superadmin";
 
   return (
@@ -54,14 +43,19 @@ export default async function AdminMembersPage({ searchParams }: PageProps<"/adm
           <h1 className="font-serif text-4xl font-medium">Members</h1>
           <p className="text-text-secondary">{canEdit ? "Approve new batchmates, assign roles and keep the directory accurate." : "Browse the member directory. Only a superadmin can edit or moderate members."}</p>
         </div>
-        <div className="flex gap-2.5">
-          <Button variant="ghost" size="sm">
-            <DownloadIcon /> Export CSV
-          </Button>
-          <Button size="sm">
-            <PlusIcon /> Add member
-          </Button>
-        </div>
+        {canEdit && (
+          <div className="flex gap-2.5">
+            <a
+              href={`/api/admin/members/export${exportQuery ? `?${exportQuery}` : ""}`}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-border-default bg-white px-5 text-sm font-semibold text-text-primary transition-colors hover:bg-black/5"
+            >
+              <DownloadIcon /> Export CSV
+            </a>
+            <Button size="sm" href="/admin/members/new">
+              <PlusIcon /> Add member
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border-default bg-white">

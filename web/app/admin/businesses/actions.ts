@@ -72,11 +72,17 @@ export async function updateBusiness(slug: string, _prevState: string | undefine
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const website = String(formData.get("website") ?? "").trim();
+  const linkedin = String(formData.get("linkedinUrl") ?? "").trim();
+  const facebook = String(formData.get("facebookUrl") ?? "").trim();
 
   if (!name) return "Name is required.";
   if (!BUSINESS_CATEGORIES.includes(category)) return "Choose a valid category.";
   const websiteUrl = parseWebsite(website);
   if (websiteUrl === undefined) return "Enter a valid website address (http or https).";
+  const linkedinUrl = parseWebsite(linkedin);
+  if (linkedinUrl === undefined) return "Enter a valid LinkedIn address (http or https).";
+  const facebookUrl = parseWebsite(facebook);
+  if (facebookUrl === undefined) return "Enter a valid Facebook address (http or https).";
 
   await db
     .update(businesses)
@@ -91,6 +97,8 @@ export async function updateBusiness(slug: string, _prevState: string | undefine
       phone: phone || null,
       email: email || null,
       website: websiteUrl,
+      linkedinUrl,
+      facebookUrl,
     })
     .where(eq(businesses.slug, slug));
 

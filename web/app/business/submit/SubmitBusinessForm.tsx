@@ -56,6 +56,16 @@ export function SubmitBusinessForm() {
           Website
           <input name="website" placeholder="https://" className={inputClasses} />
         </label>
+
+        <label className={labelClasses}>
+          LinkedIn
+          <input name="linkedinUrl" placeholder="https://linkedin.com/company/…" className={inputClasses} />
+        </label>
+
+        <label className={labelClasses}>
+          Facebook
+          <input name="facebookUrl" placeholder="https://facebook.com/…" className={inputClasses} />
+        </label>
       </div>
 
       <label className={labelClasses}>

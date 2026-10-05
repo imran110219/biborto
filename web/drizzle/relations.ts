@@ -1,33 +1,20 @@
 import { relations } from "drizzle-orm/relations";
-import { members, businesses, events, eventRsvps, sponsors, blogPosts, users, sessions, galleryVideos, disciplines, galleryAlbums, galleryPhotos, activityLog, countries, accounts } from "./schema";
+import { users, sessions, members, disciplines, countries, businesses, sponsors, events, eventRsvps, blogPosts, galleryAlbums, galleryPhotos, galleryVideos, activityLog, accounts } from "./schema";
 
-export const businessesRelations = relations(businesses, ({one, many}) => ({
-	member_ownerMemberId: one(members, {
-		fields: [businesses.ownerMemberId],
-		references: [members.id],
-		relationName: "businesses_ownerMemberId_members_id"
+export const sessionsRelations = relations(sessions, ({one}) => ({
+	user: one(users, {
+		fields: [sessions.userId],
+		references: [users.id]
 	}),
-	member_reviewedBy: one(members, {
-		fields: [businesses.reviewedBy],
-		references: [members.id],
-		relationName: "businesses_reviewedBy_members_id"
-	}),
-	sponsors: many(sponsors),
+}));
+
+export const usersRelations = relations(users, ({many}) => ({
+	sessions: many(sessions),
+	members: many(members),
+	accounts: many(accounts),
 }));
 
 export const membersRelations = relations(members, ({one, many}) => ({
-	businesses_ownerMemberId: many(businesses, {
-		relationName: "businesses_ownerMemberId_members_id"
-	}),
-	businesses_reviewedBy: many(businesses, {
-		relationName: "businesses_reviewedBy_members_id"
-	}),
-	eventRsvps: many(eventRsvps),
-	events: many(events),
-	blogPosts: many(blogPosts),
-	galleryVideos: many(galleryVideos),
-	galleryPhotos: many(galleryPhotos),
-	activityLogs: many(activityLog),
 	user: one(users, {
 		fields: [members.userId],
 		references: [users.id]
@@ -48,7 +35,60 @@ export const membersRelations = relations(members, ({one, many}) => ({
 	members: many(members, {
 		relationName: "members_reviewedBy_members_id"
 	}),
+	events: many(events),
+	eventRsvps: many(eventRsvps),
+	blogPosts: many(blogPosts),
 	galleryAlbums: many(galleryAlbums),
+	galleryPhotos: many(galleryPhotos),
+	galleryVideos: many(galleryVideos),
+	activityLogs: many(activityLog),
+	businesses_ownerMemberId: many(businesses, {
+		relationName: "businesses_ownerMemberId_members_id"
+	}),
+	businesses_reviewedBy: many(businesses, {
+		relationName: "businesses_reviewedBy_members_id"
+	}),
+}));
+
+export const disciplinesRelations = relations(disciplines, ({many}) => ({
+	members: many(members),
+	galleryAlbums: many(galleryAlbums),
+	galleryVideos: many(galleryVideos),
+}));
+
+export const countriesRelations = relations(countries, ({many}) => ({
+	members: many(members),
+}));
+
+export const sponsorsRelations = relations(sponsors, ({one}) => ({
+	business: one(businesses, {
+		fields: [sponsors.businessId],
+		references: [businesses.id]
+	}),
+}));
+
+export const businessesRelations = relations(businesses, ({one, many}) => ({
+	sponsors: many(sponsors),
+	member_ownerMemberId: one(members, {
+		fields: [businesses.ownerMemberId],
+		references: [members.id],
+		relationName: "businesses_ownerMemberId_members_id"
+	}),
+	member_reviewedBy: one(members, {
+		fields: [businesses.reviewedBy],
+		references: [members.id],
+		relationName: "businesses_reviewedBy_members_id"
+	}),
+}));
+
+export const eventsRelations = relations(events, ({one, many}) => ({
+	member: one(members, {
+		fields: [events.createdBy],
+		references: [members.id]
+	}),
+	eventRsvps: many(eventRsvps),
+	galleryAlbums: many(galleryAlbums),
+	galleryVideos: many(galleryVideos),
 }));
 
 export const eventRsvpsRelations = relations(eventRsvps, ({one}) => ({
@@ -62,23 +102,6 @@ export const eventRsvpsRelations = relations(eventRsvps, ({one}) => ({
 	}),
 }));
 
-export const eventsRelations = relations(events, ({one, many}) => ({
-	eventRsvps: many(eventRsvps),
-	member: one(members, {
-		fields: [events.createdBy],
-		references: [members.id]
-	}),
-	galleryVideos: many(galleryVideos),
-	galleryAlbums: many(galleryAlbums),
-}));
-
-export const sponsorsRelations = relations(sponsors, ({one}) => ({
-	business: one(businesses, {
-		fields: [sponsors.businessId],
-		references: [businesses.id]
-	}),
-}));
-
 export const blogPostsRelations = relations(blogPosts, ({one}) => ({
 	member: one(members, {
 		fields: [blogPosts.authorMemberId],
@@ -86,38 +109,20 @@ export const blogPostsRelations = relations(blogPosts, ({one}) => ({
 	}),
 }));
 
-export const sessionsRelations = relations(sessions, ({one}) => ({
-	user: one(users, {
-		fields: [sessions.userId],
-		references: [users.id]
-	}),
-}));
-
-export const usersRelations = relations(users, ({many}) => ({
-	sessions: many(sessions),
-	members: many(members),
-	accounts: many(accounts),
-}));
-
-export const galleryVideosRelations = relations(galleryVideos, ({one}) => ({
-	member: one(members, {
-		fields: [galleryVideos.addedBy],
-		references: [members.id]
-	}),
+export const galleryAlbumsRelations = relations(galleryAlbums, ({one, many}) => ({
 	event: one(events, {
-		fields: [galleryVideos.eventId],
+		fields: [galleryAlbums.eventId],
 		references: [events.id]
 	}),
 	discipline: one(disciplines, {
-		fields: [galleryVideos.disciplineId],
+		fields: [galleryAlbums.disciplineId],
 		references: [disciplines.id]
 	}),
-}));
-
-export const disciplinesRelations = relations(disciplines, ({many}) => ({
-	galleryVideos: many(galleryVideos),
-	members: many(members),
-	galleryAlbums: many(galleryAlbums),
+	member: one(members, {
+		fields: [galleryAlbums.createdBy],
+		references: [members.id]
+	}),
+	galleryPhotos: many(galleryPhotos),
 }));
 
 export const galleryPhotosRelations = relations(galleryPhotos, ({one}) => ({
@@ -131,19 +136,18 @@ export const galleryPhotosRelations = relations(galleryPhotos, ({one}) => ({
 	}),
 }));
 
-export const galleryAlbumsRelations = relations(galleryAlbums, ({one, many}) => ({
-	galleryPhotos: many(galleryPhotos),
-	member: one(members, {
-		fields: [galleryAlbums.createdBy],
-		references: [members.id]
-	}),
+export const galleryVideosRelations = relations(galleryVideos, ({one}) => ({
 	event: one(events, {
-		fields: [galleryAlbums.eventId],
+		fields: [galleryVideos.eventId],
 		references: [events.id]
 	}),
 	discipline: one(disciplines, {
-		fields: [galleryAlbums.disciplineId],
+		fields: [galleryVideos.disciplineId],
 		references: [disciplines.id]
+	}),
+	member: one(members, {
+		fields: [galleryVideos.addedBy],
+		references: [members.id]
 	}),
 }));
 
@@ -152,10 +156,6 @@ export const activityLogRelations = relations(activityLog, ({one}) => ({
 		fields: [activityLog.actorMemberId],
 		references: [members.id]
 	}),
-}));
-
-export const countriesRelations = relations(countries, ({many}) => ({
-	members: many(members),
 }));
 
 export const accountsRelations = relations(accounts, ({one}) => ({

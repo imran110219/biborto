@@ -100,6 +100,8 @@ export interface Business {
   phone?: string;
   email?: string;
   website?: string;
+  linkedinUrl?: string;
+  facebookUrl?: string;
 }
 
 export const BUSINESS_CATEGORIES = [
@@ -126,6 +128,8 @@ export interface AdminBusinessDetail {
   phone: string;
   email: string;
   website: string;
+  linkedinUrl: string;
+  facebookUrl: string;
 }
 
 export type SponsorTier = "diamond" | "gold" | "silver" | "bronze";

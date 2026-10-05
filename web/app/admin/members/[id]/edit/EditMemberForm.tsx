@@ -4,7 +4,7 @@ import { startTransition, useActionState } from "react";
 import type { FormEvent } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { updateMember } from "@/app/admin/members/actions";
+import { createMember, updateMember } from "@/app/admin/members/actions";
 import type { AdminMemberDetail } from "@/lib/types";
 import type { DisciplineOption } from "@/lib/db/queries/disciplines";
 import type { CountryOption } from "@/lib/db/queries/countries";
@@ -33,13 +33,19 @@ export function EditMemberForm({
   disciplines,
   countries,
   returnTo,
+  mode = "edit",
 }: {
   member: AdminMemberDetail;
   disciplines: DisciplineOption[];
   countries: CountryOption[];
   returnTo: string;
+  mode?: "edit" | "create";
 }) {
-  const [error, formAction, pending] = useActionState(updateMember.bind(null, member.id), undefined);
+  const creating = mode === "create";
+  const [error, formAction, pending] = useActionState(
+    creating ? createMember : updateMember.bind(null, member.id),
+    undefined,
+  );
 
   // Submitted via onSubmit rather than the form's `action` prop: React resets
   // uncontrolled fields after an action finishes, which would wipe everything
@@ -135,7 +141,11 @@ export function EditMemberForm({
       <Card title="Private details" hint="Visible to admins only — never shown publicly.">
         <label className={labelClasses}>
           Email
-          <input value={member.email} readOnly disabled className={`${inputClasses} bg-bg-admin text-text-secondary`} />
+          {creating ? (
+            <input type="email" name="email" required autoComplete="off" placeholder="name@example.com" className={inputClasses} />
+          ) : (
+            <input value={member.email} readOnly disabled className={`${inputClasses} bg-bg-admin text-text-secondary`} />
+          )}
         </label>
         <label className={labelClasses}>
           Phone number
@@ -168,7 +178,7 @@ export function EditMemberForm({
           disabled={pending}
           className="h-11 rounded-[10px] bg-brand-green px-6 text-sm font-semibold text-white disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Save changes"}
+          {pending ? (creating ? "Adding…" : "Saving…") : creating ? "Add member" : "Save changes"}
         </button>
         <Link
           href={returnTo}

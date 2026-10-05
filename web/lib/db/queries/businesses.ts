@@ -22,6 +22,8 @@ const publicBusinessSelection = {
   phone: businesses.phone,
   email: businesses.email,
   website: businesses.website,
+  linkedinUrl: businesses.linkedinUrl,
+  facebookUrl: businesses.facebookUrl,
 } as const;
 
 function toBusiness(row: {
@@ -38,6 +40,8 @@ function toBusiness(row: {
   phone: string | null;
   email: string | null;
   website: string | null;
+  linkedinUrl: string | null;
+  facebookUrl: string | null;
 }): Business {
   return {
     slug: row.slug,
@@ -57,6 +61,8 @@ function toBusiness(row: {
     phone: row.phone ?? undefined,
     email: row.email ?? undefined,
     website: row.website ?? undefined,
+    linkedinUrl: row.linkedinUrl ?? undefined,
+    facebookUrl: row.facebookUrl ?? undefined,
   };
 }
 
@@ -112,6 +118,8 @@ export async function getAdminBusinessBySlug(slug: string): Promise<AdminBusines
       phone: businesses.phone,
       email: businesses.email,
       website: businesses.website,
+      linkedinUrl: businesses.linkedinUrl,
+      facebookUrl: businesses.facebookUrl,
     })
     .from(businesses)
     .where(eq(businesses.slug, slug))
@@ -132,5 +140,7 @@ export async function getAdminBusinessBySlug(slug: string): Promise<AdminBusines
     phone: row.phone ?? "",
     email: row.email ?? "",
     website: row.website ?? "",
+    linkedinUrl: row.linkedinUrl ?? "",
+    facebookUrl: row.facebookUrl ?? "",
   };
 }

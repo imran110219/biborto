@@ -204,9 +204,10 @@ then seeds from scratch.
 - **Most core write paths are wired into `web/`.** Auth, member and
   business review/edit, business submission, event RSVP, and admin CRUD
   for events, sponsors, videos and blog posts write to Postgres.
-- Admin member creation and CSV import are not implemented; the current
-  roster is loaded through `db/seed_members.sql`. There is no open
-  account registration.
+- Admin CSV import is not implemented; the current roster is loaded
+  through `db/seed_members.sql`, and a superadmin can add individual
+  members at `/admin/members/new` (a `members` row only — no `users` row
+  until the person claims it). There is no open account registration.
 - No `activity_log` seed data — no source for it in `mock-data.ts` (the
   dashboard's activity feed text is hardcoded in the page component).
 - Gallery R2 configuration is per environment: credentials, bucket name,

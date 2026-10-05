@@ -26,8 +26,9 @@ real. Member and business approval are real writes now too — see
 [Admin write surface](#admin-write-surface). Admin CRUD also writes
 events, sponsors, videos and blog posts; business submission and event
 RSVP are real. The 241-member seed is based on the active-voter CSV.
-There is no open account registration; admin manual member creation and
-CSV import are planned but not built. Gallery images upload to Cloudflare
+There is no open account registration; superadmins add members manually
+and export CSV, while CSV import is planned but not built. Gallery images
+upload to Cloudflare
 R2 through an admin-only server route and display from the bucket's public
 domain. Configure R2 variables in `.env.local` before uploading. Other
 media types are not wired to R2 yet.
@@ -236,28 +237,30 @@ the member's `admin`/`superadmin` role, validates JPEG/PNG/WebP/GIF up to
 15 MB, uploads with server-only credentials, then saves the key and
 uploader in Postgres. Admins can update captions and delete photos;
 superadmins can create, edit, and delete empty albums. Public pages resolve
-keys through `R2_PUBLIC_URL`. Member profile and cover photos also use R2.
+keys through `R2_PUBLIC_URL`. Member profile and cover photos also use R2
+(uploading them is superadmin-only).
 Configure an R2 bucket, an Object Read & Write API token scoped to that
 bucket, and a public custom domain (or `r2.dev` for local development).
 The app does not create the bucket or configure its domain.
 
 **Still on mock data**: `lib/mock-data.ts` remains in use for dashboard
 activity placeholders, settings, and some inert
-controls. Admin member creation and CSV import are not implemented;
-members currently come from seed data or a pending request created by an
+controls. Admin CSV import is not implemented; members come from seed
+data, manual creation by a superadmin, or a pending request created by an
 unmatched Google sign-in. That request does not create an account or
 grant access until an admin approves it.
 
 ## Admin write surface
 
-Real admin writes include member approval, suspension/reactivation and
-editing; business approval/rejection/editing; and CRUD for events,
+Real admin writes include member creation, approval,
+suspension/reactivation and editing (superadmin only — see
+[Admin members](#admin-members)); business approval/rejection/editing; and CRUD for events,
 sponsors, videos and blog posts. The public business submission form and
 event RSVP also write to Postgres. Gallery management lives at
 `/admin/photos`: admins can upload photos, edit captions, and delete
 photos; superadmins can also create, edit, and delete empty albums. Video
 records have admin CRUD at `/admin/videos` and public cards play linked
-YouTube videos in privacy-enhanced embeds. Member creation/CSV import and
+YouTube videos in privacy-enhanced embeds. Member CSV import and
 settings persistence are not implemented.
 
 - **`lib/db/queries/{members,businesses}.ts`** export `getAdminMembers()`/
@@ -293,10 +296,75 @@ The gallery upload route and photo actions independently check admin
 roles; album mutations require a superadmin. The Photos page is also
 behind the `/admin/**` role gate.
 
-**Suggested next tasks**: build admin-only manual member creation and
-CSV import, then complete persistence for settings.
+**Suggested next tasks**: build admin CSV import for members, then
+complete persistence for settings.
+
+## Admin members
+
+Permissions: **admins have view-only access** to member profiles; every
+member mutation is **superadmin-only**. This is enforced server-side
+(`requireSuperadmin()` in the Server Actions and the photo/export routes)
+and mirrored in the UI by hiding the controls, so calling an action
+directly as an admin still fails.
+
+| Surface | Route / file | Who |
+|---|---|---|
+| List with search, filters, pagination | `/admin/members` | admin, superadmin |
+| Read-only profile (all fields incl. private) | `/admin/members/[id]` | admin, superadmin |
+| Edit (every `members` column except `slug`/`email`) | `/admin/members/[id]/edit` | superadmin (others redirect to the view page) |
+| Add member | `/admin/members/new`, `createMember` | superadmin |
+| Approve / reject / suspend / reactivate, bulk activate/suspend | list + dashboard, `actions.ts` | superadmin |
+| Profile/cover photo upload | `/api/admin/members/[id]/photos` | superadmin |
+| Export CSV | `/api/admin/members/export` | superadmin |
+
+**List filters** live in the URL — `?q=&status=&discipline=&role=&page=` —
+so views are shareable and the page stays a plain Server Component.
+`lib/members/filters.ts` validates the params (shared by the list and the
+export); `getAdminMembersPage` applies them in SQL (search matches name,
+email, student ID or city, with LIKE wildcards escaped) and paginates 25
+per page. The dashboard still uses the unfiltered `getAdminMembers`.
+Checkbox selection for bulk actions is per page.
+
+**Add member** creates a roster row only — **no login account**. The person
+claims it later at `/signup`, which links the existing row by email.
+Defaults: `active`, role `member`, public. Name and email are required;
+email is stored lowercase and checked case-insensitively for duplicates
+(sign-in matches on `lower(email)`); a unique-violation race is caught at
+insert. The slug is generated from the name with `-2`, `-3`… on collision.
+The creator is recorded in `reviewed_by`/`reviewed_at`. Photos are uploaded
+after creation, from the edit page.
+
+**Edit** shares its parsing/validation with Add (`lib/members/form.ts`):
+URLs must be http(s), blood group must be a valid enum value, date of birth
+must be a real, non-future date. A superadmin can't change their own role
+or status; changing a member's status records the reviewer. The form
+submits via `onSubmit` rather than the `action` prop because React resets
+uncontrolled fields after an action, which would wipe the form on a
+validation error. The Access & visibility card sits in the page sidebar,
+outside the `<form>` element, and joins it with the `form="member-edit-form"`
+attribute.
+
+**Export CSV** downloads every row matching the current filters (not just
+the visible page), including admin-only fields (phone, student ID, blood
+group, date of birth) — hence superadmin-only. UTF-8 with BOM so Excel
+renders Bangla names; cells starting with `=`, `+`, `-` or `@` are prefixed
+with `'` so they can't execute as spreadsheet formulas (a `+880…` phone
+therefore exports as `'+880…`).
+
+**Admin top bar**: an avatar dropdown (My profile, View public site, Sign
+out). My profile needs `memberId`, which `auth.ts` puts in the JWT/session
+at sign-in — sessions created before it existed must sign in again. It goes
+to the edit page for superadmins and the view page for admins.
 
 ## Auth
+
+**Development shortcut**: under `next dev` (never in production — the
+button is not rendered and the action throws unless
+`NODE_ENV === "development"`), `/signin` shows "Dev: sign in as
+superadmin". It signs in as `superadmin@biborto11.com` using
+`SUPERADMIN_PASSWORD` from the server env (`devSuperadminSignIn` in
+`app/signin/actions.ts`); the password never reaches the client. Run
+`npm run db:seed` (or `db:seed-superadmin`) first so that login exists.
 
 Email/password and Google, via Auth.js v5 (`next-auth@beta` +
 `@auth/drizzle-adapter`). JWT sessions — Auth.js doesn't support database
@@ -307,8 +375,9 @@ consistency rather than splitting strategy per provider.
 membership" in the UI) lets a person claim an existing `members` row by
 email; it does not create an active member account. The committee-managed
 roster is currently loaded from `active-voter-list.csv` via
-`db/seed_members.sql`; admin manual member creation and CSV import are
-planned, but not implemented. Claiming is email-verified: enter the email on
+`db/seed_members.sql`; superadmins can add members manually (see
+[Admin members](#admin-members)), and CSV import is planned but not
+implemented. Claiming is email-verified: enter the email on
 file → a one-time link (sha256-hashed token in `verification_tokens`, 1 hour,
 single use, sent via Resend — see `lib/email.ts`; without `RESEND_API_KEY` in
 dev the link is logged to the server console) → `/signup/verify` sets the
@@ -404,7 +473,8 @@ restructure first.
   event RSVP, and admin CRUD for events, sponsors, videos and blog posts
   use real database writes. Gallery image upload and public display also
   use R2. Gallery album management, photo captions/deletion, and the
-  album/video tabs are implemented. Search/filter controls, settings
-  persistence and member creation/import remain unbuilt.
+  album/video tabs are implemented. The members list search/filters and
+  pagination are real, but search/filter controls on other admin pages,
+  settings persistence and member CSV import remain unbuilt.
 - The seed has 241 active roster members and 0 gallery photos. Country
   reference data has 243 rows, while member country fields remain empty.

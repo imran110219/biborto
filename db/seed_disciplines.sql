@@ -6,7 +6,7 @@
 insert into disciplines (code, school, name, short_code, slug, website_path) values
   ('01', 'Science, Engineering & Technology School',   'Architecture',                              'ARCH', 'architecture',                          '/discipline/arch'),
   ('02', 'Science, Engineering & Technology School',   'Computer Science & Engineering',            'CSE',  'computer-science-engineering',         '/discipline/cse'),
-  ('03', 'Management & Business Administration School','Business Administration',                   'BA',   'business-administration',              '/discipline/ba'),
+  ('03', 'Management & Business Administration School','Business Administration',                   'BAD',   'business-administration',              '/discipline/ba'),
   ('04', 'Science, Engineering & Technology School',   'Urban and Rural Planning',                  'URP',  'urban-rural-planning',                 '/discipline/urp'),
   ('05', 'Life Science School',                        'Forestry & Wood Technology',                'FWT',  'forestry-wood-technology',             '/discipline/fwt'),
   ('06', 'Life Science School',                        'Fisheries & Marine Resource Technology',    'FMRT', 'fisheries-marine-resource-technology', '/discipline/fmrt'),

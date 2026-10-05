@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { PageHero } from "@/components/ui/PageHero";
 import { FilterBar, SearchField, SelectField } from "@/components/ui/FilterBar";
@@ -5,12 +6,28 @@ import { Pagination } from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/Button";
 import { BusinessCard } from "@/components/BusinessCard";
 import { ArrowRightIcon } from "@/components/ui/icons";
-import { getPublicBusinesses } from "@/lib/db/queries/businesses";
+import { PUBLIC_BUSINESSES_PAGE_SIZE, getPublicBusinessCities, getPublicBusinessesPage } from "@/lib/db/queries/businesses";
+import { businessFiltersToQuery, parseBusinessFilters } from "@/lib/businesses/filters";
+import { BUSINESS_CATEGORIES } from "@/lib/types";
 
 export default async function BusinessDirectoryPage({ searchParams }: PageProps<"/business">) {
-  const { submitted } = await searchParams;
-  const businesses = await getPublicBusinesses();
-  const categories = Array.from(new Set(businesses.map((b) => b.category)));
+  const sp = await searchParams;
+  const submitted = sp.submitted;
+  const { status: _status, ...filters } = parseBusinessFilters(sp);
+  const [{ items: businesses, total, page, pageCount }, cities] = await Promise.all([
+    getPublicBusinessesPage(filters),
+    getPublicBusinessCities(),
+  ]);
+  const rangeStart = total === 0 ? 0 : (page - 1) * PUBLIC_BUSINESSES_PAGE_SIZE + 1;
+  const rangeEnd = (page - 1) * PUBLIC_BUSINESSES_PAGE_SIZE + businesses.length;
+  const baseQuery = businessFiltersToQuery({ ...filters, status: undefined });
+  const pageHref = (n: number) => {
+    const next = new URLSearchParams(baseQuery);
+    if (n > 1) next.set("page", String(n));
+    const qs = next.toString();
+    return qs ? `/business?${qs}` : "/business";
+  };
+  const filtered = !!(filters.q || filters.category || filters.city);
 
   return (
     <PublicLayout>
@@ -39,20 +56,44 @@ export default async function BusinessDirectoryPage({ searchParams }: PageProps<
           </Button>
         </div>
 
-        <FilterBar>
-          <SearchField id="bq" label="Search" placeholder="Business, owner or city" />
-          <SelectField id="bcat" label="Category" options={["All categories", ...categories]} />
-          <SelectField id="bcity" label="Current city" options={["Anywhere", "Dhaka", "Khulna", "Abroad"]} />
-          <button
-            type="button"
-            className="h-12 rounded-xl border border-brand-green bg-brand-green px-5 text-sm font-semibold text-white"
-          >
-            Apply
-          </button>
-        </FilterBar>
+        <form method="get" action="/business">
+          <FilterBar>
+            <SearchField id="bq" name="q" defaultValue={filters.q} label="Search" placeholder="Business, owner or city" />
+            <SelectField
+              id="bcat"
+              name="category"
+              defaultValue={filters.category ?? ""}
+              label="Category"
+              options={[{ value: "", label: "All categories" }, ...BUSINESS_CATEGORIES.map((c) => ({ value: c, label: c }))]}
+            />
+            <SelectField
+              id="bcity"
+              name="city"
+              defaultValue={filters.city}
+              label="Current city"
+              options={[{ value: "", label: "Anywhere" }, ...cities.map((c) => ({ value: c, label: c }))]}
+            />
+            <button
+              type="submit"
+              className="h-12 rounded-xl border border-brand-green bg-brand-green px-5 text-sm font-semibold text-white"
+            >
+              Apply
+            </button>
+          </FilterBar>
+        </form>
 
         <div className="flex items-center justify-between text-sm text-text-secondary">
-          <span>Showing {businesses.length} of [00] businesses</span>
+          <span>
+            {total === 0 ? "No businesses found" : `Showing ${rangeStart}–${rangeEnd} of ${total} ${total === 1 ? "business" : "businesses"}`}
+            {filtered && (
+              <>
+                {" · "}
+                <Link href="/business" className="font-semibold text-brand-green">
+                  Clear filters
+                </Link>
+              </>
+            )}
+          </span>
           <span>Sorted by name, A–Z</span>
         </div>
 
@@ -62,7 +103,7 @@ export default async function BusinessDirectoryPage({ searchParams }: PageProps<
           ))}
         </div>
 
-        <Pagination pages={2} />
+        <Pagination pages={pageCount} current={page} hrefFor={pageHref} />
       </section>
     </PublicLayout>
   );

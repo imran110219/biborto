@@ -13,10 +13,14 @@ export function SearchField({
   id,
   label,
   placeholder,
+  name,
+  defaultValue,
 }: {
   id: string;
   label: string;
   placeholder: string;
+  name?: string;
+  defaultValue?: string;
 }) {
   return (
     <div className="flex flex-1 flex-col gap-1.5">
@@ -29,6 +33,8 @@ export function SearchField({
         </span>
         <input
           id={id}
+          name={name}
+          defaultValue={defaultValue}
           type="search"
           placeholder={placeholder}
           className="h-12 w-full rounded-xl border border-border-input pl-10 pr-3.5 text-sm"
@@ -43,21 +49,33 @@ export function SelectField({
   label,
   options,
   width = "md:w-[220px]",
+  name,
+  defaultValue,
 }: {
   id: string;
   label: string;
-  options: string[];
+  // Plain strings, or {value,label} when the submitted value differs from the
+  // shown text (e.g. "" for "All categories").
+  options: (string | { value: string; label: string })[];
   width?: string;
+  name?: string;
+  defaultValue?: string;
 }) {
   return (
     <div className={`flex flex-col gap-1.5 ${width}`}>
       <label htmlFor={id} className="text-xs font-semibold text-text-secondary">
         {label}
       </label>
-      <select id={id} className="h-12 rounded-xl border border-border-input bg-white px-3.5 text-sm">
-        {options.map((o) => (
-          <option key={o}>{o}</option>
-        ))}
+      <select id={id} name={name} defaultValue={defaultValue} className="h-12 rounded-xl border border-border-input bg-white px-3.5 text-sm">
+        {options.map((o) =>
+          typeof o === "string" ? (
+            <option key={o}>{o}</option>
+          ) : (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ),
+        )}
       </select>
     </div>
   );

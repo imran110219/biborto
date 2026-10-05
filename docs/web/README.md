@@ -254,7 +254,8 @@ grant access until an admin approves it.
 
 Real admin writes include member creation, approval,
 suspension/reactivation and editing (superadmin only — see
-[Admin members](#admin-members)); business approval/rejection/editing; and CRUD for events,
+[Admin members](#admin-members)); business creation, approval/rejection and
+editing (superadmin only — see [Admin businesses](#admin-businesses)); and CRUD for events,
 sponsors, videos and blog posts. The public business submission form and
 event RSVP also write to Postgres. Gallery management lives at
 `/admin/photos`: admins can upload photos, edit captions, and delete
@@ -280,7 +281,8 @@ settings persistence are not implemented.
   page the row now appears on or disappears from (`/members`,
   `/business`).
 - **`lib/auth/require-admin.ts`** — every action above calls
-  `requireAdminMemberId()` first. `proxy.ts` already keeps non-admins off
+  `requireSuperadmin()` (members and businesses) or `requireAdminMemberId()`
+  (other admin areas) first. `proxy.ts` already keeps non-admins off
   `/admin/**`, but a Server Action is directly callable — reachable
   without ever rendering the page that binds it to a form — so the role
   check (and the acting-admin lookup) is restated here rather than
@@ -355,6 +357,40 @@ therefore exports as `'+880…`).
 out). My profile needs `memberId`, which `auth.ts` puts in the JWT/session
 at sign-in — sessions created before it existed must sign in again. It goes
 to the edit page for superadmins and the view page for admins.
+
+## Admin businesses
+
+Same permission model as members: **admins are view-only; every business
+mutation is superadmin-only**, enforced server-side (`requireSuperadmin()` in
+the actions and the export route) and mirrored in the UI.
+
+| Surface | Route / file | Who |
+|---|---|---|
+| List with search, status/category filters, pagination | `/admin/businesses` | admin, superadmin |
+| Read-only listing (all fields, owner, links) | `/admin/businesses/[slug]` | admin, superadmin |
+| Edit (all fields + owner + status) | `/admin/businesses/[slug]/edit` | superadmin (others redirect to the view page) |
+| Add listing | `/admin/businesses/new`, `createBusiness` | superadmin |
+| Approve / reject, bulk approve/reject | list + dashboard, `actions.ts` | superadmin |
+| Export CSV | `/api/admin/businesses/export` | superadmin |
+
+Filters live in the URL (`?q=&status=&category=&page=`); `lib/businesses/
+filters.ts` validates them for the admin list, the public directory and the
+export alike, and `getAdminBusinessesPage` applies them in SQL (search matches
+business name, city or owner name; 25 per page). `lib/businesses/form.ts`
+holds the shared parse/validation for create and update (http(s)-only links,
+email shape, length caps, valid owner/status). **Add listing** creates an
+`active` listing by default (committee-entered), with an optional owner
+(member picker) and a generated slug (`-2`, `-3`… on collision); member
+self-submissions via `/business/submit` still start `pending`. Changing status
+on edit records `reviewed_by`/`reviewed_at`. The dashboard's business
+submissions panel hides approve/reject for admins (`ApprovalRow readOnly`).
+
+**Public directory** (`/business`) filters are a plain GET form — search
+(name, owner or city), category and city (distinct cities of active listings)
+— with real pagination (12 per page, `Pagination current/hrefFor`) and an
+accurate "Showing x–y of N" line. Only `active` listings are ever returned,
+whatever `status` is in the URL. Note the seeded businesses reference owner
+names that aren't in the member roster, so their owner is empty until set.
 
 ## Auth
 
@@ -473,8 +509,9 @@ restructure first.
   event RSVP, and admin CRUD for events, sponsors, videos and blog posts
   use real database writes. Gallery image upload and public display also
   use R2. Gallery album management, photo captions/deletion, and the
-  album/video tabs are implemented. The members list search/filters and
-  pagination are real, but search/filter controls on other admin pages,
+  album/video tabs are implemented. The members and business lists
+  (admin and public directory) have real search/filters and pagination, but
+  search/filter controls on other pages,
   settings persistence and member CSV import remain unbuilt.
 - The seed has 241 active roster members and 0 gallery photos. Country
   reference data has 243 rows, while member country fields remain empty.

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminStatCard } from "@/components/admin/AdminStatCard";
 import { ApprovalRow } from "@/components/admin/ApprovalRow";
@@ -61,9 +62,9 @@ export default async function AdminDashboardPage() {
         <div className="overflow-hidden rounded-2xl border border-border-default bg-white">
           <div className="flex items-center justify-between border-b border-[#EFEAE0] px-6 py-5">
             <h2 className="text-lg font-semibold">Membership requests</h2>
-            <a href="/admin/members" className="text-sm font-semibold">
+            <Link href="/admin/members" className="text-sm font-semibold">
               View all
-            </a>
+            </Link>
           </div>
           {pendingMembers.map((m) => (
             <ApprovalRow
@@ -81,9 +82,9 @@ export default async function AdminDashboardPage() {
         <div className="overflow-hidden rounded-2xl border border-border-default bg-white">
           <div className="flex items-center justify-between border-b border-[#EFEAE0] px-6 py-5">
             <h2 className="text-lg font-semibold">Event RSVPs</h2>
-            <a href="/admin/events" className="text-sm font-semibold">
+            <Link href="/admin/events" className="text-sm font-semibold">
               Manage events
-            </a>
+            </Link>
           </div>
           <div className="flex flex-col px-6 py-2">
             {events.slice(0, 3).map((e, i) => {
@@ -109,9 +110,9 @@ export default async function AdminDashboardPage() {
       <div className="overflow-hidden rounded-2xl border border-border-default bg-white">
         <div className="flex items-center justify-between border-b border-[#EFEAE0] px-6 py-5">
           <h2 className="text-lg font-semibold">Business submissions</h2>
-          <a href="/admin/businesses" className="text-sm font-semibold">
+          <Link href="/admin/businesses" className="text-sm font-semibold">
             View all
-          </a>
+          </Link>
         </div>
         {pendingBusinesses.map((b) => (
           <ApprovalRow
@@ -121,6 +122,7 @@ export default async function AdminDashboardPage() {
             subtitle={`${b.category} · Owner: ${b.ownerName}`}
             onApprove={approveBusiness.bind(null, b.slug)}
             onReject={rejectBusiness.bind(null, b.slug)}
+            readOnly={!isSuperadmin}
           />
         ))}
       </div>

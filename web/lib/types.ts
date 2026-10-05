@@ -130,6 +130,9 @@ export interface AdminBusinessDetail {
   website: string;
   linkedinUrl: string;
   facebookUrl: string;
+  ownerMemberId: string | null;
+  ownerName: string;
+  submittedAt: string;
 }
 
 export type SponsorTier = "diamond" | "gold" | "silver" | "bronze";

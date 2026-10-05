@@ -57,8 +57,15 @@ named.
 - Admin account menu (avatar dropdown: My profile, View public site,
   Sign out) and a development-only one-click superadmin sign-in on
   `/signin`.
-- Business edit page for all listing fields
+- Business edit page for all listing fields plus owner and status
   (`app/admin/businesses/[slug]/edit`).
+- Businesses now follow the member permission model: admins view-only
+  (`/admin/businesses/[slug]`), superadmin-only edit, add
+  (`/admin/businesses/new`), approve/reject, bulk actions and CSV export
+  (`/api/admin/businesses/export`). Admin list has URL-driven search,
+  status/category filters and 25-per-page pagination; the public directory
+  has working search/category/city filters and 12-per-page pagination
+  (`lib/businesses/`).
 - Still open: no field-level audit trail beyond `reviewedBy`/
   `reviewedAt`; `approveMember` still doesn't hard-require a discipline
   before activating (mitigated today only because a Google-origin

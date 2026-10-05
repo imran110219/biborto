@@ -5,10 +5,12 @@ import { redirect } from "next/navigation";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { businesses } from "@/drizzle/schema";
-import { parseWebsite } from "@/lib/url";
-import { requireAdminMemberId } from "@/lib/auth/require-admin";
-import { BUSINESS_CATEGORIES, type BusinessCategory, type BusinessStatus } from "@/lib/types";
+import { requireSuperadmin } from "@/lib/auth/require-admin";
+import { businessSlug, parseBusinessForm } from "@/lib/businesses/form";
+import type { BusinessStatus } from "@/lib/types";
 
+// Business moderation and editing is superadmin-only (same rule as members);
+// admins have view-only access.
 const revalidateBusinessPaths = () => {
   revalidatePath("/admin/businesses");
   revalidatePath("/admin/dashboard");
@@ -16,7 +18,7 @@ const revalidateBusinessPaths = () => {
 };
 
 export async function approveBusiness(slug: string, _formData: FormData) {
-  const adminId = await requireAdminMemberId();
+  const adminId = await requireSuperadmin();
   await db
     .update(businesses)
     .set({ status: "active", reviewedBy: adminId, reviewedAt: new Date().toISOString() })
@@ -26,7 +28,7 @@ export async function approveBusiness(slug: string, _formData: FormData) {
 }
 
 export async function rejectBusiness(slug: string, _formData: FormData) {
-  const adminId = await requireAdminMemberId();
+  const adminId = await requireSuperadmin();
   await db
     .update(businesses)
     .set({ status: "rejected", reviewedBy: adminId, reviewedAt: new Date().toISOString() })
@@ -36,7 +38,7 @@ export async function rejectBusiness(slug: string, _formData: FormData) {
 }
 
 async function bulkSetBusinessStatus(status: BusinessStatus, formData: FormData) {
-  const adminId = await requireAdminMemberId();
+  const adminId = await requireSuperadmin();
   const slugs = formData.getAll("businessSlugs").map(String).filter(Boolean);
   if (slugs.length === 0) return;
 
@@ -57,53 +59,54 @@ export async function bulkRejectBusinesses(formData: FormData) {
 }
 
 export async function updateBusiness(slug: string, _prevState: string | undefined, formData: FormData) {
-  await requireAdminMemberId();
+  const actorId = await requireSuperadmin();
 
-  const name = String(formData.get("name") ?? "").trim();
-  const category = String(formData.get("category") ?? "") as BusinessCategory;
-  const city = String(formData.get("city") ?? "").trim();
-  const tagline = String(formData.get("tagline") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const offerings = String(formData.get("offerings") ?? "")
-    .split(",")
-    .map((o) => o.trim())
-    .filter(Boolean);
-  const testimonial = String(formData.get("testimonial") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const website = String(formData.get("website") ?? "").trim();
-  const linkedin = String(formData.get("linkedinUrl") ?? "").trim();
-  const facebook = String(formData.get("facebookUrl") ?? "").trim();
+  const parsed = parseBusinessForm(formData);
+  if ("error" in parsed) return parsed.error;
+  const values = parsed.values;
 
-  if (!name) return "Name is required.";
-  if (!BUSINESS_CATEGORIES.includes(category)) return "Choose a valid category.";
-  const websiteUrl = parseWebsite(website);
-  if (websiteUrl === undefined) return "Enter a valid website address (http or https).";
-  const linkedinUrl = parseWebsite(linkedin);
-  if (linkedinUrl === undefined) return "Enter a valid LinkedIn address (http or https).";
-  const facebookUrl = parseWebsite(facebook);
-  if (facebookUrl === undefined) return "Enter a valid Facebook address (http or https).";
+  const [target] = await db.select({ status: businesses.status }).from(businesses).where(eq(businesses.slug, slug)).limit(1);
+  if (!target) return "Listing not found.";
+  const statusChanged = values.status !== target.status;
 
   await db
     .update(businesses)
-    .set({
-      name,
-      category,
-      city: city || null,
-      tagline: tagline || null,
-      description: description || null,
-      offerings,
-      testimonial: testimonial || null,
-      phone: phone || null,
-      email: email || null,
-      website: websiteUrl,
-      linkedinUrl,
-      facebookUrl,
-    })
+    .set({ ...values, ...(statusChanged ? { reviewedBy: actorId, reviewedAt: new Date().toISOString() } : {}) })
     .where(eq(businesses.slug, slug));
 
   revalidateBusinessPaths();
+  revalidatePath(`/admin/businesses/${slug}`);
   revalidatePath(`/admin/businesses/${slug}/edit`);
   revalidatePath(`/business/${slug}`);
   redirect("/admin/businesses");
+}
+
+// Committee-entered listing (as opposed to a member's self-submission, which
+// starts pending). Slug is generated from the name, suffixed on collision.
+export async function createBusiness(_prevState: string | undefined, formData: FormData) {
+  const actorId = await requireSuperadmin();
+
+  const parsed = parseBusinessForm(formData);
+  if ("error" in parsed) return parsed.error;
+  const values = parsed.values;
+
+  const base = businessSlug(values.name);
+  let slug = base;
+  for (let n = 2; ; n++) {
+    const [taken] = await db.select({ id: businesses.id }).from(businesses).where(eq(businesses.slug, slug)).limit(1);
+    if (!taken) break;
+    slug = `${base}-${n}`;
+  }
+
+  try {
+    await db.insert(businesses).values({ ...values, slug, reviewedBy: actorId, reviewedAt: new Date().toISOString() });
+  } catch (error) {
+    // Lost a race on the unique slug between the check above and the insert.
+    const code = (error as { code?: string; cause?: { code?: string } }).code ?? (error as { cause?: { code?: string } }).cause?.code;
+    if (code === "23505") return "That listing name was just taken — try again.";
+    throw error;
+  }
+
+  revalidateBusinessPaths();
+  redirect(`/admin/businesses/${slug}`);
 }

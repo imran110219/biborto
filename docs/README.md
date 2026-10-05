@@ -9,7 +9,8 @@ Two-part repo:
 
 ```
 web/    Next.js app — public pages read from Postgres; Auth.js signs in
-        existing members and gates /admin/**. Member/business review,
+        existing members and gates /admin/**. Member/business review
+        (superadmin-only; admins view-only),
         event/sponsor/video/blog editing, business submissions and RSVPs
         have real writes. Gallery album and photo management is
         implemented; manual member creation and CSV export are (superadmin

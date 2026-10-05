@@ -188,7 +188,7 @@ values
   ('111243', 'Md.Saddam Hossain', (select id from disciplines where short_code = 'MATH'), 'saddam111243@yahoo.com', '+880 01916000921', '111243', 'member', 'active', true),
   ('111254', 'Md. Ahsanul Hoque Fahim', (select id from disciplines where short_code = 'MATH'), 'fahim86015@gmail.com', '01723504425', '111254', 'member', 'active', true),
   ('111328', 'MD ZEHAD HOSEN MUNSI', (select id from disciplines where short_code = 'SWE'), 'zehadku@gmail.com', '+880 01312264696', '111328', 'member', 'active', true),
-  ('111336', 'Md. Zahid HaSWEan Rana', (select id from disciplines where short_code = 'SWE'), 'zahid.ku11@gmail.com', '+880 8801830602008', '111336', 'member', 'active', true),
+  ('111336', 'Md. Zahid Hassan Rana', (select id from disciplines where short_code = 'SWE'), 'zahid.ku11@gmail.com', '+880 8801830602008', '111336', 'member', 'active', true),
   ('111339', 'Tipu Sultan', (select id from disciplines where short_code = 'SWE'), 'tipu.ku11@gmail.com', '+880 1741544286', '111339', 'member', 'active', true),
   ('111346', 'Md. Shahinur Rahman', (select id from disciplines where short_code = 'SWE'), 'samratms16@gmail.com', '+880 01751-786970', '111346', 'member', 'active', true),
   ('111350', 'Puja Biswas', (select id from disciplines where short_code = 'SWE'), 'poozabiswasmitu@gmail.com', '01782317136', '111350', 'member', 'active', true),

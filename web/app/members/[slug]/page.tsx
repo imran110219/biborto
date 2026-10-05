@@ -41,7 +41,7 @@ export default async function MemberProfilePage({ params }: PageProps<"/members/
             </p>
           )}
           <div className="flex items-center gap-3.5 pt-2">
-            <Avatar initials={member.initials} size="md" />
+            <Avatar initials={member.initials} imageUrl={member.avatarUrl} size="md" />
             <div className="flex flex-col">
               {locationLabel && (
                 <span className="flex items-center gap-1.5 text-sm text-text-secondary">
@@ -53,12 +53,28 @@ export default async function MemberProfilePage({ params }: PageProps<"/members/
           </div>
         </div>
 
-        <PlaceholderMedia label={`[Cover photo: ${member.name}]`} className="h-[300px] w-full max-w-[1120px] md:h-[480px]" rounded="rounded-3xl" />
+        {member.coverPhotoUrl ? (
+          <div role="img" aria-label={`${member.name} cover photo`} className="h-[300px] w-full max-w-[1120px] rounded-3xl bg-cover bg-center md:h-[480px]" style={{ backgroundImage: `url("${member.coverPhotoUrl}")` }} />
+        ) : (
+          <PlaceholderMedia label={`[Cover photo: ${member.name}]`} className="h-[300px] w-full max-w-[1120px] md:h-[480px]" rounded="rounded-3xl" />
+        )}
 
         <div className="flex w-full max-w-[720px] flex-col gap-6">
           <p className="text-lg leading-relaxed text-text-article">
-            {member.bio || `${member.name} hasn't added a bio yet.`}
+            {member.shortBio || member.bio || `${member.name} hasn't added a bio yet.`}
           </p>
+
+          {(member.favoriteCampusPlace || member.mostMemorableEvent) && (
+            <section className="flex flex-col gap-4 rounded-[18px] border border-border-default bg-white p-7">
+              <h2 className="font-serif text-2xl font-medium">Campus memories</h2>
+              {member.favoriteCampusPlace && (
+                <p><strong>Favorite campus place:</strong> {member.favoriteCampusPlace}</p>
+              )}
+              {member.mostMemorableEvent && (
+                <p><strong>Most memorable event:</strong> {member.mostMemorableEvent}</p>
+              )}
+            </section>
+          )}
 
           <h2 className="font-serif text-2xl font-medium md:text-3xl">Connect</h2>
           <div className="flex flex-col gap-4 rounded-[18px] border border-border-default bg-white p-7">
@@ -68,6 +84,9 @@ export default async function MemberProfilePage({ params }: PageProps<"/members/
               </span>
               {member.discipline}
             </span>
+            {member.campusName && (
+              <span className="text-sm text-text-secondary">Campus: {member.campusName}</span>
+            )}
             {member.linkedinUrl && <LinkRow href={member.linkedinUrl} label="LinkedIn" />}
             {member.facebookUrl && <LinkRow href={member.facebookUrl} label="Facebook" />}
             {member.websiteUrl && <LinkRow href={member.websiteUrl} label="Website" />}

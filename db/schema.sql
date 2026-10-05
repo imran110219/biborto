@@ -200,12 +200,17 @@ create table members (
   -- Nullable while a Google sign-in is awaiting membership review; the
   -- admin can collect the missing academic details before making it public.
   discipline_id   uuid references disciplines (id),
+  campus_name     text,
+  short_bio       text,
+  favorite_campus_place text,
+  most_memorable_event text,
   profession      text,
   current_employer text,
   bio             text,
   city            text,
   country_id      uuid references countries (id),
   avatar_key      text,
+  cover_photo_key text,
   linkedin_url    text,
   facebook_url    text,
   website_url     text,
@@ -252,8 +257,9 @@ create trigger members_set_updated_at
 -- query — never the base table directly (keeps email/student_id/
 -- phone_number/blood_group out).
 create view public_members as
-  select id, slug, name, discipline_id, profession, current_employer, bio, city,
-         country_id, avatar_key, linkedin_url, facebook_url, website_url
+  select id, slug, name, discipline_id, campus_name, short_bio, favorite_campus_place,
+         most_memorable_event, profession, current_employer, bio, city,
+         country_id, avatar_key, linkedin_url, facebook_url, website_url, cover_photo_key
   from members
   where status = 'active' and is_public = true;
 

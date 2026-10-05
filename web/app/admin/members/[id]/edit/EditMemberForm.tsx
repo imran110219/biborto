@@ -50,6 +50,26 @@ export function EditMemberForm({
         </label>
 
         <label className={labelClasses}>
+          Campus name
+          <input name="campusName" defaultValue={member.campusName} className={inputClasses} />
+        </label>
+
+        <label className={labelClasses}>
+          Short bio
+          <textarea name="shortBio" defaultValue={member.shortBio} rows={3} className={inputClasses} />
+        </label>
+
+        <label className={labelClasses}>
+          Favorite campus place
+          <input name="favoriteCampusPlace" defaultValue={member.favoriteCampusPlace} className={inputClasses} />
+        </label>
+
+        <label className={labelClasses}>
+          Most memorable event
+          <textarea name="mostMemorableEvent" defaultValue={member.mostMemorableEvent} rows={3} className={inputClasses} />
+        </label>
+
+        <label className={labelClasses}>
           Profession
           <input name="profession" defaultValue={member.profession} className={inputClasses} />
         </label>

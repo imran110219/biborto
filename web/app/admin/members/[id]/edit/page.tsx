@@ -3,6 +3,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { getAdminMemberById } from "@/lib/db/queries/members";
 import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
 import { EditMemberForm } from "./EditMemberForm";
+import { MemberPhotoControls } from "./MemberPhotoControls";
 
 export default async function EditMemberPage({ params }: PageProps<"/admin/members/[id]/edit">) {
   const { id } = await params;
@@ -20,6 +21,7 @@ export default async function EditMemberPage({ params }: PageProps<"/admin/membe
       <div className="max-w-2xl rounded-2xl border border-border-default bg-white p-6">
         <EditMemberForm member={member} disciplines={disciplines} />
       </div>
+      <MemberPhotoControls memberId={member.id} avatarUrl={member.avatarUrl} coverPhotoUrl={member.coverPhotoUrl} />
     </AdminLayout>
   );
 }

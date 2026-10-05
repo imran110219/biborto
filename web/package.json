@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:pull": "drizzle-kit pull",
     "db:seed": "bash ../db/seed.sh",
+    "db:seed-superadmin": "node scripts/seed-superadmin-login.mjs",
     "db:reset": "bash ../db/seed.sh --reset"
   },
   "dependencies": {

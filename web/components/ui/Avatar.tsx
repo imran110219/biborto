@@ -6,6 +6,7 @@ const sizes = {
 
 interface AvatarProps {
   initials: string;
+  imageUrl?: string;
   size?: keyof typeof sizes;
   variant?: "green" | "cream" | "diamond" | "amber";
 }
@@ -17,12 +18,15 @@ const variants = {
   amber: "bg-accent-amber-tint text-accent-amber-text",
 };
 
-export function Avatar({ initials, size = "md", variant = "green" }: AvatarProps) {
+export function Avatar({ initials, imageUrl, size = "md", variant = "green" }: AvatarProps) {
   return (
     <div
+      role={imageUrl ? "img" : undefined}
+      aria-label={imageUrl ? `${initials} profile photo` : undefined}
       className={`flex shrink-0 items-center justify-center rounded-full font-serif font-semibold ${sizes[size]} ${variants[variant]}`}
+      style={imageUrl ? { backgroundImage: `url("${imageUrl}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
     >
-      {initials}
+      {!imageUrl && initials}
     </div>
   );
 }

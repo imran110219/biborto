@@ -165,9 +165,13 @@ Docker, RDS, etc.):
    from disciplines;` should return 24; `select count(*) from countries;`
    should return 243; `select count(*) from businesses;` should return 8.
 
-The initial platform superadmin is seeded separately as an active,
-non-public member with email `superadmin@biborto11.com`. After seeding,
-claim that email at `/signup` to create the login and set its password.
+The initial platform superadmin is seeded as an active, non-public member
+and a password login with email `superadmin@biborto11.com`. Set
+`SUPERADMIN_PASSWORD` in the environment or `web/.env.local` before running
+`npm run db:seed`; the seed stores a bcrypt hash, not the plaintext password.
+For a database that already has the superadmin member, set the same variable
+and run `npm run db:seed-superadmin` from `web/` to create or reset its
+password login without reseeding other data.
 For an already-seeded database, apply
 `db/migrations/001_google_membership_requests.sql` once before deploying
 the Google membership-request flow.

@@ -23,6 +23,12 @@ export interface AdminMemberDetail {
   id: string;
   name: string;
   disciplineId: string | null;
+  campusName: string;
+  avatarUrl?: string;
+  coverPhotoUrl?: string;
+  shortBio: string;
+  favoriteCampusPlace: string;
+  mostMemorableEvent: string;
   profession: string;
   currentEmployer: string;
   city: string;
@@ -46,12 +52,18 @@ export interface PublicMember {
   profession: string;
   city: string;
   avatarKey?: string;
+  avatarUrl?: string;
 }
 
 // Only the profile page needs the rest of the public card — the
 // directory/home-page cards never touch these, so they stay out of the
 // shared PublicMember type above.
 export interface PublicMemberDetail extends PublicMember {
+  campusName?: string;
+  coverPhotoUrl?: string;
+  shortBio?: string;
+  favoriteCampusPlace?: string;
+  mostMemorableEvent?: string;
   currentEmployer?: string;
   bio?: string;
   country?: string;

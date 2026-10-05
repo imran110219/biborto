@@ -3,6 +3,7 @@ import { db } from "@/lib/db/client";
 import { members, disciplines, countries } from "@/drizzle/schema";
 import { initialsOf, formatMonthYear } from "@/lib/db/format";
 import type { AdminMemberDetail, Member, PublicMember, PublicMemberDetail } from "@/lib/types";
+import { getR2PublicUrl } from "@/lib/r2";
 
 // Same filter public_members (db/schema.sql) encodes — replicated here
 // rather than selecting from the view directly, since this query also
@@ -35,6 +36,7 @@ export async function getPublicMembers(): Promise<PublicMember[]> {
     profession: row.profession ?? "",
     city: row.city ?? "",
     avatarKey: row.avatarKey ?? undefined,
+    avatarUrl: row.avatarKey ? getR2PublicUrl(row.avatarKey) : undefined,
   }));
 }
 
@@ -45,11 +47,16 @@ export async function getPublicMemberBySlug(slug: string): Promise<PublicMemberD
       slug: members.slug,
       name: members.name,
       discipline: disciplines.name,
+      campusName: members.campusName,
+      shortBio: members.shortBio,
+      favoriteCampusPlace: members.favoriteCampusPlace,
+      mostMemorableEvent: members.mostMemorableEvent,
       profession: members.profession,
       currentEmployer: members.currentEmployer,
       bio: members.bio,
       city: members.city,
       avatarKey: members.avatarKey,
+      coverPhotoKey: members.coverPhotoKey,
       country: countries.name,
       linkedinUrl: members.linkedinUrl,
       facebookUrl: members.facebookUrl,
@@ -70,11 +77,17 @@ export async function getPublicMemberBySlug(slug: string): Promise<PublicMemberD
     name: row.name,
     initials: initialsOf(row.name),
     discipline: row.discipline ?? "Not provided",
+    campusName: row.campusName ?? undefined,
+    shortBio: row.shortBio ?? undefined,
+    favoriteCampusPlace: row.favoriteCampusPlace ?? undefined,
+    mostMemorableEvent: row.mostMemorableEvent ?? undefined,
     profession: row.profession ?? "",
     currentEmployer: row.currentEmployer ?? undefined,
     bio: row.bio ?? undefined,
     city: row.city ?? "",
     avatarKey: row.avatarKey ?? undefined,
+    avatarUrl: row.avatarKey ? getR2PublicUrl(row.avatarKey) : undefined,
+    coverPhotoUrl: row.coverPhotoKey ? getR2PublicUrl(row.coverPhotoKey) : undefined,
     country: row.country ?? undefined,
     linkedinUrl: row.linkedinUrl ?? undefined,
     facebookUrl: row.facebookUrl ?? undefined,
@@ -127,6 +140,12 @@ export async function getAdminMemberById(id: string): Promise<AdminMemberDetail 
       id: members.id,
       name: members.name,
       disciplineId: members.disciplineId,
+      campusName: members.campusName,
+      avatarKey: members.avatarKey,
+      coverPhotoKey: members.coverPhotoKey,
+      shortBio: members.shortBio,
+      favoriteCampusPlace: members.favoriteCampusPlace,
+      mostMemorableEvent: members.mostMemorableEvent,
       profession: members.profession,
       currentEmployer: members.currentEmployer,
       city: members.city,
@@ -145,6 +164,12 @@ export async function getAdminMemberById(id: string): Promise<AdminMemberDetail 
     id: row.id,
     name: row.name,
     disciplineId: row.disciplineId,
+    campusName: row.campusName ?? "",
+    avatarUrl: row.avatarKey ? getR2PublicUrl(row.avatarKey) : undefined,
+    coverPhotoUrl: row.coverPhotoKey ? getR2PublicUrl(row.coverPhotoKey) : undefined,
+    shortBio: row.shortBio ?? "",
+    favoriteCampusPlace: row.favoriteCampusPlace ?? "",
+    mostMemorableEvent: row.mostMemorableEvent ?? "",
     profession: row.profession ?? "",
     currentEmployer: row.currentEmployer ?? "",
     city: row.city ?? "",

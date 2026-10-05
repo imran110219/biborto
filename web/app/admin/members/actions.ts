@@ -70,6 +70,10 @@ export async function updateMember(memberId: string, _prevState: string | undefi
 
   const name = String(formData.get("name") ?? "").trim();
   const disciplineId = String(formData.get("disciplineId") ?? "") || null;
+  const campusName = String(formData.get("campusName") ?? "").trim();
+  const shortBio = String(formData.get("shortBio") ?? "").trim();
+  const favoriteCampusPlace = String(formData.get("favoriteCampusPlace") ?? "").trim();
+  const mostMemorableEvent = String(formData.get("mostMemorableEvent") ?? "").trim();
   const profession = String(formData.get("profession") ?? "").trim();
   const currentEmployer = String(formData.get("currentEmployer") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
@@ -83,6 +87,10 @@ export async function updateMember(memberId: string, _prevState: string | undefi
     .set({
       name,
       disciplineId,
+      campusName: campusName || null,
+      shortBio: shortBio || null,
+      favoriteCampusPlace: favoriteCampusPlace || null,
+      mostMemorableEvent: mostMemorableEvent || null,
       profession: profession || null,
       currentEmployer: currentEmployer || null,
       city: city || null,

@@ -12,6 +12,7 @@
 #   db/seed.sh --reset  # drop and recreate the public schema first, so
 #                        # this is safe to run against an already-seeded DB
 set -euo pipefail
+SUPERADMIN_PASSWORD="${SUPERADMIN_PASSWORD:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -23,8 +24,18 @@ if [[ -z "${DATABASE_URL:-}" && -f "$REPO_ROOT/web/.env.local" ]]; then
   export DATABASE_URL
 fi
 
+if [[ -z "${SUPERADMIN_PASSWORD:-}" && -f "$REPO_ROOT/web/.env.local" ]]; then
+  SUPERADMIN_PASSWORD="$(grep -m1 '^SUPERADMIN_PASSWORD=' "$REPO_ROOT/web/.env.local" | cut -d= -f2-)"
+  export SUPERADMIN_PASSWORD
+fi
+
 if [[ -z "${DATABASE_URL:-}" ]]; then
   echo "DATABASE_URL is not set (checked the environment and web/.env.local)." >&2
+  exit 1
+fi
+
+if [[ ${#SUPERADMIN_PASSWORD} -lt 8 ]]; then
+  echo "SUPERADMIN_PASSWORD is required and must be at least 8 characters (set it in the environment or web/.env.local)." >&2
   exit 1
 fi
 
@@ -42,6 +53,10 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SCRIPT_DIR/schema.sql"
 for entity in disciplines countries members superadmin businesses sponsors events blog_posts gallery; do
   echo "Seeding $entity..."
   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SCRIPT_DIR/seed_${entity}.sql"
+  if [[ "$entity" == "superadmin" ]]; then
+    echo "Creating superadmin password login..."
+    node "$REPO_ROOT/web/scripts/seed-superadmin-login.mjs"
+  fi
 done
 
 echo "Done."

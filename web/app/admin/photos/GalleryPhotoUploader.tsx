@@ -66,7 +66,7 @@ export function GalleryPhotoUploader({ albums }: { albums: GalleryAlbum[] }) {
   }
 
   if (albums.length === 0) {
-    return <p className="text-sm text-text-secondary">Create a gallery album before uploading images.</p>;
+    return <p className="text-sm text-text-secondary">No albums yet — a superadmin needs to create one before images can be uploaded.</p>;
   }
 
   return (

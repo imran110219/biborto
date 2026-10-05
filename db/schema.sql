@@ -444,10 +444,15 @@ create table gallery_albums (
   id          uuid primary key default gen_random_uuid(),
   slug        text not null unique,
   name        text not null,
+  event_id       uuid references events (id) on delete set null,       -- optional link
+  discipline_id  uuid references disciplines (id) on delete set null,  -- optional link
   created_by  uuid references members (id) on delete set null,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
+create index gallery_albums_event_idx on gallery_albums (event_id);
+create index gallery_albums_discipline_idx on gallery_albums (discipline_id);
 
 create trigger gallery_albums_set_updated_at
   before update on gallery_albums
@@ -468,9 +473,14 @@ create table gallery_videos (
   id           uuid primary key default gen_random_uuid(),
   title        text not null,
   youtube_url  text,             -- null until the real YouTube link is filled in
+  event_id       uuid references events (id) on delete set null,       -- optional link
+  discipline_id  uuid references disciplines (id) on delete set null,  -- optional link
   added_by     uuid references members (id) on delete set null,
   created_at   timestamptz not null default now()
 );
+
+create index gallery_videos_event_idx on gallery_videos (event_id);
+create index gallery_videos_discipline_idx on gallery_videos (discipline_id);
 
 -- ---------------------------------------------------------------------
 -- activity_log — backs the admin dashboard's "Recent activity" panel.

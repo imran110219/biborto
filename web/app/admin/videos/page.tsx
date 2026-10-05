@@ -22,10 +22,10 @@ export default async function AdminVideosPage() {
 
       <div className="overflow-hidden rounded-2xl border border-border-default bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] border-collapse">
+          <table className="w-full min-w-[720px] border-collapse">
             <thead className="bg-[#FAF8F3]">
               <tr>
-                {["Video", "Source"].map((h) => (
+                {["Video", "Event", "Discipline", "Source"].map((h) => (
                   <th key={h} className="px-4 py-3.5 pl-5 text-left text-xs font-bold uppercase tracking-[0.04em] text-text-secondary">
                     {h}
                   </th>
@@ -37,7 +37,11 @@ export default async function AdminVideosPage() {
               {videos.map((v) => (
                 <tr key={v.id} className="border-t border-[#EFEAE0]">
                   <td className="px-4 py-3.5 pl-5 text-[15px] font-semibold">{v.title}</td>
-                  <td className="px-4 py-3.5 text-sm text-text-secondary">YouTube · Batch 11 channel</td>
+                  <td className="px-4 py-3.5 text-sm text-text-secondary">{v.eventTitle ?? "—"}</td>
+                  <td className="px-4 py-3.5 text-sm text-text-secondary">{v.disciplineName ?? "—"}</td>
+                  <td className="px-4 py-3.5 text-sm text-text-secondary">
+                    {v.youtubeId ? "YouTube" : <span className="text-[#9C3D10]">No link yet</span>}
+                  </td>
                   <td className="px-4 py-3.5">
                     <div className="flex gap-1.5">
                       <Link

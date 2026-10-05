@@ -1,10 +1,17 @@
 import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { GalleryPhotoUploader } from "@/app/admin/photos/GalleryPhotoUploader";
+import { auth } from "@/auth";
+import { CreateAlbumForm } from "@/app/admin/photos/CreateAlbumForm";
 import { getGalleryAlbums } from "@/lib/db/queries/gallery";
+import { getAdminEvents } from "@/lib/db/queries/events";
+import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
 
 export default async function AdminPhotosPage() {
+  const session = await auth();
+  const isSuperadmin = session?.user?.platformRole === "superadmin";
   const albums = await getGalleryAlbums();
+  const [events, disciplines] = isSuperadmin ? await Promise.all([getAdminEvents(), getDisciplineOptions()]) : [[], []];
 
   return (
     <AdminLayout>
@@ -12,6 +19,16 @@ export default async function AdminPhotosPage() {
         <h1 className="font-serif text-4xl font-medium">Photos</h1>
         <p className="text-text-secondary">Upload and manage photos in the public gallery.</p>
       </div>
+
+      {isSuperadmin && (
+        <section className="mt-8 flex flex-col gap-5 rounded-2xl border border-border-default bg-white p-6">
+          <div>
+            <h2 className="text-lg font-semibold">Create album</h2>
+            <p className="mt-1 text-sm text-text-secondary">Only superadmins can create albums. Link one to an event or discipline if it applies.</p>
+          </div>
+          <CreateAlbumForm events={events.map((e) => ({ id: e.id, title: e.title }))} disciplines={disciplines} />
+        </section>
+      )}
 
       <section className="mt-8 flex flex-col gap-5 rounded-2xl border border-border-default bg-white p-6">
         <div>
@@ -26,10 +43,10 @@ export default async function AdminPhotosPage() {
           <h2 className="font-semibold">Albums</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] border-collapse">
+          <table className="w-full min-w-[720px] border-collapse">
             <thead className="bg-[#FAF8F3]">
               <tr>
-                {["Album", "Photos", "Public page"].map((heading) => (
+                {["Album", "Event", "Discipline", "Photos", "Actions"].map((heading) => (
                   <th key={heading} className="px-4 py-3.5 pl-5 text-left text-xs font-bold uppercase tracking-[0.04em] text-text-secondary">
                     {heading}
                   </th>
@@ -40,14 +57,17 @@ export default async function AdminPhotosPage() {
               {albums.map((album) => (
                 <tr key={album.id} className="border-t border-[#EFEAE0]">
                   <td className="px-4 py-3.5 pl-5 text-[15px] font-semibold">{album.name}</td>
+                  <td className="px-4 py-3.5 text-sm text-text-secondary">{album.eventTitle ?? "—"}</td>
+                  <td className="px-4 py-3.5 text-sm text-text-secondary">{album.disciplineName ?? "—"}</td>
                   <td className="px-4 py-3.5 text-sm text-text-secondary">{album.count}</td>
-                  <td className="px-4 py-3.5 text-sm">
-                    <Link href={`/gallery/${album.slug}`} className="font-semibold text-brand-green">View album</Link>
+                  <td className="flex gap-4 px-4 py-3.5 text-sm">
+                    <Link href={`/admin/photos/${album.slug}`} className="font-semibold text-brand-green">Edit photos</Link>
+                    <Link href={`/gallery/${album.slug}`} className="font-semibold text-brand-green">View</Link>
                   </td>
                 </tr>
               ))}
               {albums.length === 0 && (
-                <tr><td colSpan={3} className="px-5 py-8 text-sm text-text-secondary">No albums yet.</td></tr>
+                <tr><td colSpan={5} className="px-5 py-8 text-sm text-text-secondary">No albums yet.</td></tr>
               )}
             </tbody>
           </table>

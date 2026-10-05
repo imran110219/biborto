@@ -1,8 +1,11 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { getAdminEvents } from "@/lib/db/queries/events";
+import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
 import { VideoForm } from "../VideoForm";
 import { createVideo } from "../actions";
 
-export default function NewVideoPage() {
+export default async function NewVideoPage() {
+  const [events, disciplines] = await Promise.all([getAdminEvents(), getDisciplineOptions()]);
   return (
     <AdminLayout>
       <div className="flex flex-col gap-1.5">
@@ -11,7 +14,7 @@ export default function NewVideoPage() {
       </div>
 
       <div className="max-w-lg rounded-2xl border border-border-default bg-white p-6">
-        <VideoForm action={createVideo} submitLabel="Add video" />
+        <VideoForm action={createVideo} submitLabel="Add video" events={events.map((e) => ({ id: e.id, title: e.title }))} disciplines={disciplines} />
       </div>
     </AdminLayout>
   );

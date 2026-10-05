@@ -33,6 +33,8 @@ export default async function AlbumDetailPage({ params }: PageProps<"/gallery/[s
             <h1 className="font-serif text-4xl font-medium">{album.name}</h1>
             <p className="text-text-secondary">
               {album.photos.length} photo{album.photos.length === 1 ? "" : "s"}
+              {album.eventTitle && ` · ${album.eventTitle}`}
+              {album.disciplineName && ` · ${album.disciplineName}`}
             </p>
           </div>
         </div>

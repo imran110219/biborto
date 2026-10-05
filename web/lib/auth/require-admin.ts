@@ -36,3 +36,11 @@ export async function requireAdmin(): Promise<{ id: string; role: PlatformRole }
 export async function requireAdminMemberId(): Promise<string> {
   return (await requireAdmin()).id;
 }
+
+// Superadmin-only operations (e.g. creating gallery albums). Same DB
+// re-check as requireAdmin(); admins are rejected.
+export async function requireSuperadmin(): Promise<string> {
+  const admin = await requireAdmin();
+  if (admin.role !== "superadmin") throw new Error("Not authorized.");
+  return admin.id;
+}

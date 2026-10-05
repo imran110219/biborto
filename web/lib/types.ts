@@ -136,6 +136,11 @@ export interface Video {
   id: string;
   title: string;
   youtubeUrl: string;
+  youtubeId?: string; // parsed from youtubeUrl; undefined until a real link is set
+  eventId?: string;
+  eventTitle?: string;
+  disciplineId?: string;
+  disciplineName?: string;
 }
 
 export interface EventItem {

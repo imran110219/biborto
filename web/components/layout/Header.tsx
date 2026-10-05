@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { signOut, useSession } from "next-auth/react";
 import { LockIcon, MenuIcon } from "@/components/ui/icons";
 
 const NAV_ITEMS = [
@@ -14,9 +15,58 @@ const NAV_ITEMS = [
   { label: "Business", href: "/business" },
 ];
 
+function AccountActions({
+  mobile = false,
+  status,
+  isAdmin,
+  onNavigate,
+}: {
+  mobile?: boolean;
+  status: "loading" | "authenticated" | "unauthenticated";
+  isAdmin: boolean;
+  onNavigate?: () => void;
+}) {
+  if (status === "loading") return null;
+  if (status !== "authenticated") {
+    return (
+      <Link
+        href="/signin"
+        onClick={onNavigate}
+        className={`${mobile ? "mt-2 flex h-11 justify-center" : "hidden h-11 md:flex"} items-center gap-2 rounded-full bg-text-primary px-5 text-sm font-semibold text-bg-public`}
+      >
+        <LockIcon />
+        Member login
+      </Link>
+    );
+  }
+
+  return (
+    <div className={`${mobile ? "mt-2 flex flex-col" : "hidden md:flex"} items-center gap-2`}>
+      {isAdmin && (
+        <Link
+          href="/admin/dashboard"
+          onClick={onNavigate}
+          className="flex h-11 items-center rounded-full bg-brand-green px-5 text-sm font-semibold text-white"
+        >
+          Admin dashboard
+        </Link>
+      )}
+      <button
+        type="button"
+        onClick={() => signOut({ redirectTo: "/" })}
+        className={`${mobile ? "h-11 w-full" : "h-9 px-3"} rounded-full text-sm font-semibold text-text-secondary`}
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}
+
 export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { data: session, status } = useSession();
+  const isAdmin = session?.user?.platformRole === "admin" || session?.user?.platformRole === "superadmin";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border-default bg-bg-public">
@@ -57,13 +107,7 @@ export function Header() {
           })}
         </nav>
 
-        <Link
-          href="/signin"
-          className="hidden h-11 items-center gap-2 rounded-full bg-text-primary px-5 text-sm font-semibold text-bg-public md:flex"
-        >
-          <LockIcon />
-          Member login
-        </Link>
+        <AccountActions status={status} isAdmin={isAdmin} />
       </div>
 
       {open && (
@@ -83,14 +127,7 @@ export function Header() {
               </Link>
             );
           })}
-          <Link
-            href="/signin"
-            onClick={() => setOpen(false)}
-            className="mt-2 flex h-11 items-center justify-center gap-2 rounded-full bg-text-primary text-sm font-semibold text-bg-public"
-          >
-            <LockIcon />
-            Member login
-          </Link>
+          <AccountActions mobile status={status} isAdmin={isAdmin} onNavigate={() => setOpen(false)} />
         </div>
       )}
     </header>

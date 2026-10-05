@@ -3,7 +3,7 @@ import { SignInForm } from "./SignInForm";
 
 export default async function SignInPage({ searchParams }: PageProps<"/signin">) {
   const { callbackUrl } = await searchParams;
-  const target = typeof callbackUrl === "string" ? callbackUrl : "/";
+  const target = typeof callbackUrl === "string" ? callbackUrl : "";
 
   return (
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-2">

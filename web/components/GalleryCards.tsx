@@ -2,7 +2,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { PlaceholderMedia } from "@/components/ui/PlaceholderMedia";
 
-export function AlbumCard({ slug, name, count, coverImageUrl }: { slug: string; name: string; count: string; coverImageUrl?: string }) {
+export function AlbumCard({
+  slug,
+  name,
+  count,
+  coverImageUrl,
+  context,
+}: {
+  slug: string;
+  name: string;
+  count: string;
+  coverImageUrl?: string;
+  context?: string;
+}) {
   return (
     <Link href={`/gallery/${slug}`} className="flex flex-col gap-3.5 text-text-primary">
       {coverImageUrl ? (
@@ -16,6 +28,7 @@ export function AlbumCard({ slug, name, count, coverImageUrl }: { slug: string; 
         <span className="font-serif text-xl font-medium">{name}</span>
         <span className="text-sm text-text-secondary">{count}</span>
       </div>
+      {context && <span className="text-sm text-text-secondary">{context}</span>}
     </Link>
   );
 }

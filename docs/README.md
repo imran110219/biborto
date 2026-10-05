@@ -11,8 +11,8 @@ Two-part repo:
 web/    Next.js app — public pages read from Postgres; Auth.js signs in
         existing members and gates /admin/**. Member/business review,
         event/sponsor/video/blog editing, business submissions and RSVPs
-        have real writes. Gallery image upload/display is implemented;
-        member creation/import and photo deletion are not.
+        have real writes. Gallery album and photo management is
+        implemented; member creation/import are not.
 db/     Full Postgres data model and seed data, including the current
         active-voter roster (members, businesses, sponsors, events,
         blog, gallery, auth) — wired into web/'s public pages and login
@@ -31,8 +31,8 @@ component shapes) lives on in `docs/web/DESIGN.md`.
   existing members and role-gates `/admin/**`. Member and business
   review/edit, business submissions, event RSVPs, and admin editing for
   events, sponsors, videos and blog posts write to Postgres. Admin member
-  creation/CSV import and gallery album creation/photo deletion remain
-  unimplemented.
+  creation/CSV import remain unimplemented. Gallery album management,
+  photo captions/deletion, and album/video tabs are implemented.
   See `docs/web/README.md` and `docs/web/DESIGN.md`.
 - **`db/`** is the full Postgres data model — members, businesses,
   sponsors, events/RSVPs, blog posts, gallery, plus auth (`users`,
@@ -47,8 +47,8 @@ import and manual member creation are planned but not implemented.
 
 Gallery image upload and public display are wired through Cloudflare R2.
 The application still needs R2 account credentials and a public bucket
-domain in `web/.env.local`. Uploads are restricted to admins and
-superadmins by a server-side role check.
+domain in `web/.env.local`. Admins and superadmins manage photos; only
+superadmins manage albums. Albums must be empty before deletion.
 
 ## Target stack
 

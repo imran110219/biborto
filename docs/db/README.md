@@ -19,6 +19,12 @@ this isn't a speculative model, it's what the UI assumes.
 - `db/migrations/001_google_membership_requests.sql` — one-time migration
   for an existing database, allowing pending Google membership requests
   to omit discipline until an admin collects it.
+- `db/migrations/002_member_campus_name.sql` through
+  `db/migrations/004_member_cover_photo.sql` — optional member campus/profile
+  fields and cover-photo storage.
+- `db/migrations/005_gallery_album_links.sql` and
+  `db/migrations/006_gallery_video_links.sql` — optional event and discipline
+  links for gallery albums and videos.
 - `db/seed.sh` — runs `schema.sql` then every `seed_*.sql` below against
   `$DATABASE_URL` (or `web/.env.local`'s, if unset), in the required
   order. Wired up as `npm run db:seed` / `npm run db:reset` from `web/`
@@ -38,9 +44,9 @@ this isn't a speculative model, it's what the UI assumes.
   KU reference codes `BA` and `BAN`. Since the CSV has no platform roles
   or app approval statuses, every roster row is seeded as an active
   `member`. Profession, city and country are left unset.
-- `db/seed_superadmin.sql` separately creates the non-public bootstrap
-  superadmin with no discipline. It is an active member record only;
-  credentials are claimed at `/signup`.
+- `db/seed_superadmin.sql` and `web/scripts/seed-superadmin-login.mjs`
+  create the non-public bootstrap superadmin and its password login. Set
+  `SUPERADMIN_PASSWORD` before seeding; only a bcrypt hash is stored.
 - `db/seed_businesses.sql`, `db/seed_sponsors.sql`,
   `db/seed_events.sql`, `db/seed_blog_posts.sql`, and
   `db/seed_gallery.sql` seed the remaining sample content in dependency
@@ -62,7 +68,7 @@ this isn't a speculative model, it's what the UI assumes.
 | `sponsors` | Committee-curated sponsor tiers. `business_id` is an *optional* cross-link — sponsors are managed independently of the Business Directory, even though several sponsors are also listed businesses. |
 | `events`, `event_rsvps` | Reunion/chapter events and member RSVPs (`going` / `interested` / `declined`). |
 | `blog_posts` | Draft/published, public/members-only visibility, tags. `body` holds the full article; read time is computed at render time, not stored. `author_name` is a free-text byline fallback for posts with no real member author (e.g. "Reunion committee"). |
-| `gallery_albums`, `gallery_photos`, `gallery_videos` | Photo albums (R2-hosted; an album can optionally link to an `events` row and/or a `disciplines` row — `db/migrations/005_gallery_album_links.sql`) and a separate video list (YouTube links, not R2; videos can also link to an event and/or discipline — `db/migrations/006_gallery_video_links.sql`). Only superadmins create albums; admins upload photos and edit captions. |
+| `gallery_albums`, `gallery_photos`, `gallery_videos` | R2-hosted photo albums with optional event/discipline links, plus YouTube videos with optional event/discipline links. Superadmins create, edit, and delete empty albums; admins and superadmins upload, caption, and delete photos. |
 | `activity_log` | Backs the admin dashboard's "Recent activity" panel — precomputed human-readable entries, generic across entity types. |
 
 ## Key design decisions
@@ -81,7 +87,9 @@ this isn't a speculative model, it's what the UI assumes.
   (`avatar_key`, `cover_photo_key`, `logo_key`, `r2_key`) store an object
   key. Gallery photo upload writes to R2 and stores the key in
   `gallery_photos`; public gallery pages resolve it through
-  `R2_PUBLIC_URL`. Other media upload flows are not implemented.
+  `R2_PUBLIC_URL`. Photo uploads accept JPEG, PNG, WebP, and GIF up to
+  15 MB. Member profile and cover images use the same bucket through a
+  separate admin upload flow.
 - **Sponsors are not businesses.** 5 of the current 5 mock sponsors
   happen to match businesses by name — a sponsor is often also a
   batchmate's business — but the design (see `docs/web/DESIGN.md`)
@@ -198,5 +206,8 @@ then seeds from scratch.
   dashboard's activity feed text is hardcoded in the page component).
 - Gallery R2 configuration is per environment: credentials, bucket name,
   and a public bucket URL must be set before uploads and image display
-  work. Gallery upload is restricted to admins and superadmins in the
-  server route.
+  work. Upload and photo-management actions check admin/superadmin access
+  on the server. Seeded albums contain no photos; albums only show images
+  after an admin uploads them. Public gallery tabs switch between photo
+  albums and linked YouTube videos; videos without a valid YouTube URL are
+  omitted from the public list.

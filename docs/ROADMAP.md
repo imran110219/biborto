@@ -78,14 +78,15 @@ named.
   15 MB limit, stores the object in R2, and inserts its key into
   `gallery_photos`. Public album pages resolve keys through
   `R2_PUBLIC_URL`. R2 credentials and a readable bucket domain still need
-  configuration for the feature to work. Album metadata editing and
-  photo deletion are not implemented.
+  configuration. Admins can edit captions and delete photos; superadmins
+  can create, edit, and delete empty albums. The public gallery has
+  separate album and video tabs.
 
 ## 6. Infrastructure and remaining media work
 
-- Cloudflare R2 — gallery upload and display code are implemented, but
-  credentials and the public bucket domain must be configured. Avatar,
-  business and other media upload/rendering are not implemented.
+- Cloudflare R2 — gallery and member profile/cover photo upload and display
+  are implemented, but credentials and the public bucket domain must be
+  configured. Business image upload/rendering is not implemented.
 - Google OAuth — provider code exists and local client settings are in
   the ignored `.env.local`; the flow still needs end-to-end verification.
   Keep `.env.example` as a placeholder, with no client secret.

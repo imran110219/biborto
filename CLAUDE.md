@@ -72,4 +72,4 @@ Config is `web/auth.ts`; full writeup in `docs/web/README.md`'s Auth section. Th
 
 ### File storage
 
-Columns named `*_key` (`avatar_key`, `cover_photo_key`, `logo_key`, `r2_key`) store Cloudflare R2 object keys, not URLs. Gallery uploads go through `web/app/api/admin/gallery/photos/route.ts`, which checks admin/superadmin access, and public gallery pages resolve keys through `R2_PUBLIC_URL`. Set the `R2_*` variables in ignored `web/.env.local`; the route needs Object Read & Write credentials and a public bucket domain. Member avatars and business images are not wired up; `Avatar` still draws initials.
+Columns named `*_key` (`avatar_key`, `cover_photo_key`, `logo_key`, `r2_key`) store Cloudflare R2 object keys, not URLs. Gallery uploads go through `web/app/api/admin/gallery/photos/route.ts`, which checks admin/superadmin access, and public gallery pages resolve keys through `R2_PUBLIC_URL`. Set the `R2_*` variables in ignored `web/.env.local`; the route needs Object Read & Write credentials and a public bucket domain. Member profile and cover photos also use R2; business image uploads are not implemented.

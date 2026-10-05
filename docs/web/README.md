@@ -232,13 +232,14 @@ codegen error after a schema change, this is almost certainly why.
 
 **File storage (R2)**: gallery uploads are implemented in
 `app/api/admin/gallery/photos/route.ts`. The route independently checks
-the member's `admin`/`superadmin` role, allows JPEG/PNG/WebP/GIF up to
-15 MB, uploads with server-only R2 credentials, then saves the object key
-and uploader in Postgres. Album pages turn keys into image URLs using
-`R2_PUBLIC_URL`. Configure an R2 bucket, an Object Read & Write API token
-scoped to that bucket, and a public custom domain (or `r2.dev` for local
-development). The app does not create the bucket or configure its domain.
-Avatars, business images and other media are not implemented.
+the member's `admin`/`superadmin` role, validates JPEG/PNG/WebP/GIF up to
+15 MB, uploads with server-only credentials, then saves the key and
+uploader in Postgres. Admins can update captions and delete photos;
+superadmins can create, edit, and delete empty albums. Public pages resolve
+keys through `R2_PUBLIC_URL`. Member profile and cover photos also use R2.
+Configure an R2 bucket, an Object Read & Write API token scoped to that
+bucket, and a public custom domain (or `r2.dev` for local development).
+The app does not create the bucket or configure its domain.
 
 **Still on mock data**: `lib/mock-data.ts` remains in use for dashboard
 activity placeholders, settings, and some inert
@@ -252,10 +253,12 @@ grant access until an admin approves it.
 Real admin writes include member approval, suspension/reactivation and
 editing; business approval/rejection/editing; and CRUD for events,
 sponsors, videos and blog posts. The public business submission form and
-event RSVP also write to Postgres. Gallery images can be uploaded from
-`/admin/photos` by admins and superadmins; gallery album creation, photo
-deletion, admin member creation/CSV import, and settings persistence are
-not implemented.
+event RSVP also write to Postgres. Gallery management lives at
+`/admin/photos`: admins can upload photos, edit captions, and delete
+photos; superadmins can also create, edit, and delete empty albums. Video
+records have admin CRUD at `/admin/videos` and public cards play linked
+YouTube videos in privacy-enhanced embeds. Member creation/CSV import and
+settings persistence are not implemented.
 
 - **`lib/db/queries/{members,businesses}.ts`** export `getAdminMembers()`/
   `getAdminBusinesses()` alongside the existing public-facing queries —
@@ -286,11 +289,12 @@ not implemented.
   no "Event RSVPs" approval queue yet), where the buttons render inert,
   same as before this existed.
 
-The gallery upload route independently checks `admin` and `superadmin`
-roles; the Photos page is also behind the `/admin/**` role gate.
+The gallery upload route and photo actions independently check admin
+roles; album mutations require a superadmin. The Photos page is also
+behind the `/admin/**` role gate.
 
 **Suggested next tasks**: build admin-only manual member creation and
-CSV import, then add gallery album management and photo deletion.
+CSV import, then complete persistence for settings.
 
 ## Auth
 
@@ -399,7 +403,8 @@ restructure first.
 - Sign-in/sign-up, member and business review, business submission,
   event RSVP, and admin CRUD for events, sponsors, videos and blog posts
   use real database writes. Gallery image upload and public display also
-  use R2. Search/filter controls, settings persistence, member
-  creation/import, album management and photo deletion remain unbuilt.
+  use R2. Gallery album management, photo captions/deletion, and the
+  album/video tabs are implemented. Search/filter controls, settings
+  persistence and member creation/import remain unbuilt.
 - The seed has 241 active roster members and 0 gallery photos. Country
   reference data has 243 rows, while member country fields remain empty.

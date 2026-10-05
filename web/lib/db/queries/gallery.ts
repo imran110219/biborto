@@ -60,7 +60,9 @@ export interface AlbumDetail {
   id: string;
   slug: string;
   name: string;
+  eventId?: string;
   eventTitle?: string;
+  disciplineId?: string;
   disciplineName?: string;
   photos: AlbumPhoto[];
 }
@@ -71,7 +73,9 @@ export async function getAlbumBySlug(slug: string): Promise<AlbumDetail | undefi
       id: galleryAlbums.id,
       slug: galleryAlbums.slug,
       name: galleryAlbums.name,
+      eventId: galleryAlbums.eventId,
       eventTitle: events.title,
+      disciplineId: galleryAlbums.disciplineId,
       disciplineName: disciplines.name,
     })
     .from(galleryAlbums)
@@ -92,7 +96,9 @@ export async function getAlbumBySlug(slug: string): Promise<AlbumDetail | undefi
     id: album.id,
     slug: album.slug,
     name: album.name,
+    eventId: album.eventId ?? undefined,
     eventTitle: album.eventTitle ?? undefined,
+    disciplineId: album.disciplineId ?? undefined,
     disciplineName: album.disciplineName ?? undefined,
     photos: photoRows.map((p) => ({ id: p.id, imageUrl: getR2PublicUrl(p.r2Key), caption: p.caption ?? undefined })),
   };

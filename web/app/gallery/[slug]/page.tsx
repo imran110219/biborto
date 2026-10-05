@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import { PlaceholderMedia } from "@/components/ui/PlaceholderMedia";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { AlbumCard } from "@/components/GalleryCards";
 import Image from "next/image";
@@ -31,10 +30,13 @@ export default async function AlbumDetailPage({ params }: PageProps<"/gallery/[s
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-col gap-1.5">
             <h1 className="font-serif text-4xl font-medium">{album.name}</h1>
+            {(album.eventTitle || album.disciplineName) && (
+              <p className="text-sm text-text-secondary">
+                {[album.eventTitle, album.disciplineName].filter(Boolean).join(" · ")}
+              </p>
+            )}
             <p className="text-text-secondary">
               {album.photos.length} photo{album.photos.length === 1 ? "" : "s"}
-              {album.eventTitle && ` · ${album.eventTitle}`}
-              {album.disciplineName && ` · ${album.disciplineName}`}
             </p>
           </div>
         </div>
@@ -69,7 +71,7 @@ export default async function AlbumDetailPage({ params }: PageProps<"/gallery/[s
           <SectionHeader eyebrow="Keep browsing" title="More albums" viewAllHref="/gallery" viewAllLabel="All albums" />
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {others.map((a) => (
-            <AlbumCard key={a.slug} slug={a.slug} name={a.name} count={a.count} coverImageUrl={a.coverImageUrl} />
+              <AlbumCard key={a.slug} slug={a.slug} name={a.name} count={a.count} coverImageUrl={a.coverImageUrl} />
             ))}
           </div>
         </section>

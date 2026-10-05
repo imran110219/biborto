@@ -6,7 +6,8 @@ import { StatBar } from "@/components/StatTile";
 import { EventCard } from "@/components/EventCard";
 import { FeaturedBlogTeaser, BlogTeaserRow } from "@/components/BlogTeaser";
 import { MemberCard } from "@/components/MemberCard";
-import { AlbumCard, VideoCard } from "@/components/GalleryCards";
+import { AlbumCard } from "@/components/GalleryCards";
+import { VideoCard } from "@/components/VideoCard";
 import { SponsorStrip } from "@/components/SponsorStrip";
 import { DiamondPopup } from "@/components/DiamondPopup";
 import { ArrowRightIcon, CalendarIcon } from "@/components/ui/icons";
@@ -139,7 +140,7 @@ export default async function HomePage() {
         <SectionHeader eyebrow="Videos" title="Watch on our YouTube channel" viewAllHref="/gallery" viewAllLabel="All videos" />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
           {videos.map((v) => (
-            <VideoCard key={v.title} title={v.title} />
+            <VideoCard key={v.id} video={v} />
           ))}
         </div>
       </section>

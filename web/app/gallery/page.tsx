@@ -1,6 +1,7 @@
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { PageHero } from "@/components/ui/PageHero";
-import { AlbumCard, VideoCard } from "@/components/GalleryCards";
+import { AlbumCard } from "@/components/GalleryCards";
+import { VideoCard } from "@/components/VideoCard";
 import { getGalleryAlbums, getGalleryVideos } from "@/lib/db/queries/gallery";
 
 export default async function GalleryPage() {
@@ -41,7 +42,7 @@ export default async function GalleryPage() {
         </div>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
           {videos.map((v) => (
-            <VideoCard key={v.title} title={v.title} />
+            <VideoCard key={v.id} video={v} />
           ))}
         </div>
       </section>

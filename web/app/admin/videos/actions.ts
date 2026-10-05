@@ -14,7 +14,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 // is required and stored in canonical watch-URL form, so only real video
 // IDs ever reach the page. Event/discipline are optional; a bad id is
 // rejected rather than silently dropped.
-function readVideoForm(formData: FormData) {
+type VideoForm =
+  | { error: string }
+  | { error?: undefined; values: { title: string; youtubeUrl: string; eventId: string | null; disciplineId: string | null } };
+
+function readVideoForm(formData: FormData): VideoForm {
   const title = String(formData.get("title") ?? "").trim();
   const rawUrl = String(formData.get("youtubeUrl") ?? "").trim();
   const eventId = String(formData.get("eventId") ?? "") || null;
@@ -39,7 +43,7 @@ const revalidateVideoPaths = () => {
 export async function createVideo(_prevState: string | undefined, formData: FormData) {
   const adminId = await requireAdminMemberId();
   const form = readVideoForm(formData);
-  if (form.error) return form.error;
+  if (form.error !== undefined) return form.error;
 
   await db.insert(galleryVideos).values({ ...form.values, addedBy: adminId });
 
@@ -50,7 +54,7 @@ export async function createVideo(_prevState: string | undefined, formData: Form
 export async function updateVideo(id: string, _prevState: string | undefined, formData: FormData) {
   await requireAdminMemberId();
   const form = readVideoForm(formData);
-  if (form.error) return form.error;
+  if (form.error !== undefined) return form.error;
 
   await db.update(galleryVideos).set(form.values).where(eq(galleryVideos.id, id));
 

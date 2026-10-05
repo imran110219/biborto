@@ -62,7 +62,7 @@ this isn't a speculative model, it's what the UI assumes.
 | `sponsors` | Committee-curated sponsor tiers. `business_id` is an *optional* cross-link — sponsors are managed independently of the Business Directory, even though several sponsors are also listed businesses. |
 | `events`, `event_rsvps` | Reunion/chapter events and member RSVPs (`going` / `interested` / `declined`). |
 | `blog_posts` | Draft/published, public/members-only visibility, tags. `body` holds the full article; read time is computed at render time, not stored. `author_name` is a free-text byline fallback for posts with no real member author (e.g. "Reunion committee"). |
-| `gallery_albums`, `gallery_photos`, `gallery_videos` | Photo albums (R2-hosted; an album can optionally link to an `events` row and/or a `disciplines` row — `db/migrations/005_gallery_album_links.sql`) and a separate video list (YouTube links, not R2). Only superadmins create albums; admins upload photos and edit captions. |
+| `gallery_albums`, `gallery_photos`, `gallery_videos` | Photo albums (R2-hosted; an album can optionally link to an `events` row and/or a `disciplines` row — `db/migrations/005_gallery_album_links.sql`) and a separate video list (YouTube links, not R2; videos can also link to an event and/or discipline — `db/migrations/006_gallery_video_links.sql`). Only superadmins create albums; admins upload photos and edit captions. |
 | `activity_log` | Backs the admin dashboard's "Recent activity" panel — precomputed human-readable entries, generic across entity types. |
 
 ## Key design decisions

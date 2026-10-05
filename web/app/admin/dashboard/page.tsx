@@ -16,10 +16,13 @@ import { getAdminBusinesses } from "@/lib/db/queries/businesses";
 import { getUpcomingEvents } from "@/lib/db/queries/events";
 import { getRsvpSummary } from "@/lib/db/queries/rsvps";
 import { getAdminPosts } from "@/lib/db/queries/blog";
+import { auth } from "@/auth";
 import { approveMember, suspendMember } from "@/app/admin/members/actions";
 import { approveBusiness, rejectBusiness } from "@/app/admin/businesses/actions";
 
 export default async function AdminDashboardPage() {
+  const session = await auth();
+  const isSuperadmin = session?.user?.platformRole === "superadmin";
   const allMembers = await getAdminMembers();
   const pendingMembers = allMembers.filter((m) => m.status === "pending");
   const allBusinesses = await getAdminBusinesses();
@@ -70,6 +73,7 @@ export default async function AdminDashboardPage() {
               subtitle={`${m.discipline} · Student ID ${m.studentId ?? "—"}`}
               onApprove={approveMember.bind(null, m.id)}
               onReject={suspendMember.bind(null, m.id)}
+              readOnly={!isSuperadmin}
             />
           ))}
         </div>

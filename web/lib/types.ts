@@ -32,7 +32,16 @@ export interface AdminMemberDetail {
   profession: string;
   currentEmployer: string;
   city: string;
+  countryId: string | null;
+  bio: string;
+  linkedinUrl: string;
+  facebookUrl: string;
+  websiteUrl: string;
   email: string;
+  phoneNumber: string;
+  studentId: string;
+  bloodGroup: string | null;
+  dateOfBirth: string; // yyyy-mm-dd, "" when unset
   platformRole: PlatformRole;
   status: MemberStatus;
   isPublic: boolean;

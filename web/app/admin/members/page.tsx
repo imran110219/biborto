@@ -1,23 +1,25 @@
 import Link from "next/link";
+import { auth } from "@/auth";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Avatar } from "@/components/ui/Avatar";
 import { StatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { DownloadIcon, EditIcon, PlusIcon, SearchIcon } from "@/components/ui/icons";
+import { DownloadIcon, EditIcon, EyeIcon, PlusIcon, SearchIcon } from "@/components/ui/icons";
 import { getAdminMembers } from "@/lib/db/queries/members";
 import { approveMember, bulkActivateMembers, bulkSuspendMembers, reactivateMember, suspendMember } from "./actions";
 
 const BULK_FORM_ID = "members-bulk-form";
 
 export default async function AdminMembersPage() {
-  const members = await getAdminMembers();
+  const [members, session] = await Promise.all([getAdminMembers(), auth()]);
+  const canEdit = session?.user?.platformRole === "superadmin";
 
   return (
     <AdminLayout>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <h1 className="font-serif text-4xl font-medium">Members</h1>
-          <p className="text-text-secondary">Approve new batchmates, assign roles and keep the directory accurate.</p>
+          <p className="text-text-secondary">{canEdit ? "Approve new batchmates, assign roles and keep the directory accurate." : "Browse the member directory. Only a superadmin can edit or moderate members."}</p>
         </div>
         <div className="flex gap-2.5">
           <Button variant="ghost" size="sm">
@@ -55,29 +57,31 @@ export default async function AdminMembersPage() {
           <span className="ml-auto text-sm text-text-secondary">{members.length} members</span>
         </div>
 
-        <form id={BULK_FORM_ID} className="flex flex-wrap items-center gap-2.5 border-b border-[#EFEAE0] bg-[#FAF8F3] px-4 py-2.5 text-sm">
-          <span className="mr-1 font-semibold text-text-secondary">Selected:</span>
-          <button
-            type="submit"
-            formAction={bulkActivateMembers}
-            className="h-9 rounded-lg bg-brand-green px-3.5 font-semibold text-white"
-          >
-            Activate
-          </button>
-          <button
-            type="submit"
-            formAction={bulkSuspendMembers}
-            className="h-9 rounded-lg border border-border-input bg-white px-3.5 font-semibold"
-          >
-            Suspend
-          </button>
-        </form>
+        {canEdit && (
+          <form id={BULK_FORM_ID} className="flex flex-wrap items-center gap-2.5 border-b border-[#EFEAE0] bg-[#FAF8F3] px-4 py-2.5 text-sm">
+            <span className="mr-1 font-semibold text-text-secondary">Selected:</span>
+            <button
+              type="submit"
+              formAction={bulkActivateMembers}
+              className="h-9 rounded-lg bg-brand-green px-3.5 font-semibold text-white"
+            >
+              Activate
+            </button>
+            <button
+              type="submit"
+              formAction={bulkSuspendMembers}
+              className="h-9 rounded-lg border border-border-input bg-white px-3.5 font-semibold"
+            >
+              Suspend
+            </button>
+          </form>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse">
             <thead className="bg-[#FAF8F3]">
               <tr>
-                <th className="w-12 py-3.5 pl-5" />
+                {canEdit && <th className="w-12 py-3.5 pl-5" />}
                 {["Member", "Discipline", "City", "Role", "Status", "Joined"].map((h) => (
                   <th key={h} className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-[0.04em] text-text-secondary">
                     {h}
@@ -89,9 +93,11 @@ export default async function AdminMembersPage() {
             <tbody>
               {members.map((m) => (
                 <tr key={m.id} className="border-t border-[#EFEAE0]">
-                  <td className="py-3.5 pl-5">
-                    <input type="checkbox" name="memberIds" value={m.id} form={BULK_FORM_ID} />
-                  </td>
+                  {canEdit && (
+                    <td className="py-3.5 pl-5">
+                      <input type="checkbox" name="memberIds" value={m.id} form={BULK_FORM_ID} />
+                    </td>
+                  )}
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
                       <Avatar initials={m.initials} size="sm" />
@@ -109,13 +115,24 @@ export default async function AdminMembersPage() {
                   <td className="px-4 py-3.5">
                     <div className="flex justify-end gap-1.5">
                       <Link
-                        href={`/admin/members/${m.id}/edit`}
-                        aria-label={`Edit ${m.name}`}
+                        href={`/admin/members/${m.id}`}
+                        aria-label={`View ${m.name}`}
+                        title="View profile"
                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white"
                       >
-                        <EditIcon />
+                        <EyeIcon size={15} />
                       </Link>
-                      {m.status === "pending" && (
+                      {canEdit && (
+                        <Link
+                          href={`/admin/members/${m.id}/edit`}
+                          aria-label={`Edit ${m.name}`}
+                          title="Edit member"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-default bg-white"
+                        >
+                          <EditIcon />
+                        </Link>
+                      )}
+                      {canEdit && m.status === "pending" && (
                         <>
                           <form action={approveMember.bind(null, m.id)}>
                             <button className="h-9 rounded-lg bg-brand-green px-3 text-xs font-semibold text-white">
@@ -129,14 +146,14 @@ export default async function AdminMembersPage() {
                           </form>
                         </>
                       )}
-                      {m.status === "active" && (
+                      {canEdit && m.status === "active" && (
                         <form action={suspendMember.bind(null, m.id)}>
                           <button className="h-9 rounded-lg border border-border-input bg-white px-3 text-xs font-semibold text-[#9C3D10]">
                             Suspend
                           </button>
                         </form>
                       )}
-                      {m.status === "suspended" && (
+                      {canEdit && m.status === "suspended" && (
                         <form action={reactivateMember.bind(null, m.id)}>
                           <button className="h-9 rounded-lg bg-brand-green px-3 text-xs font-semibold text-white">
                             Reactivate

@@ -59,7 +59,7 @@ export function AdminUserMenu() {
           </div>
           <div className="my-1 h-px bg-border-default" />
           {memberId && (
-            <Link href={`/admin/members/${memberId}/edit`} role="menuitem" onClick={() => setOpen(false)} className={ITEM}>
+            <Link href={role === "superadmin" ? `/admin/members/${memberId}/edit?from=profile` : `/admin/members/${memberId}?from=profile`} role="menuitem" onClick={() => setOpen(false)} className={ITEM}>
               <MembersIcon /> My profile
             </Link>
           )}

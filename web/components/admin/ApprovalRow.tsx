@@ -16,12 +16,15 @@ export function ApprovalRow({
   subtitle,
   onApprove,
   onReject,
+  readOnly = false,
 }: {
   initials: string;
   title: string;
   subtitle: string;
   onApprove?: (formData: FormData) => void | Promise<void>;
   onReject?: (formData: FormData) => void | Promise<void>;
+  // Hides the approve/reject controls for viewers who may not act on the row.
+  readOnly?: boolean;
 }) {
   return (
     <div className="flex items-center gap-3.5 border-b border-[#EFEAE0] px-6 py-4 last:border-0">
@@ -30,7 +33,7 @@ export function ApprovalRow({
         <span className="text-[15px] font-semibold">{title}</span>
         <span className="text-[13px] text-text-secondary">{subtitle}</span>
       </div>
-      {onReject ? (
+      {readOnly ? null : onReject ? (
         <form action={onReject}>
           <button aria-label="Reject" type="submit" className={rejectButtonClasses}>
             <CloseIcon />
@@ -41,7 +44,7 @@ export function ApprovalRow({
           <CloseIcon />
         </button>
       )}
-      {onApprove ? (
+      {readOnly ? null : onApprove ? (
         <form action={onApprove}>
           <button type="submit" className={approveButtonClasses}>
             <CheckIcon /> Approve

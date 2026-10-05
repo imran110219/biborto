@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db/client";
 import { members } from "@/drizzle/schema";
-import { requireAdminMemberId } from "@/lib/auth/require-admin";
+import { requireSuperadmin } from "@/lib/auth/require-admin";
 import { getR2BucketName, getR2Client, getR2PublicUrl } from "@/lib/r2";
 
 export const runtime = "nodejs";
@@ -33,9 +33,9 @@ function errorResponse(message: string, status: number) {
 
 export async function POST(request: Request, { params }: RouteContext<"/api/admin/members/[id]/photos">) {
   try {
-    await requireAdminMemberId();
+    await requireSuperadmin();
   } catch {
-    return errorResponse("Only admins and superadmins can upload member photos.", 403);
+    return errorResponse("Only a superadmin can upload member photos.", 403);
   }
 
   const { id } = await params;

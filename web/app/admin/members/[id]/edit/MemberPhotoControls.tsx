@@ -56,16 +56,38 @@ function PhotoUpload({
     }
   }
 
+  const isAvatar = photoType === "avatar";
   return (
-    <form onSubmit={upload} className="flex flex-col gap-3 rounded-xl border border-border-default p-4">
-      <span className="text-sm font-semibold">{label}</span>
-      {imageUrl && (
-        <div role="img" aria-label={`Current ${label.toLowerCase()}`} className="h-28 w-full rounded-lg bg-cover bg-center" style={{ backgroundImage: `url("${imageUrl}")` }} />
-      )}
-      <input name="file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required className="text-sm" />
-      <span className="text-xs text-text-secondary">JPEG, PNG, WebP, or GIF · up to 15 MB</span>
-      <button type="submit" disabled={pending} className="h-10 rounded-[10px] bg-brand-green px-4 text-sm font-semibold text-white disabled:opacity-60">
-        {pending ? "Uploading…" : imageUrl ? `Replace ${label.toLowerCase()}` : `Upload ${label.toLowerCase()}`}
+    <form onSubmit={upload} className="flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <div
+          role="img"
+          aria-label={imageUrl ? `Current ${label.toLowerCase()}` : `No ${label.toLowerCase()}`}
+          className={`flex shrink-0 items-center justify-center bg-brand-green-tint bg-cover bg-center text-xs text-brand-green ${
+            isAvatar ? "h-16 w-16 rounded-full" : "h-16 w-28 rounded-lg"
+          }`}
+          style={imageUrl ? { backgroundImage: `url("${imageUrl}")` } : undefined}
+        >
+          {!imageUrl && "None"}
+        </div>
+        <div className="min-w-0">
+          <span className="block text-sm font-semibold">{label}</span>
+          <span className="text-xs text-text-secondary">JPEG, PNG, WebP or GIF · up to 15 MB</span>
+        </div>
+      </div>
+      <input
+        name="file"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        required
+        className="w-full text-sm file:mr-3 file:h-9 file:cursor-pointer file:rounded-lg file:border file:border-border-input file:bg-white file:px-3 file:text-sm file:font-semibold"
+      />
+      <button
+        type="submit"
+        disabled={pending}
+        className="h-10 rounded-[10px] border border-brand-green px-4 text-sm font-semibold text-brand-green disabled:opacity-60"
+      >
+        {pending ? "Uploading…" : imageUrl ? "Replace photo" : "Upload photo"}
       </button>
       {status && <p role="status" className="text-sm text-text-secondary">{status}</p>}
     </form>
@@ -82,12 +104,11 @@ export function MemberPhotoControls({
   coverPhotoUrl?: string;
 }) {
   return (
-    <section className="max-w-2xl rounded-2xl border border-border-default bg-white p-6">
-      <h2 className="mb-4 font-serif text-2xl font-medium">Member photos</h2>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <PhotoUpload memberId={memberId} photoType="avatar" label="Profile photo" imageUrl={avatarUrl} />
-        <PhotoUpload memberId={memberId} photoType="cover" label="Cover photo" imageUrl={coverPhotoUrl} />
-      </div>
+    <section className="flex flex-col gap-5 rounded-2xl border border-border-default bg-white p-5 sm:p-6">
+      <h2 className="font-serif text-xl font-medium">Photos</h2>
+      <PhotoUpload memberId={memberId} photoType="avatar" label="Profile photo" imageUrl={avatarUrl} />
+      <div className="h-px bg-border-default" />
+      <PhotoUpload memberId={memberId} photoType="cover" label="Cover photo" imageUrl={coverPhotoUrl} />
     </section>
   );
 }

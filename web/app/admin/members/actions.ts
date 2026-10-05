@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { members } from "@/drizzle/schema";
-import { requireAdminMemberId } from "@/lib/auth/require-admin";
+import { requireAdmin, requireAdminMemberId } from "@/lib/auth/require-admin";
 import type { MemberStatus, PlatformRole } from "@/lib/types";
+
+const PLATFORM_ROLES: PlatformRole[] = ["member", "admin", "superadmin"];
 
 const revalidateMemberPaths = () => {
   revalidatePath("/admin/members");
@@ -26,6 +28,7 @@ export async function approveMember(memberId: string, _formData: FormData) {
 
 export async function suspendMember(memberId: string, _formData: FormData) {
   const adminId = await requireAdminMemberId();
+  if (memberId === adminId) return; // an admin can't lock themselves out
   await db
     .update(members)
     .set({ status: "suspended", reviewedBy: adminId, reviewedAt: new Date().toISOString() })
@@ -47,12 +50,14 @@ export async function reactivateMember(memberId: string, _formData: FormData) {
 async function bulkSetMemberStatus(status: MemberStatus, formData: FormData) {
   const adminId = await requireAdminMemberId();
   const ids = formData.getAll("memberIds").map(String).filter(Boolean);
-  if (ids.length === 0) return;
+  // An admin can't suspend themselves, even as part of a bulk selection.
+  const targets = status === "suspended" ? ids.filter((id) => id !== adminId) : ids;
+  if (targets.length === 0) return;
 
   await db
     .update(members)
     .set({ status, reviewedBy: adminId, reviewedAt: new Date().toISOString() })
-    .where(inArray(members.id, ids));
+    .where(inArray(members.id, targets));
 
   revalidateMemberPaths();
 }
@@ -66,7 +71,7 @@ export async function bulkSuspendMembers(formData: FormData) {
 }
 
 export async function updateMember(memberId: string, _prevState: string | undefined, formData: FormData) {
-  await requireAdminMemberId();
+  const actor = await requireAdmin();
 
   const name = String(formData.get("name") ?? "").trim();
   const disciplineId = String(formData.get("disciplineId") ?? "") || null;
@@ -77,10 +82,24 @@ export async function updateMember(memberId: string, _prevState: string | undefi
   const profession = String(formData.get("profession") ?? "").trim();
   const currentEmployer = String(formData.get("currentEmployer") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
-  const platformRole = String(formData.get("platformRole") ?? "member") as PlatformRole;
+  const requestedRole = String(formData.get("platformRole") ?? "");
   const isPublic = formData.get("isPublic") === "on";
 
   if (!name) return "Name is required.";
+  if (!PLATFORM_ROLES.includes(requestedRole as PlatformRole)) return "Choose a valid role.";
+  const platformRole = requestedRole as PlatformRole;
+
+  const [target] = await db
+    .select({ platformRole: members.platformRole })
+    .from(members)
+    .where(eq(members.id, memberId))
+    .limit(1);
+  if (!target) return "Member not found.";
+
+  if (platformRole !== target.platformRole) {
+    if (actor.role !== "superadmin") return "Only a superadmin can change platform roles.";
+    if (memberId === actor.id) return "You can't change your own role.";
+  }
 
   await db
     .update(members)

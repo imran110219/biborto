@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { sponsors } from "@/drizzle/schema";
+import { parseWebsite } from "@/lib/url";
 import { requireAdminMemberId } from "@/lib/auth/require-admin";
 import type { SponsorTier } from "@/lib/types";
 
@@ -26,8 +27,10 @@ export async function createSponsor(_prevState: string | undefined, formData: Fo
   await requireAdminMemberId();
   const { name, tier, website, active } = readSponsorForm(formData);
   if (!name) return "Name is required.";
+  const websiteUrl = parseWebsite(website);
+  if (websiteUrl === undefined) return "Enter a valid website address (http or https).";
 
-  await db.insert(sponsors).values({ name, tier, website: website || null, active });
+  await db.insert(sponsors).values({ name, tier, website: websiteUrl, active });
 
   revalidateSponsorPaths();
   redirect("/admin/sponsors");
@@ -37,8 +40,10 @@ export async function updateSponsor(id: string, _prevState: string | undefined, 
   await requireAdminMemberId();
   const { name, tier, website, active } = readSponsorForm(formData);
   if (!name) return "Name is required.";
+  const websiteUrl = parseWebsite(website);
+  if (websiteUrl === undefined) return "Enter a valid website address (http or https).";
 
-  await db.update(sponsors).set({ name, tier, website: website || null, active }).where(eq(sponsors.id, id));
+  await db.update(sponsors).set({ name, tier, website: websiteUrl, active }).where(eq(sponsors.id, id));
 
   revalidateSponsorPaths();
   revalidatePath(`/admin/sponsors/${id}/edit`);

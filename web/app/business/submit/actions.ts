@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db/client";
 import { businesses } from "@/drizzle/schema";
 import { requireMemberId } from "@/lib/auth/session-member";
+import { parseWebsite } from "@/lib/url";
 import { BUSINESS_CATEGORIES, type BusinessCategory } from "@/lib/types";
 
 function slugify(name: string): string {
@@ -32,6 +33,14 @@ export async function submitBusiness(_prevState: string | undefined, formData: F
 
   if (!name) return "Business name is required.";
   if (!BUSINESS_CATEGORIES.includes(category)) return "Choose a category.";
+  if (name.length > 120 || city.length > 80 || tagline.length > 160 || phone.length > 40 || email.length > 120) {
+    return "One of the fields is too long.";
+  }
+  if (description.length > 5000 || offerings.length > 20 || offerings.some((o) => o.length > 80)) {
+    return "Description or offerings are too long.";
+  }
+  const websiteUrl = parseWebsite(website);
+  if (websiteUrl === undefined) return "Enter a valid website address (http or https).";
 
   const slug = `${slugify(name)}-${Math.random().toString(36).slice(2, 7)}`;
 
@@ -47,7 +56,7 @@ export async function submitBusiness(_prevState: string | undefined, formData: F
     testimonial: null,
     phone: phone || null,
     email: email || null,
-    website: website || null,
+    website: websiteUrl,
   });
 
   redirect("/business?submitted=1");

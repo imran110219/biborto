@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { businesses } from "@/drizzle/schema";
+import { parseWebsite } from "@/lib/url";
 import { requireAdminMemberId } from "@/lib/auth/require-admin";
 import { BUSINESS_CATEGORIES, type BusinessCategory, type BusinessStatus } from "@/lib/types";
 
@@ -74,6 +75,8 @@ export async function updateBusiness(slug: string, _prevState: string | undefine
 
   if (!name) return "Name is required.";
   if (!BUSINESS_CATEGORIES.includes(category)) return "Choose a valid category.";
+  const websiteUrl = parseWebsite(website);
+  if (websiteUrl === undefined) return "Enter a valid website address (http or https).";
 
   await db
     .update(businesses)
@@ -87,7 +90,7 @@ export async function updateBusiness(slug: string, _prevState: string | undefine
       testimonial: testimonial || null,
       phone: phone || null,
       email: email || null,
-      website: website || null,
+      website: websiteUrl,
     })
     .where(eq(businesses.slug, slug));
 

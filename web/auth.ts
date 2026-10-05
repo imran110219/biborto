@@ -42,7 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // (Auth.js requirement, not a choice made here) — JWT for both
   // providers, so Google sign-ins behave the same way as credentials
   // ones rather than splitting session strategy per provider.
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 }, // 7 days; admin actions re-check the DB anyway
   pages: { signIn: "/signin" },
   providers: [
     Credentials({

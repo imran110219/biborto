@@ -2,7 +2,7 @@ Roll,Name,Email,Phone,Discipline
 110101,MD. ZAHIDUR RAHMAN,zahid110101@gmail.com,01511197916,ARCH
 110104,Ayesha Rubaiyat,ayesharubaiyat04@gmail.com,01786775854,ARCH
 110105,Kazi Asadullah Al Emran,archemran@gmail.com,+8801617110105,ARCH
-110107,Md. Nazmus Sakib,nazmuSWEakibtonu1990@gmail.com,+880 01722873726,ARCH
+110107,Md. Nazmus Sakib,nazmussakibtonu1990@gmail.com,+880 01722873726,ARCH
 110108,Kazi Zayed Titumir,architect.zayed@gmail.com,01722544624,ARCH
 110111,Jati Mallick,jatimallick0111@gmail.com,+880 01739521865,ARCH
 110114,Azima Tabasum,tazima1804@gmail.com,01744545805,ARCH
@@ -21,8 +21,8 @@ Roll,Name,Email,Phone,Discipline
 110206,Anwesha paul,anwesha110206@gmail.com,01914477114,CSE
 110207,Mahbuba Bintay Ali,sharna1367@gmail.com,01759126126,CSE
 110209,S. M. Arafath Habib,akash110209@gmail.com,01912827721,CSE
-110210,Shuvro Sarker,SWEuvro22@outlook.com,01911976585,CSE
-110211,Md Imran HoSWEain,imranku11@gmail.com,01789219903,CSE
+110210,Shuvro Sarker,suvro22@outlook.com,01911976585,CSE
+110211,Md Imran Hossain,imranku11@gmail.com,01789219903,CSE
 110212,Zarrin Tasnim Asha,zarrin.ku@gmail.com,,CSE
 110213,Partha Sarothi Dhali,parthasarothi91@gmail.com,01925676850,CSE
 110214,Rayhan Ferdous,rayhan.ferdous@usask.ca,+13062633299,CSE
@@ -64,7 +64,7 @@ Roll,Name,Email,Phone,Discipline
 110422,Sandip Ray,sandipray0422@gmail.com,01704536477,URP
 110424,Al Ferdous Ahmed,ferdous110424@gmail.com,+880 1737220057,URP
 110425,Babujit Halder,babujitku@gmail.com,01759298843,URP
-110429,Osman Goni,osmanruSWEel741516@gmail.com,+880 1937741516,URP
+110429,Osman Goni,osmanrussel741516@gmail.com,+880 1937741516,URP
 110432,Srijan Mazumder,srijan.planner@gmail.com,+49 15217281253,URP
 110501,Nafisa Afrin,n.afrin1991@gmail.com,+880 01743030854,FWT
 110502,Khan Md. Masudur Rahman,m.khanku91@gmail.com,01781659913,FWT
@@ -87,7 +87,7 @@ Roll,Name,Email,Phone,Discipline
 110528,Hira Khanom,khanomhira053@gmail.com,+880 1670711848,FWT
 110529,Amit Kumar Mondal,amitkufwt11@gmail.com,+880 1912904871,FWT
 110530,Jamila Khatun,jamila.fwt.ku@gmail.com,+880 01946412966,FWT
-110531,Md. Shanewas HoSWEain,shanewaspartho@gmail.com,+880 1914834572,FWT
+110531,Md. Shanewas Hossain,shanewaspartho@gmail.com,+880 1914834572,FWT
 110532,Shahelia Kabir,shahelia.arctech@gmail.com,01917874441,FWT
 110534,G M Masum Billah,masumwcsbd@gmail.com,+880 01713138183,FWT
 110537,Afrina Asrafi,afrinafwtku37@gmail.com,+880 1710862047,FWT
@@ -106,7 +106,7 @@ Roll,Name,Email,Phone,Discipline
 110610,Md.Robiul Islam,robiulku11@gmail.com,+880 01907728173,FMRT
 110611,Shahitaj shiuli,shahitajshiuli@gmail.com,+880 01880729606,FMRT
 110612,S. M. Abdullah,pervezmubbdullah11@gmail.com,+880 1681932200,FMRT
-110613,Md. Al-amin HoSWEain,pioneer.alamin@gmail.com,+880 01739252992,FMRT
+110613,Md. Al-amin Hossain,pioneer.alamin@gmail.com,+880 01739252992,FMRT
 110614,MD. Aynur Rahman,aynurku80@gmail.com,+880 01758586765,FMRT
 110615,Prosen Majumder,prosen.fmrt11@gmail.com,+880 1759180013,FMRT
 110619,Md. Naser Ali Mahadi,naserfmrt11@gmail.com,+880 01744913966,FMRT
@@ -120,7 +120,7 @@ Roll,Name,Email,Phone,Discipline
 110635,Md. Alauddin Biswas,alauddinku24@gmail.com,+880 01982889104,FMRT
 110636,DEBBRATA KUNDU,debbrata.kundu11@gmail.com,+880 01924199680,FMRT
 110637,Kaniz Fatima Shishir,kanizfatimashishir@gmail.com,+880 01537631570,FMRT
-110638,MD. IMRAN HOSWEAIN,imran.ku.fmrt11@gmail.com,+880 1750443777,FMRT
+110638,MD. IMRAN HOSSAIN,imran.ku.fmrt11@gmail.com,+880 1750443777,FMRT
 110641,Jaya Golder,Jayagolder123@gmail.com,01723833345,FMRT
 110644,Md. Asad Ali,imrandof41@gmail.com,+880 1575060774,FMRT
 110707,Md saimoon Rahman,s.rahman.ku.bd@gmail.com,+1 110707,FMRT
@@ -133,9 +133,9 @@ Roll,Name,Email,Phone,Discipline
 110818,Prokash Chandra Biswas,prokashku92@gmail.com,+880 01757496996,AT
 110820,Md Ashraf ali,ashraf.ku11@gmail.com,+880 01936118047,AT
 110822,Mir Rakibul Islam,mirrakibulislam.120@gmail.com,01712555896,AT
-110826,Shahadath HoSWEain,shd.at26@gmail.com,+880 01718305090,AT
+110826,Shahadath Hossain,shd.at26@gmail.com,+880 01718305090,AT
 110827,Yadul Islam,atsujonku@gmail.com,01741608187,AT
-110830,Md. Kamal HoSWEain,jony.kamalku@gmail.com,01729588619,AT
+110830,Md. Kamal Hossain,jony.kamalku@gmail.com,01729588619,AT
 110832,Eeshita Mandal,eeshitamandal1606@gmail.com,+880 1733171506,AT
 110834,Avijit Das,avijit3446@gmail.com,01715987972,AT
 110837,Md. Habibur Rahman,habibabir4@gmail.com,+880 01937783745,AT
@@ -165,7 +165,7 @@ Roll,Name,Email,Phone,Discipline
 110949,MD TANVEER ALAM,tanviralam21@gmail.com,01717416927,ECE
 110950,Md. Ehsanul Hoque,ehsanlikhon.ece11@gmail.com,+880 1917753390,ECE
 111003,Syed Muktaderul Islam,syed.islam@live.com,+880 01700771907,ES
-111007,Mosharof HoSWEain,mosharofhoSWEain00745@gmail.com,+880 1979111007,ES
+111007,Mosharof Hossain,mosharofhossain00745@gmail.com,+880 1979111007,ES
 111033,SK. REZOWAN-UL-ISLAM,rez1islam@gmail.com,+880 01674193039,ES
 111034,Tulip Sarkar,tulipsarkar21@yahoo.com,+880 1717995455,ES
 111109,Md. Attiquzzaman,zaman111109@gmail.com,+880 01733813939,PHARM
@@ -176,10 +176,10 @@ Roll,Name,Email,Phone,Discipline
 111227,Md Taibur Rahman,taibur.rahaman.7@gmail.com,+880 01911632296,MATH
 111239,Mahmuda Khatun,mahmuda.ku@gmail.com,+880 01763033077,MATH
 111241,MD. SAIFUL ISLAM,islamku111241@gmail.com,+880 01923062226,MATH
-111243,Md.Saddam HoSWEain,saddam111243@yahoo.com,+880 01916000921,MATH
+111243,Md.Saddam Hossain,saddam111243@yahoo.com,+880 01916000921,MATH
 111254,Md. Ahsanul Hoque Fahim,fahim86015@gmail.com,01723504425,MATH
 111328,MD ZEHAD HOSEN MUNSI,zehadku@gmail.com,+880 01312264696,SWE
-111336,Md. Zahid HaSWEan Rana,zahid.ku11@gmail.com,+880 8801830602008,SWE
+111336,Md. Zahid Hossain Rana,zahid.ku11@gmail.com,+880 8801830602008,SWE
 111339,Tipu Sultan,tipu.ku11@gmail.com,+880 1741544286,SWE
 111346,Md. Shahinur Rahman,samratms16@gmail.com,+880 01751-786970,SWE
 111350,Puja Biswas,poozabiswasmitu@gmail.com,01782317136,SWE
@@ -204,22 +204,22 @@ Roll,Name,Email,Phone,Discipline
 111604,A.H. Shakkhor,shakkhoa@gmail.com,01718700252,SOC
 111605,Sykat Mondal,mondalsykat@gmail.com,+880 01996160660,SOC
 111606,Tasmin Nahar,aneykusoc11@gmail.com,+880 01717530424,SOC
-111608,Md anowar hoSWEain,hoSWEainanowar2030@gmail.com,01823107503,SOC
-111609,Md. Jumman HoSWEain,jumman.odesk@gmail.com,+880 01915826826,SOC
+111608,Md anowar Hossain,Hossainanowar2030@gmail.com,01823107503,SOC
+111609,Md. Jumman Hossain,jumman.odesk@gmail.com,+880 01915826826,SOC
 111613,G.M. Maksudulla,maksudulla.r.ku@gmail.com,01713-554435,SOC
 111615,Anupam Roy,anupamku91@gmail.com,+880 01317257952,SOC
 111617,Jumpa Mondal,bdjhumpa@gmail.com,01726-125304,SOC
 111621,Naim Rahman Samrat,naim80samrat@gmail.com,+880 01920110333,SOC
-111622,Md. Shawkat HoSWEain Gazi,shawkatku11@gmail.com,01711106199,SOC
+111622,Md. Shawkat Hossain Gazi,shawkatku11@gmail.com,01711106199,SOC
 111624,Md Yousup Dhali,yousup11ku@gmail.com,01917553390,SOC
 111626,Asma Islam Sathi,asmasathi26@gmail.com,+880 01964152316,SOC
-111628,saddam hoSWEain,saddamku@gmail.com,+880 01748325543,SOC
+111628,saddam Hossain,saddamku@gmail.com,+880 01748325543,SOC
 111630,Rifat Ara,rifatara7583@gmail.com,01737352311,SOC
 111631,Nazmul Islam,nazmul1131@gmail.com,+880 -1773-681091,SOC
-111632,MD. MILON-HOSWEAIN,milon.ku.422@gmail.com,+880 01719137075,SOC
+111632,MD. MILON-Hossain,milon.ku.422@gmail.com,+880 01719137075,SOC
 111635,Rabeya Sultana Rifat,rifatsultana71@gmail.com,01925578479,SOC
 111640,Sidhartha Mandal,sidharmondal@gmail.com,+880 1929915479,SOC
-111643,MD. BILLAL HOSWEAIN,billalrdf22@gmail.com,+880 01966016737,SOC
+111643,MD. BILLAL Hossain,billalrdf22@gmail.com,+880 01966016737,SOC
 111644,Raimohon Sarkar,raimohonku11@gmail.com,+880 01921919596,SOC
 111648,Laila Tabasum,onni.812635@gmail.com,+880 01920426711,SOC
 111651,Somnath Sarkar (Sumon),sumon12081991@gmail.com,+880 01729541777,SOC

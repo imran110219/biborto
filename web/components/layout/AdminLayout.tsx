@@ -3,7 +3,8 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { AdminSidebar } from "./AdminSidebar";
-import { BellIcon, MenuIcon, PlusIcon, SearchIcon } from "@/components/ui/icons";
+import { AdminUserMenu } from "./AdminUserMenu";
+import { BellIcon, MenuIcon, SearchIcon } from "@/components/ui/icons";
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -47,9 +48,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               <BellIcon />
               <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#B3541E]" />
             </button>
-            <button className="flex h-11 items-center gap-2 rounded-[10px] bg-brand-green px-[18px] text-sm font-semibold text-white">
-              <PlusIcon /> Create new
-            </button>
+            <AdminUserMenu />
           </div>
         </div>
 

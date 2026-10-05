@@ -122,11 +122,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user?.id) {
         token.userId = user.id;
         const [member] = await db
-          .select({ platformRole: members.platformRole })
+          .select({ id: members.id, platformRole: members.platformRole })
           .from(members)
           .where(eq(members.userId, user.id))
           .limit(1);
         token.platformRole = member?.platformRole ?? "member";
+        token.memberId = member?.id;
       }
       return token;
     },
@@ -134,6 +135,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.userId && session.user) {
         session.user.id = token.userId as string;
         session.user.platformRole = token.platformRole as "member" | "admin" | "superadmin";
+        session.user.memberId = token.memberId as string | undefined;
       }
       return session;
     },

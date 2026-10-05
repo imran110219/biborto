@@ -25,6 +25,8 @@ this isn't a speculative model, it's what the UI assumes.
 - `db/migrations/005_gallery_album_links.sql` and
   `db/migrations/006_gallery_video_links.sql` — optional event and discipline
   links for gallery albums and videos.
+- `db/migrations/007_gallery_videos.sql` — creates the video table for an
+  existing database that predates gallery videos.
 - `db/seed.sh` — runs `schema.sql` then every `seed_*.sql` below against
   `$DATABASE_URL` (or `web/.env.local`'s, if unset), in the required
   order. Wired up as `npm run db:seed` / `npm run db:reset` from `web/`
@@ -183,6 +185,9 @@ password login without reseeding other data.
 For an already-seeded database, apply
 `db/migrations/001_google_membership_requests.sql` once before deploying
 the Google membership-request flow.
+For an already-seeded database that does not have `gallery_videos`, apply
+`db/migrations/007_gallery_videos.sql` once before deploying the gallery
+video query. It is safe to rerun if the table already exists.
 
 **Re-seeding a non-empty database**: `npm run db:seed` applies
 `schema.sql` and the seed files as plain `INSERT`s (not idempotent

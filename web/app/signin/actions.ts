@@ -49,3 +49,18 @@ export async function googleSignIn(formData: FormData) {
     throw error;
   }
 }
+
+// Development shortcut: one-click superadmin sign-in using SUPERADMIN_PASSWORD
+// from the server env (never sent to the client). Hard-disabled outside
+// `next dev` so it can't exist in a production build.
+export async function devSuperadminSignIn(formData: FormData) {
+  if (process.env.NODE_ENV !== "development") throw new Error("Not available outside development.");
+  const password = process.env.SUPERADMIN_PASSWORD;
+  if (!password) throw new Error("SUPERADMIN_PASSWORD is not set.");
+  const callbackUrl = String(formData.get("callbackUrl") ?? "");
+  await signIn("credentials", {
+    email: "superadmin@biborto11.com",
+    password,
+    redirectTo: callbackUrl || "/admin/dashboard",
+  });
+}

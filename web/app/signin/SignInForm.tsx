@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { LockIcon, MailIcon } from "@/components/ui/icons";
-import { credentialsSignIn, googleSignIn } from "./actions";
+import { credentialsSignIn, devSuperadminSignIn, googleSignIn } from "./actions";
 
 export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
   const [error, formAction, pending] = useActionState(credentialsSignIn, undefined);
@@ -90,6 +90,18 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
           Continue with Google
         </button>
       </form>
+
+      {process.env.NODE_ENV === "development" && (
+        <form action={devSuperadminSignIn}>
+          <input type="hidden" name="callbackUrl" value={callbackUrl} />
+          <button
+            type="submit"
+            className="flex h-[44px] w-full items-center justify-center rounded-xl border border-dashed border-border-input text-sm font-semibold text-text-secondary"
+          >
+            Dev: sign in as superadmin
+          </button>
+        </form>
+      )}
 
       <p className="text-center text-sm text-text-secondary">
         Not registered yet?{" "}

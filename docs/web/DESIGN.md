@@ -155,6 +155,8 @@ joins.
 - **Gallery** (`GalleryCards.tsx`): pill tab switcher ("Photo albums" /
   "Videos") + an "Upload photos" primary button; album cards (image + title +
   count); video cards (dark thumbnail, circular play button, duration badge).
+  The upload button is part of the visual design only; the feature is not
+  implemented. When built, only admins and superadmins may upload images.
 - **Stats bar**: full-bleed `brand-green` background band, 4-column grid
   (5-column on the admin dashboard, for the Business listings tile) of
   Fraunces numbers over small caption labels in a lighter green tint.

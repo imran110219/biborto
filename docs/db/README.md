@@ -3,12 +3,12 @@
 Docs for `db/` — paths below are given from the repo root, since this
 file lives in `docs/db/` rather than next to the SQL it describes.
 
-The full Postgres schema for the Batch 11 platform, covering every entity
-the Next.js app (`web/`) already renders from mock data: members,
-businesses, sponsors, events + RSVPs, blog posts, and gallery
-albums/photos/videos. Field choices come from `web/lib/types.ts`,
-`web/lib/mock-data.ts`, and the admin pages under `web/app/admin/**` —
-this isn't a speculative model, it's what the UI already assumes.
+The Postgres schema for the Batch 11 platform supports the database-backed
+public pages and admin workflows in `web/`: members, businesses, sponsors,
+events + RSVPs, blog posts, gallery albums/photos/videos, and auth. The
+member seed uses the active-voter roster; other seeded content is sample
+data. Field choices also reflect `web/lib/types.ts` and the admin pages —
+this isn't a speculative model, it's what the UI assumes.
 
 ## Files
 
@@ -32,21 +32,23 @@ this isn't a speculative model, it's what the UI already assumes.
   ICU/CLDR data bundled with Node's `Intl.DisplayNames` (generated, not
   hand-typed — see the file's own header for exactly which codes were
   kept vs. dropped and why). Must run before `db/seed_members.sql`.
-- `db/seed_members.sql`, `db/seed_superadmin.sql`,
-  `db/seed_businesses.sql`, `db/seed_sponsors.sql`,
-  `db/seed_events.sql`, `db/seed_blog_posts.sql`, `db/seed_gallery.sql` — migrate
-  every entity in `web/lib/mock-data.ts` into rows, in that dependency
-  order (members need disciplines to exist for `discipline_id`,
-  businesses need members to exist for `owner_member_id`, sponsors need
-  businesses for the optional `business_id` cross-link, blog posts need
-  members for `author_member_id`). Each file's header comment flags what
-  the mock data doesn't actually specify (e.g. exact years for
-  event/post dates, business contact info) rather than inventing it
-  silently. `activity_log` has no seed data — no source for it in
-  `mock-data.ts` (activity feed text is hardcoded in the dashboard page
-  component). `users`/`accounts`/`sessions` are deliberately never
-  seeded either — they're populated at runtime by actually claiming an
-  account or signing in, not by a SQL script.
+- `db/seed_members.sql` contains the 241 records from the top-level
+  `active-voter-list.csv`. It stores Roll as `student_id`, plus source
+  name, email and phone; CSV discipline codes `BAD` and `BANGLA` map to
+  KU reference codes `BA` and `BAN`. Since the CSV has no platform roles
+  or app approval statuses, every roster row is seeded as an active
+  `member`. Profession, city and country are left unset.
+- `db/seed_superadmin.sql` separately creates the non-public bootstrap
+  superadmin with no discipline. It is an active member record only;
+  credentials are claimed at `/signup`.
+- `db/seed_businesses.sql`, `db/seed_sponsors.sql`,
+  `db/seed_events.sql`, `db/seed_blog_posts.sql`, and
+  `db/seed_gallery.sql` seed the remaining sample content in dependency
+  order (businesses link to members; sponsors can link to businesses;
+  blog posts can link to members). Their headers document mockup gaps
+  rather than invent missing source values. `activity_log` has no seed.
+  `users`/`accounts`/`sessions` are populated at runtime by claiming an
+  account or signing in, not by a SQL seed.
 
 ## Entities
 
@@ -55,7 +57,7 @@ this isn't a speculative model, it's what the UI already assumes.
 | `users`, `accounts`, `sessions`, `verification_tokens` | Login identity (Phase 2, built) — shaped to match `@auth/drizzle-adapter`'s expected schema so Auth.js (next-auth v5) can be pointed at them directly, plus `password_hash` on `users` for credentials sign-in, which the adapter doesn't provide. See `docs/web/README.md`'s Auth section. |
 | `disciplines` | Khulna University's discipline reference list (codes 01-24), grouped by `school`. A real table, not an enum — see "Disciplines are a reference table" below. |
 | `countries` | ISO 3166-1 countries/territories for the "current country" dropdown. Same reasoning as `disciplines` — see "Countries are a reference table" below. |
-| `members` | The alumni directory / profile data. `slug` powers `web/app/members/[slug]`. `discipline_id` references `disciplines`; `country_id` (nullable) references `countries`. `user_id` links to `users` once a member logs in; can exist without one (committee-entered). |
+| `members` | The alumni directory / profile data. `slug` powers `web/app/members/[slug]`. `discipline_id` references `disciplines`; `country_id` (nullable) references `countries`. `user_id` links to `users` once a member logs in; a roster row can exist without a login. |
 | `businesses` | Alumni-run Business Directory listings, self-submitted, approve/reject workflow (`status`, `reviewed_by`, `reviewed_at`). |
 | `sponsors` | Committee-curated sponsor tiers. `business_id` is an *optional* cross-link — sponsors are managed independently of the Business Directory, even though several sponsors are also listed businesses. |
 | `events`, `event_rsvps` | Reunion/chapter events and member RSVPs (`going` / `interested` / `declined`). |
@@ -75,10 +77,9 @@ this isn't a speculative model, it's what the UI already assumes.
   `platform_role` off the session JWT to gate `/admin/**` for writes —
   same as any other Postgres-backed app. See `docs/web/README.md`'s Auth
   section for how sign-in and role-gating actually work.
-- **Files live in R2, not Postgres.** Columns named `*_key` (`avatar_key`,
-  `cover_photo_key`, `logo_key`, `r2_key`) store the Cloudflare R2 object
-  key, not a full URL — the app resolves keys to URLs at render time, so
-  a bucket/domain change never touches stored data.
+- **Files are intended for R2, not Postgres.** Columns named `*_key`
+  (`avatar_key`, `cover_photo_key`, `logo_key`, `r2_key`) store an object
+  key. R2 is not connected yet, and no code resolves keys to URLs.
 - **Sponsors are not businesses.** 5 of the current 5 mock sponsors
   happen to match businesses by name — a sponsor is often also a
   batchmate's business — but the design (see `docs/web/DESIGN.md`)
@@ -99,12 +100,10 @@ this isn't a speculative model, it's what the UI already assumes.
   yet — `Avatar` (`web/components/ui/Avatar.tsx`) only ever displays
   initials, and no R2 base URL is configured anywhere to turn a key into
   an actual image src. Data is ready; rendering isn't built.
-- **`platform_role` is `member`/`admin`/`superadmin`, not
-  `member`/`editor`/`admin`.** Changed on request; the 2 seeded
-  `'editor'`s (Rafiul Islam, Arif Khan) remapped to `'admin'` (kept their
-  elevated access, new tier name) and the 1 seeded `'admin'` (Tahmina
-  Akter) remapped to `'superadmin'` (top-level control) — see
-  `db/seed_members.sql`'s comment for the reasoning.
+- **`platform_role` has three values:** `member`, `admin`, `superadmin`.
+  All 241 roster rows are ordinary members. The separate bootstrap
+  superadmin has no discipline; admin roles are assigned by the committee,
+  not inferred from the active-voter CSV.
 - **Disciplines are a reference table, not an enum.** They started as a
   12-value `member_discipline` enum scoped to the mock data — reasonable
   when that was all the data available. Given Khulna University's real,
@@ -113,14 +112,9 @@ this isn't a speculative model, it's what the UI already assumes.
   was the wrong shape: `disciplines` is now a proper table, grouped by
   `school` (`school_name` enum, 8 values — KU's own School/Discipline
   structure).
-  `members.discipline_id` references it. Cross-checking the mock data
-  against the real list also caught 3 near-miss discipline names that
-  had drifted from KU's actual naming ("Urban & Rural Planning" vs.
-  "Urban **and** Rural Planning", "Electronics & Communication **Eng.**"
-  vs. "...**Engineering**", "...Resource **Tech.**" vs.
-  "...**Technology**") — `db/seed_members.sql` resolves against the
-  authoritative `code`, not by name, specifically to sidestep this class
-  of mismatch.
+  `members.discipline_id` references it. The active-voter CSV uses short
+  codes; `BAD` maps to `BA` (Business Administration), and `BANGLA` maps
+  to `BAN` (Bangla) in `db/seed_members.sql`.
 - **Countries are a reference table, for the same reason as
   disciplines.** `countries` holds every current ISO 3166-1 country/
   territory with a permanent civilian population (243 rows), sourced
@@ -131,9 +125,8 @@ this isn't a speculative model, it's what the UI already assumes.
   Bouvet Island, etc.) — see `db/seed_countries.sql`'s header for the exact
   list. Includes `XK` (Kosovo), which isn't formally ISO-assigned but is
   CLDR/EU/SWIFT-recognized and near-universal in real country dropdowns.
-  `members.country_id` is nullable — nobody's filled it in yet (see
-  `db/seed_members.sql`'s known-gaps note), same as before this was a real
-  column.
+  `members.country_id` is nullable — the active-voter CSV has no country
+  field, so seeded members have no country set.
 - **Other categorical fields are still fixed enums, scoped to what's
   seeded.** `business_category` (6 values), `blog_category` (4 values),
   and `event_category` (4 values) cover exactly what's in the current
@@ -160,10 +153,10 @@ Docker, RDS, etc.):
    (disciplines/countries → members/superadmin → businesses/sponsors/blog_posts →
    events/gallery). `db/seed.sh` reads `DATABASE_URL` from the
    environment, falling back to `web/.env.local` if unset.
-3. Confirm: `select * from public_members;` should return the 12 members
-   with only their public fields; `select count(*) from disciplines;`
-   should return 24; `select count(*) from countries;` should return
-   243; `select count(*) from businesses;` should return 8.
+3. Confirm: `select count(*) from public_members;` should return 241
+   roster members (the separate superadmin is private); `select count(*)
+   from disciplines;` should return 24; `select count(*) from countries;`
+   should return 243; `select count(*) from businesses;` should return 8.
 
 The initial platform superadmin is seeded separately as an active,
 non-public member with email `superadmin@biborto11.com`. After seeding,
@@ -184,21 +177,14 @@ then seeds from scratch.
 
 ## What this does NOT include yet
 
-- **Wired into `web/` for reads, login, and approval — not the rest of
-  the write surface.** The public pages query this schema directly via
-  Drizzle ORM (see `docs/web/README.md`'s Data layer section), sign-in/
-  claim-account are real writes against `users`/`members.user_id`, and
-  approving/suspending a member or approving/rejecting a business are
-  real writes against `members.status`/`businesses.status` (+
-  `reviewed_by`/`reviewed_at`) — see `docs/web/README.md`'s Admin write
-  surface section. But most *other* admin page content still renders
-  from `web/lib/mock-data.ts` — publishing a blog post, submitting a
-  business, RSVPing to an event, etc. still do nothing.
-- No admin UI wired to this yet beyond member/business approval — a
-  generic Postgres client (psql, pgAdmin, TablePlus, etc.) still works
-  for everything else until a real admin panel exists for it.
+- **Most core write paths are wired into `web/`.** Auth, member and
+  business review/edit, business submission, event RSVP, and admin CRUD
+  for events, sponsors, videos and blog posts write to Postgres.
+- Admin member creation and CSV import are not implemented; the current
+  roster is loaded through `db/seed_members.sql`. There is no open
+  account registration.
 - No `activity_log` seed data — no source for it in `mock-data.ts` (the
   dashboard's activity feed text is hardcoded in the page component).
 - No R2 wiring — `*_key` columns aren't resolved to real URLs anywhere
-  yet, and every one is `NULL` in the seed data (no files have actually
-  been uploaded).
+  yet, and seed media keys are empty. Gallery upload remains unbuilt;
+  when added, only admins and superadmins may upload images.

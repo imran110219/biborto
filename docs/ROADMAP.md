@@ -67,21 +67,26 @@ named.
   `coalesce(published_at, now())` rather than overwriting it.
 - Dashboard's events widget, blog-post count, and RSVP progress bars
   now read live data instead of `lib/mock-data.ts`.
-- **Photos (gallery) admin is the one exception, and stays mock**:
-  `gallery_photos.r2_key` is `not null`, so an individual photo row
-  can't be created without Cloudflare R2 wired up (see §6). Album
-  metadata CRUD could ship without R2, but was left alongside Photos
-  rather than split out, since "add a photo" is the point of the page.
+- **Member creation/import is still missing.** `db/seed_members.sql`
+  contains the 241-row active-voter roster, but there is no admin UI for
+  creating a member manually or importing an updated CSV. Current member
+  records come from seed data, with pending records also created by
+  unmatched Google sign-in attempts. No open account registration is
+  available.
+- **Photos (gallery) admin is still a mock page.** There is no R2 client,
+  upload route/action, or image URL resolution. The agreed access rule
+  for the future upload flow is admin and superadmin only. Album metadata
+  editing is also not implemented.
 
 ## 6. Infrastructure (explicitly deferred)
 
 Deferred by decision, not oversight — nothing else in this repo
 depends on either being done first except Photos admin (§5).
 
-- Cloudflare R2 file storage — every `*_key` column is `NULL` in seed
-  data, no bucket configured, `components/ui/Avatar.tsx` only ever
-  draws initials.
-- Google OAuth — code-complete but unverified; `AUTH_GOOGLE_ID`/
-  `AUTH_GOOGLE_SECRET` are blank in `.env.example`, no real client
-  configured in this environment. Doesn't block anything else — a
-  session only ever comes from an already-active member either way.
+- Cloudflare R2 file storage — no bucket/client configuration, upload
+  flow, or URL resolution. Seed media keys are empty; avatars still show
+  initials. Gallery upload access must be restricted to admins and
+  superadmins.
+- Google OAuth — provider code exists and local client settings are in
+  the ignored `.env.local`; the flow still needs end-to-end verification.
+  Keep `.env.example` as a placeholder, with no client secret.

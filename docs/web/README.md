@@ -23,12 +23,13 @@ blog, gallery) render from a real independent Postgres database (no
 Supabase) — see [Data layer](#data-layer). Sign-in/sign-up are real too
 (email+password and Google, see [Auth](#auth)) and gate `/admin/**` for
 real. Member and business approval are real writes now too — see
-[Admin write surface](#admin-write-surface) — but most *other* admin page
-content still renders from `lib/mock-data.ts`: signing in as an admin
-controls *access*, but e.g. publishing a blog post or editing sponsors/
-photos/videos/settings still does nothing. File storage (avatars, gallery
-media, business photos) is Cloudflare R2 — not wired up yet, tracked in
-[Known gaps](#known-gaps-vs-the-mockup).
+[Admin write surface](#admin-write-surface). Admin CRUD also writes
+events, sponsors, videos and blog posts; business submission and event
+RSVP are real. The 241-member seed is based on the active-voter CSV.
+There is no open account registration; admin manual member creation and
+CSV import are planned but not built. File storage (avatars, gallery
+media, business photos) is intended for Cloudflare R2 and is not wired
+up. Gallery uploads are planned for admins and superadmins only.
 
 ## Stack
 
@@ -42,9 +43,9 @@ media, business photos) is Cloudflare R2 — not wired up yet, tracked in
   [Data layer](#data-layer).
 - **Auth.js v5** (`next-auth@beta` + `@auth/drizzle-adapter`) for
   sign-in — email/password and Google, JWT sessions — see [Auth](#auth).
-  Member and business approval have a real backend now too — see
-  [Admin write surface](#admin-write-surface) — most other admin pages'
-  content still doesn't.
+  Member/business workflows, business submission, event RSVP and admin
+  CRUD for events, sponsors, videos and blog posts have real database
+  writes. Member import and gallery media are still unbuilt.
 
 ## Structure
 
@@ -159,10 +160,10 @@ Components that query Postgres directly via `lib/db/queries/*` — no
 Route Handlers involved, since that's the idiomatic App Router pattern
 for a page's own read: the
 server that renders the page is the same server that can just query the
-database. Route Handlers are reserved for what actually needs an HTTP
-endpoint — mutations and anything a client-side form will call — once
-Phase 2 auth exists (sign-in, RSVP, submit business, edit post all still
-render inert mock data today).
+database. Route Handlers and Server Actions handle mutations and form
+submissions where needed. Auth, business submission, event RSVP, member
+and business review, and admin CRUD for events, sponsors, videos and blog
+posts are wired to Postgres.
 
 **Setup**: copy `.env.example` to `.env.local` and point `DATABASE_URL`
 at a Postgres instance loaded with `db/schema.sql` + the `db/seed_*.sql`
@@ -228,22 +229,27 @@ supplies them explicitly, so nothing depends on it. If you hit the same
 codegen error after a schema change, this is almost certainly why.
 
 **File storage (R2)**: `*_key` columns (`avatar_key`, `cover_photo_key`,
-etc.) aren't resolved to actual URLs anywhere yet — no R2 bucket is
-wired up. Every avatar/cover/logo in the seed data is `NULL` anyway (no
-files have actually been uploaded), so this hasn't been needed yet;
-tracked as a gap, not silently faked.
+etc.) aren't resolved to actual URLs anywhere yet — no R2 bucket or upload
+flow is wired up. Gallery uploads are intended for admins and
+superadmins only; that check must be enforced in the server action/route,
+not only by hiding the UI. No gallery photos are seeded. This is a known
+gap, not silently faked.
 
-**Still on mock data**: `lib/mock-data.ts` remains what most admin page
-*content* renders from, and what every form besides sign-in/sign-up
-still does nothing with (business submission, RSVP, edit-post's
-save/publish) — member and business approval are the first two
-exceptions, see [Admin write surface](#admin-write-surface) below.
+**Still on mock data**: `lib/mock-data.ts` remains in use for dashboard
+activity placeholders, admin photos and settings, and some inert
+controls. Admin member creation and CSV import are not implemented;
+members currently come from seed data or a pending request created by an
+unmatched Google sign-in. That request does not create an account or
+grant access until an admin approves it.
 
 ## Admin write surface
 
-The first real mutations past auth: approving/suspending a member and
-approving/rejecting a business submission, both from the dashboard's
-approval-queue panels and each entity's admin list page.
+Real admin writes include member approval, suspension/reactivation and
+editing; business approval/rejection/editing; and CRUD for events,
+sponsors, videos and blog posts. The public business submission form and
+event RSVP also write to Postgres. Admin member creation and CSV import,
+gallery album/photo management, R2 uploads and settings persistence are
+not implemented.
 
 - **`lib/db/queries/{members,businesses}.ts`** export `getAdminMembers()`/
   `getAdminBusinesses()` alongside the existing public-facing queries —
@@ -274,16 +280,13 @@ approval-queue panels and each entity's admin list page.
   no "Event RSVPs" approval queue yet), where the buttons render inert,
   same as before this existed.
 
-Not yet extended to: event RSVP, blog post publish/save, sponsors,
-photos, videos, settings, or the member/business table rows' Edit/Delete
-buttons (only the approval-queue actions are wired) — same shape of work,
-not yet done.
+The gallery upload flow, when implemented, must authorize `admin` and
+`superadmin` in its server action or route. Hiding an upload button alone
+is not an access control check.
 
-**Suggested next task**: wire the public business submission form to a
-Server Action that creates a `pending` business row for the signed-in
-member, then revalidate the admin business queue. The review actions are
-already real, so this completes the submission-to-review path for
-businesses.
+**Suggested next tasks**: build admin-only manual member creation and
+CSV import, then connect gallery image uploads to R2 with server-side
+admin/superadmin authorization.
 
 ## Auth
 
@@ -292,12 +295,14 @@ Email/password and Google, via Auth.js v5 (`next-auth@beta` +
 sessions with the Credentials provider, so both providers use JWT for
 consistency rather than splitting strategy per provider.
 
-**There is no open sign-up.** Members are committee-entered into
-`members` before anyone ever logs in (see `db/schema.sql`'s comment on
-that table) — `/signup` ("Request membership" in the UI) *claims* an
-existing `members` row by email, it never creates one. Claiming: enter
-the email the committee has on file + a password → creates the `users`
-row → sets `members.user_id`. Works for `status='pending'` as well as
+**There is no public account registration.** `/signup` ("Request
+membership" in the UI) lets a person claim an existing `members` row by
+email; it does not create an active member account. The committee-managed
+roster is currently loaded from `active-voter-list.csv` via
+`db/seed_members.sql`; admin manual member creation and CSV import are
+planned, but not implemented. Claiming: enter the email on file and a
+password → creates the `users` row → sets `members.user_id`. Works for
+`status='pending'` as well as
 `'active'` (so a member awaiting approval can have a password ready),
 but actually signing in requires `status='active'` — a newly-claimed
 pending member's first sign-in attempt correctly fails until approved,
@@ -305,10 +310,10 @@ not a bug. A `'suspended'` member can neither claim nor sign in.
 
 Google sign-in has no separate claim step. For an active matching member,
 the `events.createUser` callback links `members.user_id` the same way the
-credentials claim flow does. If no member matches, the sign-in callback
-creates a pending member request but does not create an Auth.js user or
-session; see the membership request behavior below.
-The sign-up page offers Google sign-in as well: a verified Google email
+credentials claim flow does. A verified Google email with no matching
+member creates a private `pending` membership request, but no Auth.js
+user or session; this is a request for committee review, not an active
+account. The sign-up page offers Google sign-in as well: a verified Google email
 matching an active committee member finds that existing profile. Google
 email matching is case-insensitive, and a Google account can link to a
 previously password-claimed account with the same verified email. If no
@@ -343,10 +348,9 @@ against a live server and a real Postgres database — claim a real
 account, wrong password rejected, suspended/pending members correctly
 blocked from signing in even with the right password, role-based
 `/admin/**` gating, sign-out actually clearing the session. Google
-sign-in is code-complete but untested — there's no real Google Cloud
-OAuth client configured in this environment (see `.env.example`'s
-`AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`). "Continue with Google" will
-error until those are set.
+sign-in is code-complete but has not been verified end-to-end. Local
+OAuth client values belong in ignored `.env.local`; `.env.example` keeps
+these variables blank.
 
 **Not built**: forgot-password (needs an email-sending provider — a
 separate infrastructure decision, same shape of gap as R2), and any
@@ -382,14 +386,9 @@ restructure first.
   mockup); the other 3 seeded posts render the same "coming soon"
   placeholder body the mockup always showed for them — see
   `db/seed_blog_posts.sql`.
-- Sign-in/sign-up are real now (see [Auth](#auth)), and so is approving/
-  rejecting an existing pending member or business (see [Admin write
-  surface](#admin-write-surface)). The public *submission* form (an
-  alumnus listing a new business) and RSVP are still inert, same as the
-  mockup — approval has a backend now, the thing being approved doesn't
-  yet have a way to be submitted for real. Search/filter forms are still
-  inert too.
-- Real data is thin by design (9 active members, 0 photos, 0 countries
-  captured) — the home page's stat bar and directories will look sparse
-  compared to the polished mockup's bracketed placeholders until real
-  content gets entered. That's the data being honest, not a bug.
+- Sign-in/sign-up, member and business review, business submission,
+  event RSVP, and admin CRUD for events, sponsors, videos and blog posts
+  use real database writes. Search/filter controls, settings persistence,
+  member creation/import and gallery photo management remain unbuilt.
+- The seed has 241 active roster members and 0 gallery photos. Country
+  reference data has 243 rows, while member country fields remain empty.

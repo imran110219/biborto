@@ -8,11 +8,13 @@ vs. mock across both, in build order.
 Two-part repo:
 
 ```
-web/    Next.js app — real components, public pages read from a real
-        Postgres database, real sign-in gates /admin/**, member/business
-        approval are real writes, most other admin content + forms
-        still on mock data.
-db/     Full Postgres data model (members, businesses, sponsors, events,
+web/    Next.js app — public pages read from Postgres; Auth.js signs in
+        existing members and gates /admin/**. Member/business review,
+        event/sponsor/video/blog editing, business submissions and RSVPs
+        have real writes. Member creation/import and gallery photo upload
+        are not implemented yet.
+db/     Full Postgres data model and seed data, including the current
+        active-voter roster (members, businesses, sponsors, events,
         blog, gallery, auth) — wired into web/'s public pages and login
         via Drizzle ORM / Auth.js.
 ```
@@ -24,29 +26,28 @@ component shapes) lives on in `docs/web/DESIGN.md`.
 
 ## How the pieces relate
 
-- **`web/`** is a componentized Next.js + Tailwind app. Its public pages
-  (home, members, business directory, events, blog, gallery) query the
-  real database directly, and sign-in (email/password + Google) really
-  authenticates and role-gates `/admin/**`. Approving/suspending a member
-  and approving/rejecting a business submission are real writes now too
-  (see `docs/web/README.md`'s Admin write surface section). Most other
-  admin *page content* and forms (business submission, RSVP, edit-post's
-  save) still render `web/lib/mock-data.ts` and do nothing. This is the
-  actively developed project. See `docs/web/README.md` and
-  `docs/web/DESIGN.md`.
+- **`web/`** is a componentized Next.js + Tailwind app. Public pages read
+  from Postgres; Auth.js handles credentials and Google sign-in for
+  existing members and role-gates `/admin/**`. Member and business
+  review/edit, business submissions, event RSVPs, and admin editing for
+  events, sponsors, videos and blog posts write to Postgres. Admin member
+  creation/CSV import and gallery photo upload remain unimplemented.
+  See `docs/web/README.md` and `docs/web/DESIGN.md`.
 - **`db/`** is the full Postgres data model — members, businesses,
   sponsors, events/RSVPs, blog posts, gallery, plus auth (`users`,
   `accounts`, `sessions`, `verification_tokens`) — targeting an
   independent Postgres database (Supabase was considered and ruled out).
   See `docs/db/README.md`.
 
-The overall arc: mockup → componentized frontend → public pages wired to
-a real database → auth (sign-in/sign-up real, role-gates `/admin/**`) →
-the rest of the write surface, in progress (member/business approval
-done via Server Actions; business submission, RSVP, edit-post's save/
-publish, sponsors/photos/videos/settings still mock) → file uploads on
-Cloudflare R2 instead of local paths (not started — no bucket wired up
-yet).
+Member accounts are committee-managed: the active-voter CSV is the
+current source for the member seed, with all roster members assigned the
+`member` role. There is no self-service account registration. Admin CSV
+import and manual member creation are planned but not implemented.
+
+The remaining gallery media work is Cloudflare R2 integration. Gallery
+image uploads must be limited to admins and superadmins; public pages can
+display uploaded images. The bucket and upload/display code are not wired
+up yet.
 
 ## Target stack
 
@@ -58,6 +59,8 @@ yet).
   see `docs/web/README.md`'s Auth section.
 - **File storage**: Cloudflare R2 (avatars, gallery media, business
   photos).
+- **Member management**: committee-managed roster; planned admin CSV
+  import and manual creation. No open account registration.
 
 ## Getting started
 

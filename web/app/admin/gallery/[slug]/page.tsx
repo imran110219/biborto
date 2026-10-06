@@ -11,7 +11,7 @@ import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
 
 export default async function AdminAlbumPhotosPage({ params }: PageProps<"/admin/gallery/[slug]">) {
   const { slug } = await params;
-  const album = await getAlbumBySlug(slug);
+  const album = await getAlbumBySlug(slug, { includePrivate: true });
   if (!album) notFound();
   const photos = await getAdminAlbumPhotos(album.id);
   const session = await auth();

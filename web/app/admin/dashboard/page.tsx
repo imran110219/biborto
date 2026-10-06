@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/icons";
 import { getAdminMembers } from "@/lib/db/queries/members";
 import { getAdminBusinesses } from "@/lib/db/queries/businesses";
-import { getUpcomingEvents } from "@/lib/db/queries/events";
+import { getAdminUpcomingEvents } from "@/lib/db/queries/events";
 import { getRsvpSummary } from "@/lib/db/queries/rsvps";
 import { getAdminPosts } from "@/lib/db/queries/blog";
 import { auth } from "@/auth";
@@ -28,7 +28,7 @@ export default async function AdminDashboardPage() {
   const pendingMembers = allMembers.filter((m) => m.status === "pending");
   const allBusinesses = await getAdminBusinesses();
   const pendingBusinesses = allBusinesses.filter((b) => b.status === "pending");
-  const events = await getUpcomingEvents();
+  const events = await getAdminUpcomingEvents();
   const eventRsvpSummaries = await Promise.all(events.slice(0, 3).map((e) => getRsvpSummary(e.id)));
   const posts = await getAdminPosts();
   const draftPosts = posts.filter((p) => p.status === "draft");

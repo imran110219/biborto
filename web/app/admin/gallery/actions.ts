@@ -44,6 +44,7 @@ export async function createAlbum(_prevState: string | undefined, formData: Form
   const name = String(formData.get("name") ?? "").trim();
   const eventId = String(formData.get("eventId") ?? "") || null;
   const disciplineId = String(formData.get("disciplineId") ?? "") || null;
+  const isPublic = formData.get("isPublic") === "on";
 
   if (!name) return "Album name is required.";
   if (name.length > 120) return "Album name must be 120 characters or fewer.";
@@ -54,9 +55,10 @@ export async function createAlbum(_prevState: string | undefined, formData: Form
   const base = slugify(name) || "album";
   const slug = `${base}-${randomUUID().slice(0, 8)}`;
 
-  await db.insert(galleryAlbums).values({ slug, name, eventId, disciplineId, createdBy: superadminId });
+  await db.insert(galleryAlbums).values({ slug, name, eventId, disciplineId, isPublic, createdBy: superadminId });
 
   revalidatePath("/gallery");
+  revalidatePath("/"); // the landing page shows gallery albums
   revalidatePath(`/gallery/${slug}`);
   revalidatePath("/admin/gallery");
   revalidatePath(`/admin/gallery/${slug}`);
@@ -70,18 +72,20 @@ export async function updateAlbum(albumId: string, slug: string, _prevState: str
   const name = String(formData.get("name") ?? "").trim();
   const eventId = String(formData.get("eventId") ?? "") || null;
   const disciplineId = String(formData.get("disciplineId") ?? "") || null;
+  const isPublic = formData.get("isPublic") === "on";
   if (!name) return "Album name is required.";
   if (name.length > 120) return "Album name must be 120 characters or fewer.";
   const linkError = await validateAlbumLinks(eventId, disciplineId);
   if (linkError) return linkError;
 
   const [updated] = await db.update(galleryAlbums)
-    .set({ name, eventId, disciplineId })
+    .set({ name, eventId, disciplineId, isPublic })
     .where(eq(galleryAlbums.id, albumId))
     .returning({ id: galleryAlbums.id });
   if (!updated) return "That album no longer exists.";
 
   revalidatePath("/gallery");
+  revalidatePath("/"); // the landing page shows gallery albums
   revalidatePath(`/gallery/${slug}`);
   revalidatePath("/admin/gallery");
   revalidatePath(`/admin/gallery/${slug}`);
@@ -99,6 +103,7 @@ export async function deleteAlbum(albumId: string, slug: string, _prevState: str
   if (!deleted) return "That album no longer exists.";
 
   revalidatePath("/gallery");
+  revalidatePath("/"); // the landing page shows gallery albums
   revalidatePath(`/gallery/${slug}`);
   revalidatePath("/admin/gallery");
   revalidatePath(`/admin/gallery/${slug}`);
@@ -151,6 +156,7 @@ export async function deletePhoto(photoId: string, albumSlug: string, _prevState
   }
 
   revalidatePath("/gallery");
+  revalidatePath("/"); // the landing page shows gallery albums
   revalidatePath(`/gallery/${albumSlug}`);
   revalidatePath("/admin/gallery");
   revalidatePath(`/admin/gallery/${albumSlug}`);

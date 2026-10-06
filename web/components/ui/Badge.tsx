@@ -39,3 +39,13 @@ export function TierBadge({ tier }: { tier: SponsorTier }) {
     </span>
   );
 }
+
+// Admin lists: whether an item (blog post, event, album, video) is shown on
+// the public site. Private = hidden from everyone but admins.
+export function VisibilityBadge({ isPublic }: { isPublic: boolean }) {
+  return (
+    <span className={`${base} ${isPublic ? "bg-brand-green-tint text-brand-green" : "bg-status-neutral-bg text-status-neutral-text"}`}>
+      {isPublic ? "Public" : "Private"}
+    </span>
+  );
+}

@@ -16,13 +16,14 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 // rejected rather than silently dropped.
 type VideoForm =
   | { error: string }
-  | { error?: undefined; values: { title: string; youtubeUrl: string; eventId: string | null; disciplineId: string | null } };
+  | { error?: undefined; values: { title: string; youtubeUrl: string; eventId: string | null; disciplineId: string | null; isPublic: boolean } };
 
 function readVideoForm(formData: FormData): VideoForm {
   const title = String(formData.get("title") ?? "").trim();
   const rawUrl = String(formData.get("youtubeUrl") ?? "").trim();
   const eventId = String(formData.get("eventId") ?? "") || null;
   const disciplineId = String(formData.get("disciplineId") ?? "") || null;
+  const isPublic = formData.get("isPublic") === "on";
 
   if (!title) return { error: "Title is required." };
   if (title.length > 160) return { error: "Title must be 160 characters or fewer." };
@@ -31,7 +32,7 @@ function readVideoForm(formData: FormData): VideoForm {
   if ((eventId && !UUID.test(eventId)) || (disciplineId && !UUID.test(disciplineId))) {
     return { error: "Choose a valid event or discipline." };
   }
-  return { values: { title, youtubeUrl: youtubeWatchUrl(videoId), eventId, disciplineId } };
+  return { values: { title, youtubeUrl: youtubeWatchUrl(videoId), eventId, disciplineId, isPublic } };
 }
 
 const revalidateVideoPaths = () => {

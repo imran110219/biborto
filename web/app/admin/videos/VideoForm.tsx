@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { PublicField } from "@/components/admin/PublicField";
 import { retainedFormSubmit } from "@/lib/use-retained-form";
 import Link from "next/link";
 import type { Video } from "@/lib/types";
@@ -54,6 +55,8 @@ export function VideoForm({
           {disciplines.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
       </label>
+
+      <PublicField defaultChecked={video?.isPublic ?? true} />
 
       <div className="flex gap-3">
         <button

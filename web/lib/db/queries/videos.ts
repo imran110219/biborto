@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { disciplines, events, galleryVideos } from "@/drizzle/schema";
 import { parseYoutubeId } from "@/lib/youtube";
@@ -12,6 +12,7 @@ const videoColumns = {
   eventTitle: events.title,
   disciplineId: galleryVideos.disciplineId,
   disciplineName: disciplines.name,
+  isPublic: galleryVideos.isPublic,
 };
 
 function toVideo(row: {
@@ -22,6 +23,7 @@ function toVideo(row: {
   eventTitle: string | null;
   disciplineId: string | null;
   disciplineName: string | null;
+  isPublic: boolean;
 }): Video {
   return {
     id: row.id,
@@ -32,19 +34,33 @@ function toVideo(row: {
     eventTitle: row.eventTitle ?? undefined,
     disciplineId: row.disciplineId ?? undefined,
     disciplineName: row.disciplineName ?? undefined,
+    isPublic: row.isPublic,
   };
 }
 
-function selectVideos() {
+// `publicOnly` also hides the event's title when that event is itself not
+// public, so a public video never leaks a private event's name.
+function selectVideos(publicOnly = false) {
   return db
-    .select(videoColumns)
+    .select(
+      publicOnly
+        ? { ...videoColumns, eventTitle: sql<string | null>`case when ${events.isPublic} then ${events.title} end` }
+        : videoColumns,
+    )
     .from(galleryVideos)
     .leftJoin(events, eq(events.id, galleryVideos.eventId))
     .leftJoin(disciplines, eq(disciplines.id, galleryVideos.disciplineId));
 }
 
+// Admin-only: every video, public or not.
 export async function getVideos(): Promise<Video[]> {
   const rows = await selectVideos().orderBy(desc(galleryVideos.createdAt));
+  return rows.map(toVideo);
+}
+
+// Public site (landing page + /gallery): is_public videos only.
+export async function getPublicVideos(): Promise<Video[]> {
+  const rows = await selectVideos(true).where(eq(galleryVideos.isPublic, true)).orderBy(desc(galleryVideos.createdAt));
   return rows.map(toVideo);
 }
 

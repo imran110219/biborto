@@ -161,6 +161,9 @@ export interface Video {
   eventTitle?: string;
   disciplineId?: string;
   disciplineName?: string;
+  // Shown on the public site (landing page, lists, own page). Only admin
+  // queries ever return non-public rows.
+  isPublic: boolean;
 }
 
 export interface EventItem {
@@ -175,6 +178,7 @@ export interface EventItem {
   category: string;
   description: string;
   featured?: boolean;
+  isPublic: boolean;
 }
 
 export const EVENT_CATEGORIES = ["Reunion", "Online", "Chapter", "Volunteer"] as const;
@@ -194,6 +198,7 @@ export interface AdminEventDetail {
   category: string;
   description: string;
   featured: boolean;
+  isPublic: boolean;
 }
 
 export interface BlogPost {
@@ -216,9 +221,8 @@ export interface BlogPostDetail extends BlogPost {
 export const BLOG_CATEGORIES = ["Reunion", "Memories", "Careers", "Campus"] as const;
 export type BlogCategoryOption = (typeof BLOG_CATEGORIES)[number];
 export type BlogPostStatus = "draft" | "published";
-export type BlogVisibility = "public" | "members_only";
 
-// Admin list row — every post regardless of status/visibility.
+// Admin list row — every post regardless of status/is_public.
 export interface AdminBlogPost {
   id: string;
   slug: string;
@@ -226,6 +230,7 @@ export interface AdminBlogPost {
   category: string;
   authorName: string;
   status: BlogPostStatus;
+  isPublic: boolean;
   updatedAt: string;
 }
 
@@ -239,7 +244,7 @@ export interface AdminBlogPostDetail {
   body: string;
   tags: string[];
   status: BlogPostStatus;
-  visibility: BlogVisibility;
+  isPublic: boolean;
   featured: boolean;
 }
 

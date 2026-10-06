@@ -17,13 +17,26 @@ function toEventItem(row: typeof events.$inferSelect): EventItem {
     category: row.category ?? "",
     description: row.description ?? "",
     featured: row.featured,
+    isPublic: row.isPublic,
   };
 }
 
 // Returns every upcoming event ordered soonest-first — pages that only
 // need "the featured one" or "the next 3" do that same .find/.filter/
 // .slice the mock data always did, just on real rows now.
+// Public site (landing page, /events, event pages): is_public events only.
 export async function getUpcomingEvents(): Promise<EventItem[]> {
+  const rows = await db
+    .select()
+    .from(events)
+    .where(and(gte(events.eventDate, sql`current_date`), eq(events.isPublic, true)))
+    .orderBy(events.eventDate);
+
+  return rows.map(toEventItem);
+}
+
+// Admin dashboard: upcoming events whether or not they're public.
+export async function getAdminUpcomingEvents(): Promise<EventItem[]> {
   const rows = await db
     .select()
     .from(events)
@@ -42,7 +55,7 @@ export async function getEventBySlug(slug: string): Promise<EventItem | undefine
   const [row] = await db
     .select()
     .from(events)
-    .where(and(eq(events.slug, slug), gte(events.eventDate, sql`current_date`)))
+    .where(and(eq(events.slug, slug), gte(events.eventDate, sql`current_date`), eq(events.isPublic, true)))
     .limit(1);
 
   return row ? toEventItem(row) : undefined;
@@ -71,5 +84,6 @@ export async function getAdminEventById(id: string): Promise<AdminEventDetail | 
     category: row.category ?? "",
     description: row.description ?? "",
     featured: row.featured,
+    isPublic: row.isPublic,
   };
 }

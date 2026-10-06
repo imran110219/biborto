@@ -54,6 +54,10 @@ named.
   `getAdminMembersPage`).
 - Manual member creation (`/admin/members/new`, `createMember`) and
   filtered CSV export (`/api/admin/members/export`).
+- Shared `is_public` visibility on blog posts, events, gallery albums and
+  videos (private = hidden from everyone but admins; blog's old
+  public/members-only `visibility` replaced by it), with a single
+  `PublicField` form control and `VisibilityBadge` in the admin lists.
 - Sponsors: superadmin-only management (admins read-only), logo upload to R2,
   logos + website links on the home sponsor strip (no more 5-sponsor cap or
   placeholder boxes), searchable/filterable list, delete confirmation,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef } from "react";
+import { PublicField } from "@/components/admin/PublicField";
 import { retainedFormSubmit } from "@/lib/use-retained-form";
 import { createAlbum } from "./actions";
 
@@ -44,6 +45,7 @@ export function CreateAlbumForm({
           </select>
         </label>
       </div>
+      <PublicField />
       <div>
         <button
           type="submit"

@@ -1,6 +1,6 @@
 import { and, count, countDistinct, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { galleryPhotos, members } from "@/drizzle/schema";
+import { galleryAlbums, galleryPhotos, members } from "@/drizzle/schema";
 
 export interface HomeStats {
   registeredBatchmates: number;
@@ -22,7 +22,12 @@ export async function getHomeStats(): Promise<HomeStats> {
     .from(members)
     .where(and(eq(members.status, "active"), eq(members.isPublic, true)));
 
-  const [photoStats] = await db.select({ photosInArchive: count() }).from(galleryPhotos);
+  // Only photos in public albums count towards the public "photos in the archive" stat.
+  const [photoStats] = await db
+    .select({ photosInArchive: count() })
+    .from(galleryPhotos)
+    .innerJoin(galleryAlbums, eq(galleryAlbums.id, galleryPhotos.albumId))
+    .where(eq(galleryAlbums.isPublic, true));
 
   return {
     registeredBatchmates: memberStats?.registeredBatchmates ?? 0,

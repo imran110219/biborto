@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { PublicField } from "@/components/admin/PublicField";
 import { retainedFormSubmit } from "@/lib/use-retained-form";
 import { updateAlbum, deleteAlbum } from "../actions";
 
@@ -12,7 +13,7 @@ export function AlbumSettings({
   events,
   disciplines,
 }: {
-  album: { id: string; slug: string; name: string; eventId?: string; disciplineId?: string };
+  album: { id: string; slug: string; name: string; isPublic: boolean; eventId?: string; disciplineId?: string };
   events: { id: string; title: string }[];
   disciplines: { id: string; name: string }[];
 }) {
@@ -43,6 +44,7 @@ export function AlbumSettings({
             </select>
           </label>
         </div>
+        <PublicField defaultChecked={album.isPublic} />
         <div className="flex items-center gap-3">
           <button type="submit" disabled={savePending} className="h-10 rounded-full bg-brand-green px-4 text-sm font-semibold text-white disabled:opacity-60">
             {savePending ? "Saving…" : "Save album"}

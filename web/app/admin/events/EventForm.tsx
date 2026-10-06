@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { PublicField } from "@/components/admin/PublicField";
 import { retainedFormSubmit } from "@/lib/use-retained-form";
 import Link from "next/link";
 import { EVENT_CATEGORIES, type AdminEventDetail } from "@/lib/types";
@@ -65,6 +66,8 @@ export function EventForm({ event, action, submitLabel }: { event?: AdminEventDe
         <input type="checkbox" name="featured" defaultChecked={event?.featured} className="h-4 w-4" />
         Feature this event
       </label>
+
+      <PublicField defaultChecked={event?.isPublic ?? true} />
 
       <div className="flex gap-3">
         <button

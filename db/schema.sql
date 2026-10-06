@@ -74,7 +74,6 @@ create type business_category as enum (
 );
 
 create type blog_status as enum ('draft', 'published');
-create type blog_visibility as enum ('public', 'members_only');
 
 -- Scoped to exactly the 4 categories in the current seed data. Add new
 -- values with `alter type blog_category add value 'New Category';`.
@@ -359,6 +358,7 @@ create table events (
   category        event_category,
   description     text,
   featured        boolean not null default false,
+  is_public       boolean not null default true,   -- shown on the public site; see db/migrations/011
   cover_photo_key text,
 
   created_by      uuid references members (id) on delete set null,
@@ -418,7 +418,9 @@ create table blog_posts (
   tags              text[] not null,
 
   status            blog_status not null default 'draft',
-  visibility        blog_visibility not null default 'public',
+  -- Shown on the public site (landing page, /blog, its own page). Shared
+  -- with events, gallery_albums and gallery_videos; see db/migrations/011.
+  is_public         boolean not null default true,
   featured          boolean not null default false,
   published_at      timestamptz,
 
@@ -441,7 +443,7 @@ create view public_blog_posts as
   select id, slug, category, title, author_member_id, author_name, body, cover_photo_key,
          tags, featured, published_at
   from blog_posts
-  where status = 'published' and visibility = 'public';
+  where status = 'published' and is_public;
 
 -- ---------------------------------------------------------------------
 -- gallery — albums of photos, plus a separate videos list (YouTube
@@ -453,6 +455,7 @@ create table gallery_albums (
   name        text not null,
   event_id       uuid references events (id) on delete set null,       -- optional link
   discipline_id  uuid references disciplines (id) on delete set null,  -- optional link
+  is_public   boolean not null default true,   -- shown on the public site; see db/migrations/011
   created_by  uuid references members (id) on delete set null,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
@@ -482,6 +485,7 @@ create table gallery_videos (
   youtube_url  text,             -- null until the real YouTube link is filled in
   event_id       uuid references events (id) on delete set null,       -- optional link
   discipline_id  uuid references disciplines (id) on delete set null,  -- optional link
+  is_public    boolean not null default true,   -- shown on the public site; see db/migrations/011
   added_by     uuid references members (id) on delete set null,
   created_at   timestamptz not null default now()
 );

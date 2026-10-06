@@ -67,8 +67,8 @@ export const videos = [
 ];
 
 export const events: EventItem[] = [
-  { id: "1", slug: "batch-11-grand-reunion", title: "Batch 11 Grand Reunion", month: "DEC", day: "12", dateLabel: "Saturday, Dec 12", timeLabel: "10:00 AM – 8:00 PM", location: "Khulna University campus", category: "Reunion", featured: true, description: "A full day back on campus: a morning walk through the departments, lunch together, a photo session at the central field and a cultural evening. Families are welcome." },
-  { id: "2", slug: "career-talk-batchmates-in-tech", title: "Career talk: Batchmates in tech", month: "JAN", day: "18", dateLabel: "Jan 18", timeLabel: "8:30 PM", location: "Online · Zoom", category: "Online", description: "" },
-  { id: "3", slug: "iftar-get-together-dhaka-chapter", title: "Iftar get-together, Dhaka chapter", month: "MAR", day: "02", dateLabel: "Mar 02", timeLabel: "5:30 PM", location: "Dhanmondi, Dhaka", category: "Chapter", description: "" },
-  { id: "4", slug: "tree-planting-at-gollamari", title: "Tree planting at Gollamari", month: "MAR", day: "20", dateLabel: "Mar 20", timeLabel: "9:00 AM", location: "Khulna University campus", category: "Volunteer", description: "" },
+  { id: "1", slug: "batch-11-grand-reunion", title: "Batch 11 Grand Reunion", month: "DEC", day: "12", dateLabel: "Saturday, Dec 12", timeLabel: "10:00 AM – 8:00 PM", location: "Khulna University campus", category: "Reunion", isPublic: true, featured: true, description: "A full day back on campus: a morning walk through the departments, lunch together, a photo session at the central field and a cultural evening. Families are welcome." },
+  { id: "2", slug: "career-talk-batchmates-in-tech", title: "Career talk: Batchmates in tech", month: "JAN", day: "18", dateLabel: "Jan 18", timeLabel: "8:30 PM", location: "Online · Zoom", category: "Online", isPublic: true, description: "" },
+  { id: "3", slug: "iftar-get-together-dhaka-chapter", title: "Iftar get-together, Dhaka chapter", month: "MAR", day: "02", dateLabel: "Mar 02", timeLabel: "5:30 PM", location: "Dhanmondi, Dhaka", category: "Chapter", isPublic: true, description: "" },
+  { id: "4", slug: "tree-planting-at-gollamari", title: "Tree planting at Gollamari", month: "MAR", day: "20", dateLabel: "Mar 20", timeLabel: "9:00 AM", location: "Khulna University campus", category: "Volunteer", isPublic: true, description: "" },
 ];

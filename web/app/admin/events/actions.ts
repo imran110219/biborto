@@ -25,13 +25,14 @@ function readEventForm(formData: FormData) {
   const category = String(formData.get("category") ?? "") as EventCategory | "";
   const description = String(formData.get("description") ?? "").trim();
   const featured = formData.get("featured") === "on";
+  const isPublic = formData.get("isPublic") === "on";
 
-  return { title, eventDate, startTime, endTime, location, category, description, featured };
+  return { title, eventDate, startTime, endTime, location, category, description, featured, isPublic };
 }
 
 export async function createEvent(_prevState: string | undefined, formData: FormData) {
   const adminId = await requireAdminMemberId();
-  const { title, eventDate, startTime, endTime, location, category, description, featured } = readEventForm(formData);
+  const { title, eventDate, startTime, endTime, location, category, description, featured, isPublic } = readEventForm(formData);
 
   if (!title) return "Title is required.";
   if (!eventDate) return "Date is required.";
@@ -49,18 +50,20 @@ export async function createEvent(_prevState: string | undefined, formData: Form
     category: category || null,
     description: description || null,
     featured,
+    isPublic,
     createdBy: adminId,
   });
 
   revalidatePath("/admin/events");
   revalidatePath("/admin/dashboard");
   revalidatePath("/events");
+  revalidatePath("/"); // the landing page lists upcoming events
   redirect("/admin/events");
 }
 
 export async function updateEvent(id: string, _prevState: string | undefined, formData: FormData) {
   await requireAdminMemberId();
-  const { title, eventDate, startTime, endTime, location, category, description, featured } = readEventForm(formData);
+  const { title, eventDate, startTime, endTime, location, category, description, featured, isPublic } = readEventForm(formData);
 
   if (!title) return "Title is required.";
   if (!eventDate) return "Date is required.";
@@ -77,12 +80,14 @@ export async function updateEvent(id: string, _prevState: string | undefined, fo
       category: category || null,
       description: description || null,
       featured,
+      isPublic,
     })
     .where(eq(events.id, id));
 
   revalidatePath("/admin/events");
   revalidatePath("/admin/dashboard");
   revalidatePath("/events");
+  revalidatePath("/"); // the landing page lists upcoming events
   revalidatePath(`/admin/events/${id}/edit`);
   redirect("/admin/events");
 }
@@ -94,4 +99,5 @@ export async function deleteEvent(id: string, _formData: FormData) {
   revalidatePath("/admin/events");
   revalidatePath("/admin/dashboard");
   revalidatePath("/events");
+  revalidatePath("/"); // the landing page lists upcoming events
 }

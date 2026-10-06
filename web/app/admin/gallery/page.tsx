@@ -3,14 +3,15 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { GalleryPhotoUploader } from "@/app/admin/gallery/GalleryPhotoUploader";
 import { auth } from "@/auth";
 import { CreateAlbumForm } from "@/app/admin/gallery/CreateAlbumForm";
-import { getGalleryAlbums } from "@/lib/db/queries/gallery";
+import { VisibilityBadge } from "@/components/ui/Badge";
+import { getAdminGalleryAlbums } from "@/lib/db/queries/gallery";
 import { getAdminEvents } from "@/lib/db/queries/events";
 import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
 
 export default async function AdminPhotosPage() {
   const session = await auth();
   const isSuperadmin = session?.user?.platformRole === "superadmin";
-  const albums = await getGalleryAlbums();
+  const albums = await getAdminGalleryAlbums();
   const [events, disciplines] = isSuperadmin ? await Promise.all([getAdminEvents(), getDisciplineOptions()]) : [[], []];
 
   return (
@@ -46,7 +47,7 @@ export default async function AdminPhotosPage() {
           <table className="w-full min-w-[720px] border-collapse">
             <thead className="bg-[#FAF8F3]">
               <tr>
-                {["Album", "Event", "Discipline", "Photos", "Actions"].map((heading) => (
+                {["Album", "Event", "Discipline", "Photos", "Visibility", "Actions"].map((heading) => (
                   <th key={heading} className="px-4 py-3.5 pl-5 text-left text-xs font-bold uppercase tracking-[0.04em] text-text-secondary">
                     {heading}
                   </th>
@@ -60,14 +61,15 @@ export default async function AdminPhotosPage() {
                   <td className="px-4 py-3.5 text-sm text-text-secondary">{album.eventTitle ?? "—"}</td>
                   <td className="px-4 py-3.5 text-sm text-text-secondary">{album.disciplineName ?? "—"}</td>
                   <td className="px-4 py-3.5 text-sm text-text-secondary">{album.count}</td>
+                  <td className="px-4 py-3.5"><VisibilityBadge isPublic={album.isPublic} /></td>
                   <td className="flex gap-4 px-4 py-3.5 text-sm">
                     <Link href={`/admin/gallery/${album.slug}`} className="font-semibold text-brand-green">Edit photos</Link>
-                    <Link href={`/gallery/${album.slug}`} className="font-semibold text-brand-green">View</Link>
+                    {album.isPublic && <Link href={`/gallery/${album.slug}`} className="font-semibold text-brand-green">View</Link>}
                   </td>
                 </tr>
               ))}
               {albums.length === 0 && (
-                <tr><td colSpan={5} className="px-5 py-8 text-sm text-text-secondary">No albums yet.</td></tr>
+                <tr><td colSpan={6} className="px-5 py-8 text-sm text-text-secondary">No albums yet.</td></tr>
               )}
             </tbody>
           </table>

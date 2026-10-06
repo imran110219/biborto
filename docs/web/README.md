@@ -197,10 +197,10 @@ returned object would leak it over the wire even though `MemberCard`
 never renders it.
 
 **Filtering**: query functions replicate the same `status`/`is_public`/
-`visibility` filters `db/schema.sql`'s `public_*` views encode
+filters `db/schema.sql`'s `public_*` views encode
 (members: `status='active' AND is_public=true`; businesses:
 `status='active'`; blog posts: `status='published' AND
-visibility='public'`) rather than selecting from the views directly,
+is_public=true`) rather than selecting from the views directly,
 since several queries also need a join the views don't carry (e.g.
 `businesses.owner_member_id` → `members.name`). This incidentally fixed
 two real bugs the mockup had: the public member directory and business
@@ -360,6 +360,35 @@ therefore exports as `'+880…`).
 out). My profile needs `memberId`, which `auth.ts` puts in the JWT/session
 at sign-in — sessions created before it existed must sign in again. It goes
 to the edit page for superadmins and the view page for admins.
+
+## Public visibility (`is_public`)
+
+Blog posts, events, gallery albums and gallery videos share one flag,
+`is_public` (default `true`). **Public** means available on the public site —
+the landing page, the list pages and the item's own page. **Private** (false)
+means hidden from everyone but admins: it disappears from the landing page and
+lists, its own page returns 404, and it stays visible (with a "Private" badge)
+in the admin lists. Blog posts still have their separate draft/published
+`status`; a post is public only when it is *published and* `is_public`. This
+replaced the blog's old `visibility` (public/members_only) column — there is no
+members-only tier.
+
+- **Queries split public from admin.** Public functions filter on `is_public`
+  (`getUpcomingEvents`, `getEventBySlug`, `getGalleryAlbums`, `getAlbumBySlug`,
+  `getGalleryVideos`/`getPublicVideos`, the blog `publicFilter`); admin
+  counterparts return everything (`getAdminUpcomingEvents`,
+  `getAdminGalleryAlbums`, `getAlbumBySlug(slug, { includePrivate: true })`,
+  `getVideos`, `getAdminPosts`). The admin dashboard's upcoming-events widget
+  therefore still lists private events.
+- **No leaks through links.** A public album or video that links to a private
+  event doesn't show that event's title. Photos inherit their album's
+  visibility, and the home "photos in the archive" stat counts only photos in
+  public albums.
+- **RSVP.** The RSVP action refuses events that aren't public.
+- **Admin UI.** One shared `PublicField` checkbox (default on) on the post,
+  event, album and video forms, and a `VisibilityBadge` column in each admin
+  list. Who may edit each type is unchanged. Saving an event/album/video also
+  revalidates `/` so the landing page updates.
 
 ## Admin popups
 

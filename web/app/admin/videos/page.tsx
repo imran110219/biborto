@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/Button";
+import { VisibilityBadge } from "@/components/ui/Badge";
 import { EditIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import { getVideos } from "@/lib/db/queries/videos";
 import { deleteVideo } from "./actions";
@@ -25,7 +26,7 @@ export default async function AdminVideosPage() {
           <table className="w-full min-w-[720px] border-collapse">
             <thead className="bg-[#FAF8F3]">
               <tr>
-                {["Video", "Event", "Discipline", "Source"].map((h) => (
+                {["Video", "Event", "Discipline", "Source", "Visibility"].map((h) => (
                   <th key={h} className="px-4 py-3.5 pl-5 text-left text-xs font-bold uppercase tracking-[0.04em] text-text-secondary">
                     {h}
                   </th>
@@ -42,6 +43,7 @@ export default async function AdminVideosPage() {
                   <td className="px-4 py-3.5 text-sm text-text-secondary">
                     {v.youtubeId ? "YouTube" : <span className="text-[#9C3D10]">No link yet</span>}
                   </td>
+                  <td className="px-4 py-3.5"><VisibilityBadge isPublic={v.isPublic} /></td>
                   <td className="px-4 py-3.5">
                     <div className="flex gap-1.5">
                       <Link

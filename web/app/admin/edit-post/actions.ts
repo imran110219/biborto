@@ -6,7 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { blogPosts } from "@/drizzle/schema";
 import { requireAdminMemberId } from "@/lib/auth/require-admin";
-import { BLOG_CATEGORIES, type BlogCategoryOption, type BlogPostStatus, type BlogVisibility } from "@/lib/types";
+import { BLOG_CATEGORIES, type BlogCategoryOption, type BlogPostStatus } from "@/lib/types";
 
 function slugify(title: string): string {
   return title
@@ -25,9 +25,9 @@ function readPostForm(formData: FormData) {
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
-  const visibility = String(formData.get("visibility") ?? "public") as BlogVisibility;
+  const isPublic = formData.get("isPublic") === "on";
   const featured = formData.get("featured") === "on";
-  return { title, category, authorName, body, tags, visibility, featured };
+  return { title, category, authorName, body, tags, isPublic, featured };
 }
 
 const revalidatePostPaths = (id?: string) => {
@@ -39,7 +39,7 @@ const revalidatePostPaths = (id?: string) => {
 
 export async function createPost(status: BlogPostStatus, formData: FormData) {
   const adminId = await requireAdminMemberId();
-  const { title, category, authorName, body, tags, visibility, featured } = readPostForm(formData);
+  const { title, category, authorName, body, tags, isPublic, featured } = readPostForm(formData);
 
   if (!title || !BLOG_CATEGORIES.includes(category as BlogCategoryOption)) {
     // The form requires both fields client-side, so this only fires on a
@@ -58,7 +58,7 @@ export async function createPost(status: BlogPostStatus, formData: FormData) {
     body,
     tags,
     status,
-    visibility,
+    isPublic,
     featured,
     publishedAt: status === "published" ? new Date().toISOString() : null,
   });
@@ -69,7 +69,7 @@ export async function createPost(status: BlogPostStatus, formData: FormData) {
 
 export async function savePost(id: string, status: BlogPostStatus, formData: FormData) {
   await requireAdminMemberId();
-  const { title, category, authorName, body, tags, visibility, featured } = readPostForm(formData);
+  const { title, category, authorName, body, tags, isPublic, featured } = readPostForm(formData);
 
   if (!title || !BLOG_CATEGORIES.includes(category as BlogCategoryOption)) return;
 
@@ -80,7 +80,7 @@ export async function savePost(id: string, status: BlogPostStatus, formData: For
     body,
     tags,
     status,
-    visibility,
+    isPublic,
     featured,
   };
 

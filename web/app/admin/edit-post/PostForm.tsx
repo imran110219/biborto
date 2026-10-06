@@ -1,3 +1,4 @@
+import { PublicField } from "@/components/admin/PublicField";
 import Link from "next/link";
 import { UploadIcon } from "@/components/ui/icons";
 import { BLOG_CATEGORIES, type AdminBlogPostDetail } from "@/lib/types";
@@ -51,33 +52,7 @@ export function PostForm({
               {post?.status === "published" ? "Published" : "Draft"}
             </span>
           </div>
-          <span className="text-xs font-semibold text-text-secondary">Who can read it</span>
-          <label className="flex items-start gap-3 rounded-xl border border-border-default p-3.5 has-[:checked]:border-brand-green has-[:checked]:bg-brand-green-tint">
-            <input
-              type="radio"
-              name="visibility"
-              value="public"
-              defaultChecked={!post || post.visibility === "public"}
-              className="mt-1 accent-brand-green"
-            />
-            <span className="flex flex-col">
-              <span className="font-semibold">Public</span>
-              <span className="text-sm text-text-secondary">Anyone visiting the site</span>
-            </span>
-          </label>
-          <label className="flex items-start gap-3 rounded-xl border border-border-default p-3.5 has-[:checked]:border-brand-green has-[:checked]:bg-brand-green-tint">
-            <input
-              type="radio"
-              name="visibility"
-              value="members_only"
-              defaultChecked={post?.visibility === "members_only"}
-              className="mt-1"
-            />
-            <span className="flex flex-col">
-              <span className="font-semibold">Members only</span>
-              <span className="text-sm text-text-secondary">Signed-in Batch 11 members</span>
-            </span>
-          </label>
+          <PublicField defaultChecked={post?.isPublic ?? true} />
           <div className="flex gap-2">
             <button type="submit" formAction={draftAction} className={ghostSubmit}>
               Save draft

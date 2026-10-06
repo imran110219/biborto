@@ -3,7 +3,6 @@ import { sql } from "drizzle-orm"
 
 export const blogCategory = pgEnum("blog_category", ['Reunion', 'Memories', 'Careers', 'Campus'])
 export const blogStatus = pgEnum("blog_status", ['draft', 'published'])
-export const blogVisibility = pgEnum("blog_visibility", ['public', 'members_only'])
 export const bloodGroup = pgEnum("blood_group", ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
 export const businessCategory = pgEnum("business_category", ['Food & Catering', 'Tech Services', 'Consulting', 'Education', 'Retail & Trade', 'Travel & Tourism'])
 export const businessStatus = pgEnum("business_status", ['pending', 'active', 'rejected'])
@@ -167,6 +166,7 @@ export const events = pgTable("events", {
 	createdBy: uuid("created_by"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isPublic: boolean("is_public").default(true).notNull(),
 }, (table) => [
 	index("events_event_date_idx").using("btree", table.eventDate.asc().nullsLast().op("date_ops")),
 	foreignKey({
@@ -201,62 +201,33 @@ export const eventRsvps = pgTable("event_rsvps", {
 	unique("event_rsvps_event_id_member_id_key").on(table.memberId, table.eventId),
 ]);
 
-export const blogPosts = pgTable("blog_posts", {
+export const galleryVideos = pgTable("gallery_videos", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
-	slug: text().notNull(),
-	category: blogCategory().notNull(),
 	title: text().notNull(),
-	authorMemberId: uuid("author_member_id"),
-	authorName: text("author_name"),
-	body: text().notNull(),
-	coverPhotoKey: text("cover_photo_key"),
-	tags: text().array().notNull(),
-	status: blogStatus().default('draft').notNull(),
-	visibility: blogVisibility().default('public').notNull(),
-	featured: boolean().default(false).notNull(),
-	publishedAt: timestamp("published_at", { withTimezone: true, mode: 'string' }),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	index("blog_posts_category_idx").using("btree", table.category.asc().nullsLast().op("enum_ops")),
-	index("blog_posts_published_at_idx").using("btree", table.publishedAt.desc().nullsFirst().op("timestamptz_ops")),
-	index("blog_posts_status_idx").using("btree", table.status.asc().nullsLast().op("enum_ops")),
-	foreignKey({
-			columns: [table.authorMemberId],
-			foreignColumns: [members.id],
-			name: "blog_posts_author_member_id_fkey"
-		}).onDelete("set null"),
-	unique("blog_posts_slug_key").on(table.slug),
-]);
-
-export const galleryAlbums = pgTable("gallery_albums", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	slug: text().notNull(),
-	name: text().notNull(),
+	youtubeUrl: text("youtube_url"),
 	eventId: uuid("event_id"),
 	disciplineId: uuid("discipline_id"),
-	createdBy: uuid("created_by"),
+	addedBy: uuid("added_by"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isPublic: boolean("is_public").default(true).notNull(),
 }, (table) => [
-	index("gallery_albums_discipline_idx").using("btree", table.disciplineId.asc().nullsLast().op("uuid_ops")),
-	index("gallery_albums_event_idx").using("btree", table.eventId.asc().nullsLast().op("uuid_ops")),
+	index("gallery_videos_discipline_idx").using("btree", table.disciplineId.asc().nullsLast().op("uuid_ops")),
+	index("gallery_videos_event_idx").using("btree", table.eventId.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
 			columns: [table.eventId],
 			foreignColumns: [events.id],
-			name: "gallery_albums_event_id_fkey"
+			name: "gallery_videos_event_id_fkey"
 		}).onDelete("set null"),
 	foreignKey({
 			columns: [table.disciplineId],
 			foreignColumns: [disciplines.id],
-			name: "gallery_albums_discipline_id_fkey"
+			name: "gallery_videos_discipline_id_fkey"
 		}).onDelete("set null"),
 	foreignKey({
-			columns: [table.createdBy],
+			columns: [table.addedBy],
 			foreignColumns: [members.id],
-			name: "gallery_albums_created_by_fkey"
+			name: "gallery_videos_added_by_fkey"
 		}).onDelete("set null"),
-	unique("gallery_albums_slug_key").on(table.slug),
 ]);
 
 export const galleryPhotos = pgTable("gallery_photos", {
@@ -280,32 +251,63 @@ export const galleryPhotos = pgTable("gallery_photos", {
 		}).onDelete("set null"),
 ]);
 
-export const galleryVideos = pgTable("gallery_videos", {
+export const blogPosts = pgTable("blog_posts", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
+	slug: text().notNull(),
+	category: blogCategory().notNull(),
 	title: text().notNull(),
-	youtubeUrl: text("youtube_url"),
+	authorMemberId: uuid("author_member_id"),
+	authorName: text("author_name"),
+	body: text().notNull(),
+	coverPhotoKey: text("cover_photo_key"),
+	tags: text().array().notNull(),
+	status: blogStatus().default('draft').notNull(),
+	featured: boolean().default(false).notNull(),
+	publishedAt: timestamp("published_at", { withTimezone: true, mode: 'string' }),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isPublic: boolean("is_public").default(true).notNull(),
+}, (table) => [
+	index("blog_posts_category_idx").using("btree", table.category.asc().nullsLast().op("enum_ops")),
+	index("blog_posts_published_at_idx").using("btree", table.publishedAt.desc().nullsFirst().op("timestamptz_ops")),
+	index("blog_posts_status_idx").using("btree", table.status.asc().nullsLast().op("enum_ops")),
+	foreignKey({
+			columns: [table.authorMemberId],
+			foreignColumns: [members.id],
+			name: "blog_posts_author_member_id_fkey"
+		}).onDelete("set null"),
+	unique("blog_posts_slug_key").on(table.slug),
+]);
+
+export const galleryAlbums = pgTable("gallery_albums", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	slug: text().notNull(),
+	name: text().notNull(),
 	eventId: uuid("event_id"),
 	disciplineId: uuid("discipline_id"),
-	addedBy: uuid("added_by"),
+	createdBy: uuid("created_by"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isPublic: boolean("is_public").default(true).notNull(),
 }, (table) => [
-	index("gallery_videos_discipline_idx").using("btree", table.disciplineId.asc().nullsLast().op("uuid_ops")),
-	index("gallery_videos_event_idx").using("btree", table.eventId.asc().nullsLast().op("uuid_ops")),
+	index("gallery_albums_discipline_idx").using("btree", table.disciplineId.asc().nullsLast().op("uuid_ops")),
+	index("gallery_albums_event_idx").using("btree", table.eventId.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
 			columns: [table.eventId],
 			foreignColumns: [events.id],
-			name: "gallery_videos_event_id_fkey"
+			name: "gallery_albums_event_id_fkey"
 		}).onDelete("set null"),
 	foreignKey({
 			columns: [table.disciplineId],
 			foreignColumns: [disciplines.id],
-			name: "gallery_videos_discipline_id_fkey"
+			name: "gallery_albums_discipline_id_fkey"
 		}).onDelete("set null"),
 	foreignKey({
-			columns: [table.addedBy],
+			columns: [table.createdBy],
 			foreignColumns: [members.id],
-			name: "gallery_videos_added_by_fkey"
+			name: "gallery_albums_created_by_fkey"
 		}).onDelete("set null"),
+	unique("gallery_albums_slug_key").on(table.slug),
 ]);
 
 export const activityLog = pgTable("activity_log", {
@@ -437,19 +439,6 @@ export const publicMembers = pgView("public_members", {	id: uuid(),
 	coverPhotoKey: text("cover_photo_key"),
 }).as(sql`SELECT id, slug, name, discipline_id, campus_name, short_bio, favorite_campus_place, most_memorable_event, profession, current_employer, bio, city, country_id, avatar_key, linkedin_url, facebook_url, website_url, cover_photo_key FROM members WHERE status = 'active'::member_status AND is_public = true`);
 
-export const publicBlogPosts = pgView("public_blog_posts", {	id: uuid(),
-	slug: text(),
-	category: blogCategory(),
-	title: text(),
-	authorMemberId: uuid("author_member_id"),
-	authorName: text("author_name"),
-	body: text(),
-	coverPhotoKey: text("cover_photo_key"),
-	tags: text(),
-	featured: boolean(),
-	publishedAt: timestamp("published_at", { withTimezone: true, mode: 'string' }),
-}).as(sql`SELECT id, slug, category, title, author_member_id, author_name, body, cover_photo_key, tags, featured, published_at FROM blog_posts WHERE status = 'published'::blog_status AND visibility = 'public'::blog_visibility`);
-
 export const publicBusinesses = pgView("public_businesses", {	id: uuid(),
 	slug: text(),
 	name: text(),
@@ -468,3 +457,16 @@ export const publicBusinesses = pgView("public_businesses", {	id: uuid(),
 	linkedinUrl: text("linkedin_url"),
 	facebookUrl: text("facebook_url"),
 }).as(sql`SELECT id, slug, name, category, city, tagline, description, offerings, testimonial, phone, email, website, cover_photo_key, logo_key, submitted_at, linkedin_url, facebook_url FROM businesses WHERE status = 'active'::business_status`);
+
+export const publicBlogPosts = pgView("public_blog_posts", {	id: uuid(),
+	slug: text(),
+	category: blogCategory(),
+	title: text(),
+	authorMemberId: uuid("author_member_id"),
+	authorName: text("author_name"),
+	body: text(),
+	coverPhotoKey: text("cover_photo_key"),
+	tags: text(),
+	featured: boolean(),
+	publishedAt: timestamp("published_at", { withTimezone: true, mode: 'string' }),
+}).as(sql`SELECT id, slug, category, title, author_member_id, author_name, body, cover_photo_key, tags, featured, published_at FROM blog_posts WHERE status = 'published'::blog_status AND is_public`);

@@ -7,7 +7,7 @@ import type { AdminBlogPost, AdminBlogPostDetail, BlogPost, BlogPostDetail } fro
 // Same filter public_blog_posts (db/schema.sql) encodes, replicated here
 // so this can join to members for the author's display name — see
 // businesses.ts for why the view isn't queried directly.
-const publicFilter = and(eq(blogPosts.status, "published"), eq(blogPosts.visibility, "public"));
+const publicFilter = and(eq(blogPosts.status, "published"), eq(blogPosts.isPublic, true));
 
 function authorNameOf(row: { authorMemberName: string | null; authorName: string | null }): string {
   return row.authorMemberName ?? row.authorName ?? "Batch 11";
@@ -70,7 +70,7 @@ export async function getPublicPostBySlug(slug: string): Promise<BlogPostDetail 
   };
 }
 
-// Admin-only: every post regardless of status/visibility.
+// Admin-only: every post regardless of status/is_public.
 export async function getAdminPosts(): Promise<AdminBlogPost[]> {
   const rows = await db
     .select({
@@ -81,6 +81,7 @@ export async function getAdminPosts(): Promise<AdminBlogPost[]> {
       authorMemberName: members.name,
       authorName: blogPosts.authorName,
       status: blogPosts.status,
+      isPublic: blogPosts.isPublic,
       updatedAt: blogPosts.updatedAt,
     })
     .from(blogPosts)
@@ -94,6 +95,7 @@ export async function getAdminPosts(): Promise<AdminBlogPost[]> {
     category: row.category,
     authorName: authorNameOf(row),
     status: row.status,
+    isPublic: row.isPublic,
     updatedAt: formatMonthDay(row.updatedAt),
   }));
 }
@@ -110,7 +112,7 @@ export async function getAdminPostById(id: string): Promise<AdminBlogPostDetail 
       body: blogPosts.body,
       tags: blogPosts.tags,
       status: blogPosts.status,
-      visibility: blogPosts.visibility,
+      isPublic: blogPosts.isPublic,
       featured: blogPosts.featured,
     })
     .from(blogPosts)
@@ -129,7 +131,7 @@ export async function getAdminPostById(id: string): Promise<AdminBlogPostDetail 
     body: row.body,
     tags: row.tags,
     status: row.status,
-    visibility: row.visibility,
+    isPublic: row.isPublic,
     featured: row.featured,
   };
 }

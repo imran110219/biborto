@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { CategoryTag } from "@/components/ui/Badge";
+import { CategoryTag, VisibilityBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EditIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import { getAdminEvents } from "@/lib/db/queries/events";
@@ -26,7 +26,7 @@ export default async function AdminEventsPage() {
           <table className="w-full min-w-[720px] border-collapse">
             <thead className="bg-[#FAF8F3]">
               <tr>
-                {["Event", "Date", "Location", "Category", "Featured"].map((h) => (
+                {["Event", "Date", "Location", "Category", "Featured", "Visibility"].map((h) => (
                   <th key={h} className="px-4 py-3.5 pl-5 text-left text-xs font-bold uppercase tracking-[0.04em] text-text-secondary">
                     {h}
                   </th>
@@ -55,6 +55,7 @@ export default async function AdminEventsPage() {
                       {e.featured ? "Featured" : "—"}
                     </span>
                   </td>
+                  <td className="px-4 py-3.5"><VisibilityBadge isPublic={e.isPublic} /></td>
                   <td className="px-4 py-3.5">
                     <div className="flex gap-1.5">
                       <Link

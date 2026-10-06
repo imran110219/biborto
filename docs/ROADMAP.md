@@ -54,6 +54,8 @@ named.
   `getAdminMembersPage`).
 - Manual member creation (`/admin/members/new`, `createMember`) and
   filtered CSV export (`/api/admin/members/export`).
+- Blog index page: `/blog` is now a real list (lead story + card grid, category pills,
+  search, pagination, CTA) instead of redirecting to the latest post.
 - Member blog-draft auto-save in the browser (restore banner, per-member key, cleared on
   submit and sign-out; see "Draft auto-save" in docs/web/README.md).
 - Blog editor UI unified: admin and member forms share one layout

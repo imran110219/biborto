@@ -24,6 +24,22 @@ export function FeaturedBlogTeaser({ post }: { post: BlogPost }) {
   );
 }
 
+// Grid card for the blog index.
+export function BlogCard({ post }: { post: BlogPost }) {
+  return (
+    <Link href={`/blog/${post.slug}`} className="group flex flex-col gap-4 text-text-primary">
+      <div className="overflow-hidden rounded-2xl">
+        <TeaserCover post={post} className="h-[200px] transition-transform duration-300 group-hover:scale-[1.02]" rounded="rounded-2xl" label="" />
+      </div>
+      <span className="w-fit rounded-full bg-accent-amber-tint px-2.5 py-1 text-xs font-semibold text-accent-amber-text">{post.category}</span>
+      <h3 className="font-serif text-2xl font-medium leading-snug">{post.title}</h3>
+      <span className="text-sm text-text-secondary">
+        {post.author} · {post.date} · {post.readTime} read
+      </span>
+    </Link>
+  );
+}
+
 export function BlogTeaserRow({ post }: { post: BlogPost }) {
   return (
     <Link

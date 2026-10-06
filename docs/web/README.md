@@ -61,7 +61,7 @@ app/
   events/[slug]/page.tsx      Event detail (dynamic route, SSG)
   gallery/page.tsx            Gallery & videos
   gallery/[slug]/page.tsx     Album detail (dynamic route, SSG)
-  blog/page.tsx                → redirects to the one seeded post
+  blog/page.tsx                Blog index — filters, search, pagination (was a redirect to the latest post)
   blog/[slug]/page.tsx         Blog post detail (dynamic route, SSG)
   business/page.tsx           Business Directory
   business/[slug]/page.tsx    Business detail (dynamic route, SSG)
@@ -346,6 +346,19 @@ in the admin avatar menu). Edits go live immediately.
 - **My submissions:** see [Member submissions](#member-submissions).
 - **Not built yet:** members editing a submission after it is in, and sharing
   photos to the gallery.
+
+## Blog index (`/blog`)
+
+The navbar, footer and home-page "Read the blog" links all open a real list, not a single
+post (the page used to redirect to the latest post). It shows published, public posts
+only — pending, rejected, draft and private ones never appear. On an unfiltered first page
+the top story (featured posts first, then newest) is shown large and the rest as a card
+grid (3 columns on desktop, 1 on phones); 10 posts per page with real pagination.
+Category pills and a search box (title, byline/author name, tags; LIKE wildcards escaped)
+are URL-driven (`?category=&q=&page=`, validated by `lib/blog/filters.ts`, queried by
+`getPublicPostsPage`), with a result count, Clear filters, an empty state and a "Write for
+the blog" call to action. Posts with a cover photo show it; others fall back to the
+placeholder block.
 
 ## Blog editor
 

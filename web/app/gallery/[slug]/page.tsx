@@ -6,11 +6,6 @@ import { AlbumCard } from "@/components/GalleryCards";
 import Image from "next/image";
 import { getGalleryAlbums, getAlbumBySlug } from "@/lib/db/queries/gallery";
 
-export async function generateStaticParams() {
-  const albums = await getGalleryAlbums();
-  return albums.map((a) => ({ slug: a.slug }));
-}
-
 export default async function AlbumDetailPage({ params }: PageProps<"/gallery/[slug]">) {
   const { slug } = await params;
   const album = await getAlbumBySlug(slug);

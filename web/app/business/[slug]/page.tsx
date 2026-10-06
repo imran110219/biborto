@@ -10,11 +10,6 @@ import { ExternalLinkIcon, MailIcon, PhoneIcon, PinIcon } from "@/components/ui/
 import { getPublicBusinesses, getPublicBusinessBySlug } from "@/lib/db/queries/businesses";
 import { externalUrl } from "@/lib/url";
 
-export async function generateStaticParams() {
-  const businesses = await getPublicBusinesses();
-  return businesses.map((b) => ({ slug: b.slug }));
-}
-
 export default async function BusinessDetailPage({ params }: PageProps<"/business/[slug]">) {
   const { slug } = await params;
   const business = await getPublicBusinessBySlug(slug);

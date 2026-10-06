@@ -10,11 +10,6 @@ import { BlogBody } from "@/components/BlogBody";
 import { MailIcon, ShareIcon } from "@/components/ui/icons";
 import { getPublishedPublicPosts, getPublicPostBySlug } from "@/lib/db/queries/blog";
 
-export async function generateStaticParams() {
-  const posts = await getPublishedPublicPosts();
-  return posts.map((p) => ({ slug: p.slug }));
-}
-
 export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">) {
   const { slug } = await params;
   const post = await getPublicPostBySlug(slug);

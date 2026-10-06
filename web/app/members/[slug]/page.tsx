@@ -8,11 +8,6 @@ import { MemberCard } from "@/components/MemberCard";
 import { BriefcaseIcon, ExternalLinkIcon, PinIcon } from "@/components/ui/icons";
 import { getPublicMembers, getPublicMemberBySlug } from "@/lib/db/queries/members";
 
-export async function generateStaticParams() {
-  const members = await getPublicMembers();
-  return members.map((m) => ({ slug: m.slug }));
-}
-
 export default async function MemberProfilePage({ params }: PageProps<"/members/[slug]">) {
   const { slug } = await params;
   const member = await getPublicMemberBySlug(slug);

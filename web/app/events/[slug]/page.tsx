@@ -13,11 +13,6 @@ import { getGoingCount, getMemberRsvpStatus } from "@/lib/db/queries/rsvps";
 import { getSessionMemberId } from "@/lib/auth/session-member";
 import { rsvpGoing, cancelRsvp } from "./actions";
 
-export async function generateStaticParams() {
-  const events = await getUpcomingEvents();
-  return events.map((e) => ({ slug: e.slug }));
-}
-
 export default async function EventDetailPage({ params }: PageProps<"/events/[slug]">) {
   const { slug } = await params;
   const event = await getEventBySlug(slug);

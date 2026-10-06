@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
 import { SessionSync } from "@/components/SessionSync";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { fraunces, instrumentSans } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Batch 11 — Khulna University",
   description: "The home of Khulna University Batch 11.",
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -17,6 +21,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <SessionSync />
           {children}
         </SessionProvider>
+        <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_ID} />
       </body>
     </html>
   );

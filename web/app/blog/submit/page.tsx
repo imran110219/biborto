@@ -24,7 +24,7 @@ export default async function SubmitPostPage() {
           </Link>
         </div>
 
-        <BlogSubmitForm imageBase={getBlogImageBase()} />
+        <BlogSubmitForm imageBase={getBlogImageBase()} memberId={memberId} />
       </section>
     </PublicLayout>
   );

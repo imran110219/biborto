@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
+import { clearAllDrafts } from "@/lib/blog/draft";
 import { LockIcon, MenuIcon } from "@/components/ui/icons";
 
 const NAV_ITEMS = [
@@ -60,7 +61,10 @@ function AccountActions({
       )}
       <button
         type="button"
-        onClick={() => signOut({ redirectTo: "/" })}
+        onClick={() => {
+          clearAllDrafts(); // unsent blog drafts stay private to the person who wrote them
+          void signOut({ redirectTo: "/" });
+        }}
         className={`${mobile ? "h-11 w-full" : "h-9 px-3"} rounded-full text-sm font-semibold text-text-secondary`}
       >
         Sign out

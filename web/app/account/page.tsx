@@ -15,6 +15,7 @@ import { EditMemberForm } from "@/app/admin/members/[id]/edit/EditMemberForm";
 import { MemberPhotoControls } from "@/app/admin/members/[id]/edit/MemberPhotoControls";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { MySubmissions } from "./MySubmissions";
+import { ClearBlogDraft } from "@/components/blog/ClearBlogDraft";
 import { getMySubmissions } from "@/lib/db/queries/submissions";
 import { getBusinessSlots } from "@/lib/businesses/limits";
 
@@ -68,6 +69,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           </p>
         )}
 
+        {submitted === "blog" && memberId && <ClearBlogDraft memberId={memberId} />}
         {submitted === "blog" && (
           <p role="status" className="rounded-xl bg-brand-green-tint px-4 py-3 text-sm font-medium text-brand-green">
             Thanks — your post was submitted and is waiting for committee review.

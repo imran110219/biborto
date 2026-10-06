@@ -400,6 +400,19 @@ The shared writing surface is `PostContentFields`:
   `rel="noopener noreferrer nofollow ugc"`; images only render when their URL starts
   with the R2 `blog/` base (`getBlogImageBase()`), so external hosts, look-alike
   hosts and tracking pixels are dropped.
+- **Draft auto-save (members only)** — the member form mirrors what's being written
+  (title, body, cover, category, tags) into this browser's `localStorage`, so a
+  refresh, crash or closed tab doesn't lose a long post. `DraftAutosave` checks the
+  form every 1.5 s (polling the form also catches the editor, which updates its hidden
+  field from script) and again on tab-hide / `pagehide`. On the next visit
+  `BlogSubmitForm` restores it with a "Draft restored — Start over" banner. Rules:
+  stored under `blog-draft:v1:<member id>` so people sharing a computer never see each
+  other's drafts; drafts older than 30 days, corrupt data, or blocked/full storage are
+  ignored without breaking the form (and the "auto-saved at …" line only appears
+  after a real save); a rejected submit keeps the draft; a successful one clears it
+  (`ClearBlogDraft` on `/account?submitted=blog`); signing out clears every blog draft
+  in the browser. Drafts never leave the browser — admins' drafts are saved to the
+  server (Save draft), as before. See `lib/blog/draft.ts`.
 - Dependencies: `@tiptap/*` v2, `tiptap-markdown`, `react-markdown`, `remark-gfm`
   (installed with pnpm, which is what `node_modules` and `pnpm-lock.yaml` use).
 

@@ -18,6 +18,7 @@ export function PostEditorShell({
   status,
   actions,
   error,
+  footnote,
   stickyTop = 0,
 }: {
   content: React.ComponentProps<typeof PostContentFields>;
@@ -26,6 +27,8 @@ export function PostEditorShell({
   status?: ReactNode;
   actions: ReactNode;
   error?: string;
+  // Small status line under the actions (e.g. "Draft saved in this browser").
+  footnote?: ReactNode;
   // Height of any fixed/sticky site header above the page (px), so the editor's
   // sticky toolbar and the rail sit just beneath it.
   stickyTop?: number;
@@ -48,6 +51,7 @@ export function PostEditorShell({
             </p>
           )}
           {actions}
+          {footnote}
         </div>
 
         <section className="flex flex-col gap-4 rounded-2xl border border-border-default bg-white p-5">

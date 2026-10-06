@@ -54,6 +54,8 @@ named.
   `getAdminMembersPage`).
 - Manual member creation (`/admin/members/new`, `createMember`) and
   filtered CSV export (`/api/admin/members/export`).
+- Member blog-draft auto-save in the browser (restore banner, per-member key, cleared on
+  submit and sign-out; see "Draft auto-save" in docs/web/README.md).
 - Blog editor UI unified: admin and member forms share one layout
   (`PostEditorShell`) — reading-width column + sticky rail on desktop, bottom action
   bar on phones, sticky toolbar, compact cover row — with members seeing fewer

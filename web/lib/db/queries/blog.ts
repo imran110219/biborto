@@ -11,7 +11,8 @@ import type { AdminBlogPost, AdminBlogPostDetail, BlogPost, BlogPostDetail } fro
 const publicFilter = and(eq(blogPosts.status, "published"), eq(blogPosts.isPublic, true));
 
 function authorNameOf(row: { authorMemberName: string | null; authorName: string | null }): string {
-  return row.authorMemberName ?? row.authorName ?? "Batch 11";
+  // An explicit byline (set in the editor) wins; otherwise the member who wrote it.
+  return row.authorName ?? row.authorMemberName ?? "Batch 11";
 }
 
 export async function getPublishedPublicPosts(): Promise<BlogPost[]> {

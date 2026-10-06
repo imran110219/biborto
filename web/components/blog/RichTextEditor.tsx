@@ -165,8 +165,15 @@ export function RichTextEditor({ name, defaultValue = "", placeholder = "Write y
   const can = (cb: (chain: ReturnType<Editor["can"]>) => boolean) => (editor ? cb(editor.can()) : false);
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-border-input bg-white">
-      <div role="toolbar" aria-label="Formatting" className="flex flex-wrap items-center gap-0.5 border-b border-border-default bg-[#FAF8F3] p-1.5">
+    <div className="flex flex-col rounded-xl border border-border-input bg-white">
+      <div
+        role="toolbar"
+        aria-label="Formatting"
+        style={{ top: "var(--editor-sticky-top, 0px)" }}
+        // Sticks under the site header while you scroll a long post; on phones it is one
+        // horizontally scrolling row instead of wrapping to three.
+        className="sticky z-20 flex flex-nowrap items-center gap-0.5 overflow-x-auto rounded-t-xl border-b border-border-default bg-[#FAF8F3] p-1.5 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&>*]:shrink-0"
+      >
         <ToolbarButton label="Bold" active={editor?.isActive("bold")} onClick={() => editor?.chain().focus().toggleBold().run()}>
           <span className="font-bold">B</span>
         </ToolbarButton>
@@ -260,7 +267,7 @@ export function RichTextEditor({ name, defaultValue = "", placeholder = "Write y
 
       <EditorContent editor={editor} className="blog-editor" />
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-default px-3 py-2 text-xs text-text-secondary">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-b-xl border-t border-border-default px-3 py-2 text-xs text-text-secondary">
         <span role={status?.kind === "error" ? "alert" : "status"} className={status?.kind === "error" ? "font-medium text-[#9C3D10]" : ""}>
           {status?.text ?? "Tip: paste or drop images straight into the editor."}
         </span>

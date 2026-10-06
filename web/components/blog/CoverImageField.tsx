@@ -49,7 +49,7 @@ export function CoverImageField({
       {url ? (
         <div className="relative overflow-hidden rounded-2xl border border-border-default">
           {/* eslint-disable-next-line @next/next/no-img-element -- remote R2 URL */}
-          <img src={url} alt="Cover" className="h-48 w-full object-cover" />
+          <img src={url} alt="Cover" className="h-40 w-full object-cover sm:h-48" />
           <div className="absolute right-3 top-3 flex gap-2">
             <button type="button" onClick={() => input.current?.click()} disabled={pending} className="h-9 rounded-lg bg-white/95 px-3 text-sm font-semibold shadow disabled:opacity-60">
               {pending ? "Uploading…" : "Replace"}
@@ -64,10 +64,13 @@ export function CoverImageField({
           type="button"
           onClick={() => input.current?.click()}
           disabled={pending}
-          className="flex flex-col items-center gap-1.5 rounded-2xl border-2 border-dashed border-border-default bg-bg-admin py-9 text-center disabled:opacity-60"
+          className="flex h-12 items-center gap-3 rounded-xl border border-dashed border-border-input bg-white px-4 text-left text-sm disabled:opacity-60"
         >
+          <span className="text-lg leading-none text-text-secondary" aria-hidden>
+            ＋
+          </span>
           <span className="font-semibold">{pending ? "Uploading…" : "Add a cover photo"}</span>
-          <span className="text-sm text-text-secondary">JPEG, PNG, WebP or GIF · up to 8 MB</span>
+          <span className="ml-auto hidden text-xs text-text-secondary sm:inline">JPEG, PNG, WebP or GIF · up to 8 MB</span>
         </button>
       )}
       <input

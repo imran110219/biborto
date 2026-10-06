@@ -59,9 +59,8 @@ body {
 
 /* Blog rich-text editor (TipTap): mirrors how BlogBody renders a post. */
 .blog-editor .blog-editor-content {
-  min-height: 340px;
-  max-height: 70vh;
-  overflow-y: auto;
+  /* grows with the text — the page scrolls, not the editor */
+  min-height: max(340px, 50vh);
   padding: 18px 20px;
   font-size: 17px;
   line-height: 1.7;

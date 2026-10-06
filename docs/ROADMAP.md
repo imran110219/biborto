@@ -54,6 +54,10 @@ named.
   `getAdminMembersPage`).
 - Manual member creation (`/admin/members/new`, `createMember`) and
   filtered CSV export (`/api/admin/members/export`).
+- Blog editor UI unified: admin and member forms share one layout
+  (`PostEditorShell`) — reading-width column + sticky rail on desktop, bottom action
+  bar on phones, sticky toolbar, compact cover row — with members seeing fewer
+  options (category, tags, Submit). Fixed: a post's byline is now shown.
 - Blog rich-text editor (TipTap, stored as Markdown) with Write/Preview, in-body image
   upload (toolbar, paste, drop) and cover photos on both the admin and member forms;
   safe Markdown rendering that ignores raw HTML and only shows our own R2 images.

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import { PageHero } from "@/components/ui/PageHero";
 import { getActiveSessionMemberId } from "@/lib/auth/session-member";
 import { getBlogImageBase } from "@/lib/blog/images";
 import { BlogSubmitForm } from "./BlogSubmitForm";
@@ -14,21 +13,18 @@ export default async function SubmitPostPage() {
 
   return (
     <PublicLayout>
-      <PageHero
-        eyebrow="Blog"
-        title="Write for the blog"
-        description="Share a story with the batch. The committee reviews every post before it goes live."
-      />
-
-      <section className="flex justify-center px-5 pb-24 md:px-20">
-        <div className="w-full max-w-3xl rounded-2xl border border-border-default bg-white p-8">
-          <BlogSubmitForm imageBase={getBlogImageBase()} />
-          <p className="mt-6 text-center text-sm text-text-secondary">
-            <Link href="/account" className="font-semibold text-brand-green">
-              See my submissions
-            </Link>
-          </p>
+      <section className="flex flex-col gap-6 px-5 pb-16 pt-8 md:px-10">
+        <div className="mx-auto flex w-full max-w-[1104px] flex-wrap items-end justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <h1 className="font-serif text-3xl font-medium">Write for the blog</h1>
+            <p className="text-sm text-text-secondary">Share a story with the batch. The committee reviews every post before it goes live.</p>
+          </div>
+          <Link href="/account" className="text-sm font-semibold text-brand-green">
+            My submissions →
+          </Link>
         </div>
+
+        <BlogSubmitForm imageBase={getBlogImageBase()} />
       </section>
     </PublicLayout>
   );

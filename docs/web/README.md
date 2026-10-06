@@ -350,7 +350,26 @@ in the admin avatar menu). Edits go live immediately.
 ## Blog editor
 
 Both the admin post editor (`/admin/edit-post/new` and `/[id]`) and the member
-submit form (`/blog/submit`) use one writing surface, `PostContentFields`:
+submit form (`/blog/submit`) are the **same UI**: one layout, `PostEditorShell`,
+filled with a different set of options.
+
+- **Layout (`components/blog/PostEditorShell.tsx`)** — desktop: a ~780px
+  reading-width writing column plus a 300px rail that stays in view (actions first,
+  then settings); phone: a single column with the actions pinned in a bottom bar.
+  The rail always shows Publish / Submit without scrolling; the editor toolbar is
+  sticky (under the 84px public header for members) and, on phones, one
+  horizontally scrolling row; the editor grows with the text (no inner scroll box);
+  the cover photo is a slim "Add a cover photo" row until one is chosen. Measured
+  at 1440×800: ~350px of writing area on the first screen for both (admin was
+  236px, member 70px before), and the actions in view for both.
+- **What differs (`PostSettingsFields`)** — *admin*: status pill, category, tags,
+  byline, "feature on the home page", public/private, and **Save draft + Publish**.
+  *Member*: category and tags only, and a single **Submit for review**. No status,
+  byline, feature flag or visibility — a member's post is always `pending` and the
+  author is the member.
+- A set byline now takes priority over the author's name on the public post.
+
+The shared writing surface is `PostContentFields`:
 
 - **Rich text (WYSIWYG)** — TipTap, with a toolbar for bold, italic, heading,
   subheading, quote, bulleted/numbered lists, links, images, rule, undo/redo.

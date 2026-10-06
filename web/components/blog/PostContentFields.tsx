@@ -16,7 +16,6 @@ export function PostContentFields({
   initialCoverKey = "",
   initialCoverUrl,
   imageBase,
-  titleClassName,
   titlePlaceholder = "Post title",
   authorLabel,
 }: {
@@ -25,7 +24,6 @@ export function PostContentFields({
   initialCoverKey?: string;
   initialCoverUrl?: string;
   imageBase?: string;
-  titleClassName: string;
   titlePlaceholder?: string;
   authorLabel?: string;
 }) {
@@ -47,7 +45,7 @@ export function PostContentFields({
         maxLength={160}
         placeholder={titlePlaceholder}
         aria-label="Post title"
-        className={titleClassName}
+        className="w-full border-0 bg-transparent font-serif text-[28px] font-medium leading-tight text-text-primary outline-none placeholder:text-text-secondary/50 md:text-[34px]"
       />
 
       <div role="tablist" aria-label="Editor mode" className="flex w-fit gap-1 rounded-full bg-black/5 p-1">

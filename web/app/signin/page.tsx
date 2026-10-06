@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SignInForm } from "./SignInForm";
 
 export default async function SignInPage({ searchParams }: PageProps<"/signin">) {
-  const { callbackUrl } = await searchParams;
+  const { callbackUrl, reset } = await searchParams;
   const target = typeof callbackUrl === "string" ? callbackUrl : "";
 
   return (
@@ -23,7 +23,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
             Welcome back, batchmate.
           </h1>
           <p className="max-w-[480px] text-lg leading-relaxed text-brand-green-tint">
-            Sign in to RSVP for events, update your profile, share photos and write for the blog. Committee
+            Sign in to RSVP for events, keep your profile up to date and list your business. Committee
             admins manage the site from here.
           </p>
         </div>
@@ -32,7 +32,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
       </div>
 
       <div className="flex items-center justify-center bg-bg-public p-9 md:p-14">
-        <SignInForm callbackUrl={target} />
+        <SignInForm callbackUrl={target} passwordReset={reset === "1"} />
       </div>
     </div>
   );

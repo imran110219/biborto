@@ -42,6 +42,13 @@ function AccountActions({
 
   return (
     <div className={`${mobile ? "mt-2 flex flex-col" : "hidden md:flex"} items-center gap-2`}>
+      <Link
+        href="/account"
+        onClick={onNavigate}
+        className={`${mobile ? "h-11 w-full justify-center" : "h-9 px-3"} flex items-center rounded-full text-sm font-semibold text-text-primary`}
+      >
+        My account
+      </Link>
       {isAdmin && (
         <Link
           href="/admin/dashboard"

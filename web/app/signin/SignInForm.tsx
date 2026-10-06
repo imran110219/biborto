@@ -6,7 +6,7 @@ import Link from "next/link";
 import { LockIcon, MailIcon } from "@/components/ui/icons";
 import { credentialsSignIn, devSuperadminSignIn, googleSignIn } from "./actions";
 
-export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
+export function SignInForm({ callbackUrl, passwordReset = false }: { callbackUrl: string; passwordReset?: boolean }) {
   const [error, formAction, pending] = useActionState(credentialsSignIn, undefined);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -21,6 +21,12 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
         <h2 className="font-serif text-3xl font-medium">Sign in</h2>
         <p className="mt-1 text-text-secondary">Use the email you registered with.</p>
       </div>
+
+      {passwordReset && !error && (
+        <p role="status" className="rounded-xl bg-brand-green-tint px-4 py-3 text-sm text-brand-green">
+          Password updated — sign in with your new password.
+        </p>
+      )}
 
       {error && (
         <p role="alert" className="rounded-xl bg-[#F8ECE4] px-4 py-3 text-sm text-[#9C3D10]">
@@ -64,12 +70,8 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
           </span>
         </label>
 
-        <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center gap-2.5">
-            <input type="checkbox" className="h-[18px] w-[18px] accent-brand-green" />
-            Keep me signed in
-          </label>
-          <Link href="#" className="font-semibold text-brand-green">
+        <div className="flex justify-end text-sm">
+          <Link href="/forgot-password" className="font-semibold text-brand-green">
             Forgot password?
           </Link>
         </div>

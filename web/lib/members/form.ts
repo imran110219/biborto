@@ -25,10 +25,10 @@ function isHttpUrl(value: string) {
   }
 }
 
-export interface MemberFormValues {
-  name: string;
-  email: string;
-  disciplineId: string | null;
+
+// Profile fields shared by the admin forms and the member's own account form:
+// everything a member can describe about themselves, validated identically.
+export interface ProfileFieldValues {
   countryId: string | null;
   campusName: string | null;
   shortBio: string | null;
@@ -42,41 +42,33 @@ export interface MemberFormValues {
   facebookUrl: string | null;
   websiteUrl: string | null;
   phoneNumber: string | null;
-  studentId: string | null;
   bloodGroup: BloodGroup | null;
   dateOfBirth: string | null;
-  platformRole: PlatformRole;
-  status: MemberStatus;
   isPublic: boolean;
-  returnTo: string;
 }
 
-export function parseMemberForm(
-  formData: FormData,
-  { requireEmail }: { requireEmail: boolean },
-): { error: string } | { values: MemberFormValues } {
+function parseProfileFields(formData: FormData): { error: string } | { values: ProfileFieldValues } {
   const text = (key: string) => String(formData.get(key) ?? "").trim();
   const opt = (key: string) => text(key) || null;
 
-  const name = text("name");
-  const email = text("email").toLowerCase();
-  const requestedRole = text("platformRole");
-  const requestedStatus = text("status");
   const linkedinUrl = text("linkedinUrl");
   const facebookUrl = text("facebookUrl");
   const websiteUrl = text("websiteUrl");
   const bloodGroup = text("bloodGroup");
   const dateOfBirth = text("dateOfBirth");
 
-  if (!name) return { error: "Name is required." };
-  if (requireEmail) {
-    if (!email) return { error: "Email is required." };
-    if (!EMAIL.test(email)) return { error: "Enter a valid email address." };
+  // Length caps keep public profile content sane (the admin form shares them).
+  const caps: [string, string, number][] = [
+    ["Short bio", "shortBio", 500], ["Bio", "bio", 5000], ["Campus name", "campusName", 200],
+    ["Favorite campus place", "favoriteCampusPlace", 200], ["Most memorable event", "mostMemorableEvent", 500],
+    ["Profession", "profession", 200], ["Current employer", "currentEmployer", 200], ["City", "city", 200],
+    ["Phone number", "phoneNumber", 40],
+  ];
+  for (const [label, key, max] of caps) {
+    if (text(key).length > max) return { error: `${label} is too long (${max} characters max).` };
   }
-  if (!PLATFORM_ROLES.includes(requestedRole as PlatformRole)) return { error: "Choose a valid role." };
-  if (!MEMBER_STATUSES.includes(requestedStatus as MemberStatus)) return { error: "Choose a valid status." };
   for (const [label, url] of [["LinkedIn", linkedinUrl], ["Facebook", facebookUrl], ["Website", websiteUrl]]) {
-    if (url && !isHttpUrl(url)) return { error: `${label} URL must start with http:// or https://.` };
+    if (url && (url.length > 300 || !isHttpUrl(url))) return { error: `${label} URL must start with http:// or https://.` };
   }
   if (bloodGroup && !BLOOD_GROUPS.includes(bloodGroup as BloodGroup)) return { error: "Choose a valid blood group." };
   if (dateOfBirth) {
@@ -88,9 +80,6 @@ export function parseMemberForm(
 
   return {
     values: {
-      name,
-      email,
-      disciplineId: opt("disciplineId"),
       countryId: opt("countryId"),
       campusName: opt("campusName"),
       shortBio: opt("shortBio"),
@@ -104,12 +93,61 @@ export function parseMemberForm(
       facebookUrl: facebookUrl || null,
       websiteUrl: websiteUrl || null,
       phoneNumber: opt("phoneNumber"),
-      studentId: opt("studentId"),
       bloodGroup: (bloodGroup as BloodGroup) || null,
       dateOfBirth: dateOfBirth || null,
+      isPublic: formData.get("isPublic") === "on",
+    },
+  };
+}
+
+// A member editing their own profile. Identity and access fields — name,
+// discipline, email, student ID, role, status — are deliberately not parsed
+// here, so a crafted request can't change them.
+export function parseSelfProfileForm(formData: FormData) {
+  return parseProfileFields(formData);
+}
+
+export interface MemberFormValues extends ProfileFieldValues {
+  name: string;
+  email: string;
+  disciplineId: string | null;
+  studentId: string | null;
+  platformRole: PlatformRole;
+  status: MemberStatus;
+  returnTo: string;
+}
+
+export function parseMemberForm(
+  formData: FormData,
+  { requireEmail }: { requireEmail: boolean },
+): { error: string } | { values: MemberFormValues } {
+  const text = (key: string) => String(formData.get(key) ?? "").trim();
+
+  const name = text("name");
+  const email = text("email").toLowerCase();
+  const requestedRole = text("platformRole");
+  const requestedStatus = text("status");
+
+  if (!name) return { error: "Name is required." };
+  if (requireEmail) {
+    if (!email) return { error: "Email is required." };
+    if (!EMAIL.test(email)) return { error: "Enter a valid email address." };
+  }
+  if (!PLATFORM_ROLES.includes(requestedRole as PlatformRole)) return { error: "Choose a valid role." };
+  if (!MEMBER_STATUSES.includes(requestedStatus as MemberStatus)) return { error: "Choose a valid status." };
+
+  const profile = parseProfileFields(formData);
+  if ("error" in profile) return profile;
+
+  return {
+    values: {
+      ...profile.values,
+      name,
+      email,
+      disciplineId: text("disciplineId") || null,
+      studentId: text("studentId") || null,
       platformRole: requestedRole as PlatformRole,
       status: requestedStatus as MemberStatus,
-      isPublic: formData.get("isPublic") === "on",
       returnTo: text("returnTo"),
     },
   };

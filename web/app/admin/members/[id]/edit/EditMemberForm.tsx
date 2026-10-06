@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { createMember, updateMember } from "@/app/admin/members/actions";
+import { updateMyProfile } from "@/app/account/actions";
 import type { AdminMemberDetail } from "@/lib/types";
 import type { DisciplineOption } from "@/lib/db/queries/disciplines";
 import type { CountryOption } from "@/lib/db/queries/countries";
@@ -39,11 +40,14 @@ export function EditMemberForm({
   disciplines: DisciplineOption[];
   countries: CountryOption[];
   returnTo: string;
-  mode?: "edit" | "create";
+  // "self": a member editing their own profile from /account — identity fields
+  // (name, discipline, email, student ID) are read-only and role/status are absent.
+  mode?: "edit" | "create" | "self";
 }) {
   const creating = mode === "create";
+  const self = mode === "self";
   const [error, formAction, pending] = useActionState(
-    creating ? createMember : updateMember.bind(null, member.id),
+    creating ? createMember : self ? updateMyProfile : updateMember.bind(null, member.id),
     undefined,
   );
 
@@ -62,11 +66,18 @@ export function EditMemberForm({
       <Card title="Profile" hint="Shown on the public member directory when the profile is public.">
         <label className={`${labelClasses} sm:col-span-2`}>
           Name
-          <input name="name" defaultValue={member.name} required className={inputClasses} />
+          <input
+            name="name"
+            defaultValue={member.name}
+            required={!self}
+            disabled={self}
+            className={`${inputClasses} ${self ? "bg-bg-admin text-text-secondary" : ""}`}
+          />
+          {self && <span className="text-xs font-normal text-text-secondary">Name, discipline, email and student ID are managed by the committee — contact an admin to change them.</span>}
         </label>
         <label className={labelClasses}>
           Discipline
-          <select name="disciplineId" defaultValue={member.disciplineId ?? ""} className={inputClasses}>
+          <select name="disciplineId" defaultValue={member.disciplineId ?? ""} disabled={self} className={`${inputClasses} ${self ? "bg-bg-admin text-text-secondary" : ""}`}>
             <option value="">Not provided</option>
             {disciplines.map((d) => (
               <option key={d.id} value={d.id}>
@@ -138,7 +149,7 @@ export function EditMemberForm({
         </label>
       </Card>
 
-      <Card title="Private details" hint="Visible to admins only — never shown publicly.">
+      <Card title="Private details" hint={self ? "Only you and the committee can see these — they are never shown publicly." : "Visible to admins only — never shown publicly."}>
         <label className={labelClasses}>
           Email
           {creating ? (
@@ -153,7 +164,7 @@ export function EditMemberForm({
         </label>
         <label className={labelClasses}>
           Student ID
-          <input name="studentId" defaultValue={member.studentId} className={inputClasses} />
+          <input name="studentId" defaultValue={member.studentId} disabled={self} className={`${inputClasses} ${self ? "bg-bg-admin text-text-secondary" : ""}`} />
         </label>
         <label className={labelClasses}>
           Blood group
@@ -172,20 +183,34 @@ export function EditMemberForm({
         </label>
       </Card>
 
+      {self && (
+        <section className="rounded-2xl border border-border-default bg-white p-5 sm:p-6">
+          <label className="flex items-start gap-3 text-sm">
+            <input type="checkbox" name="isPublic" defaultChecked={member.isPublic} className="mt-0.5 h-4 w-4 accent-brand-green" />
+            <span>
+              <span className="block font-semibold">Show me in the public member directory</span>
+              <span className="text-xs text-text-secondary">When off, your profile is hidden from the public site. Admins can still see it.</span>
+            </span>
+          </label>
+        </section>
+      )}
+
       <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center gap-3 rounded-2xl border border-border-default bg-white/95 p-3 shadow-[0_-6px_20px_rgba(0,0,0,0.04)] backdrop-blur">
         <button
           type="submit"
           disabled={pending}
           className="h-11 rounded-[10px] bg-brand-green px-6 text-sm font-semibold text-white disabled:opacity-60"
         >
-          {pending ? (creating ? "Adding…" : "Saving…") : creating ? "Add member" : "Save changes"}
+          {pending ? (creating ? "Adding…" : "Saving…") : creating ? "Add member" : self ? "Save profile" : "Save changes"}
         </button>
-        <Link
-          href={returnTo}
-          className="flex h-11 items-center rounded-[10px] border border-border-input px-5 text-sm font-semibold"
-        >
-          Cancel
-        </Link>
+        {!self && (
+          <Link
+            href={returnTo}
+            className="flex h-11 items-center rounded-[10px] border border-border-input px-5 text-sm font-semibold"
+          >
+            Cancel
+          </Link>
+        )}
         {error && (
           <p role="alert" className="min-w-0 flex-1 text-sm font-medium text-[#9C3D10]">
             {error}

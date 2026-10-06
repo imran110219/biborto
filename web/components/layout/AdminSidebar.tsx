@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import {
   DashboardIcon,
   MembersIcon,
@@ -13,11 +13,8 @@ import {
   SettingsIcon,
   StarIcon,
   BriefcaseIcon,
-  EyeIcon,
   BellIcon,
-  LogoutIcon,
 } from "@/components/ui/icons";
-import { initialsOf } from "@/lib/db/format";
 
 const NAV_ITEMS: { label: string; href: string; icon: typeof DashboardIcon; superadminOnly?: boolean }[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: DashboardIcon },
@@ -32,16 +29,13 @@ const NAV_ITEMS: { label: string; href: string; icon: typeof DashboardIcon; supe
   { label: "Settings", href: "/admin/settings", icon: SettingsIcon },
 ];
 
-const ROLE_LABELS = { member: "Member", admin: "Admin", superadmin: "Superadmin" };
-
 export function AdminSidebar({ className = "" }: { className?: string }) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const name = session?.user?.name ?? "…";
   const role = session?.user?.platformRole;
 
   return (
-    <aside className={`flex flex-col gap-9 bg-brand-green-dark p-5 text-bg-public ${className}`}>
+    <aside className={`flex flex-col gap-9 overflow-y-auto bg-brand-green-dark p-5 text-bg-public ${className}`}>
       <div className="flex items-center gap-3 px-1.5">
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-bg-public font-serif text-lg font-semibold text-brand-green">
           11
@@ -70,30 +64,6 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
           );
         })}
       </nav>
-
-      <div className="mt-auto flex flex-col gap-3">
-        <Link href="/" className="flex h-11 items-center gap-3 rounded-[10px] px-3.5 text-sm text-brand-green-tint">
-          <EyeIcon />
-          View public site
-        </Link>
-        <div className="flex items-center gap-3 rounded-xl bg-brand-green p-3.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-amber-tint text-sm font-bold text-accent-amber-text">
-            {initialsOf(name)}
-          </div>
-          <div className="flex flex-1 flex-col">
-            <span className="text-sm font-semibold text-white">{name}</span>
-            <span className="text-xs text-brand-green-tint">{role ? ROLE_LABELS[role] : ""}</span>
-          </div>
-          <button
-            type="button"
-            aria-label="Sign out"
-            onClick={() => signOut({ redirectTo: "/" })}
-            className="text-brand-green-tint"
-          >
-            <LogoutIcon />
-          </button>
-        </div>
-      </div>
     </aside>
   );
 }

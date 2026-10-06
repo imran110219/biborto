@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 const MAX_IMAGE_SIZE = 15 * 1024 * 1024;
 
 function PhotoUpload({
-  memberId,
+  endpoint,
   photoType,
   label,
   imageUrl,
 }: {
-  memberId: string;
+  endpoint: string;
   photoType: "avatar" | "cover";
   label: string;
   imageUrl?: string;
@@ -40,7 +40,7 @@ function PhotoUpload({
     body.set("photoType", photoType);
     body.set("file", file);
     try {
-      const response = await fetch(`/api/admin/members/${memberId}/photos`, { method: "POST", body });
+      const response = await fetch(endpoint, { method: "POST", body });
       const result = await response.json() as { error?: string };
       if (!response.ok) {
         setStatus(result.error ?? "The upload failed.");
@@ -98,17 +98,21 @@ export function MemberPhotoControls({
   memberId,
   avatarUrl,
   coverPhotoUrl,
+  endpoint = `/api/admin/members/${memberId}/photos`,
 }: {
   memberId: string;
   avatarUrl?: string;
   coverPhotoUrl?: string;
+  // Admin edit page: the superadmin route. A member's own /account page passes
+  // /api/account/photos, which only ever targets the signed-in member.
+  endpoint?: string;
 }) {
   return (
     <section className="flex flex-col gap-5 rounded-2xl border border-border-default bg-white p-5 sm:p-6">
       <h2 className="font-serif text-xl font-medium">Photos</h2>
-      <PhotoUpload memberId={memberId} photoType="avatar" label="Profile photo" imageUrl={avatarUrl} />
+      <PhotoUpload endpoint={endpoint} photoType="avatar" label="Profile photo" imageUrl={avatarUrl} />
       <div className="h-px bg-border-default" />
-      <PhotoUpload memberId={memberId} photoType="cover" label="Cover photo" imageUrl={coverPhotoUrl} />
+      <PhotoUpload endpoint={endpoint} photoType="cover" label="Cover photo" imageUrl={coverPhotoUrl} />
     </section>
   );
 }

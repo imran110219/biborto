@@ -11,7 +11,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-bg-admin">
-      <AdminSidebar className="hidden w-[264px] shrink-0 md:flex" />
+      {/* Pinned to the viewport so the profile card and "View public site" stay
+          visible on long pages instead of sitting at the very bottom of the page. */}
+      <AdminSidebar className="hidden w-[264px] shrink-0 md:sticky md:top-0 md:flex md:h-screen md:self-start" />
 
       {open && (
         <>

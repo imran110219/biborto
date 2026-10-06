@@ -32,7 +32,6 @@ export function AdminUserMenu() {
   const name = session?.user?.name ?? "…";
   const email = session?.user?.email;
   const role = session?.user?.platformRole;
-  const memberId = session?.user?.memberId;
 
   return (
     <div ref={ref} className="relative">
@@ -58,11 +57,9 @@ export function AdminUserMenu() {
             {role && <span className="mt-1 text-xs font-semibold text-brand-green">{ROLE_LABELS[role]}</span>}
           </div>
           <div className="my-1 h-px bg-border-default" />
-          {memberId && (
-            <Link href={role === "superadmin" ? `/admin/members/${memberId}/edit?from=profile` : `/admin/members/${memberId}?from=profile`} role="menuitem" onClick={() => setOpen(false)} className={ITEM}>
-              <MembersIcon /> My profile
-            </Link>
-          )}
+          <Link href="/account" role="menuitem" onClick={() => setOpen(false)} className={ITEM}>
+            <MembersIcon /> My profile
+          </Link>
           <Link href="/" role="menuitem" onClick={() => setOpen(false)} className={ITEM}>
             <EyeIcon /> View public site
           </Link>

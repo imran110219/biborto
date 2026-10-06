@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { blogPosts, members } from "@/drizzle/schema";
 import { formatMonthDay, estimateReadTime } from "@/lib/db/format";
+import { blogImageUrl } from "@/lib/blog/images";
 import type { AdminBlogPost, AdminBlogPostDetail, BlogPost, BlogPostDetail } from "@/lib/types";
 
 // Same filter public_blog_posts (db/schema.sql) encodes, replicated here
@@ -23,6 +24,7 @@ export async function getPublishedPublicPosts(): Promise<BlogPost[]> {
       authorName: blogPosts.authorName,
       publishedAt: blogPosts.publishedAt,
       body: blogPosts.body,
+      coverPhotoKey: blogPosts.coverPhotoKey,
     })
     .from(blogPosts)
     .leftJoin(members, eq(members.id, blogPosts.authorMemberId))
@@ -36,6 +38,7 @@ export async function getPublishedPublicPosts(): Promise<BlogPost[]> {
     author: authorNameOf(row),
     date: row.publishedAt ? formatMonthDay(row.publishedAt) : "",
     readTime: estimateReadTime(row.body),
+    coverUrl: blogImageUrl(row.coverPhotoKey),
   }));
 }
 
@@ -50,6 +53,7 @@ export async function getPublicPostBySlug(slug: string): Promise<BlogPostDetail 
       publishedAt: blogPosts.publishedAt,
       body: blogPosts.body,
       tags: blogPosts.tags,
+      coverPhotoKey: blogPosts.coverPhotoKey,
     })
     .from(blogPosts)
     .leftJoin(members, eq(members.id, blogPosts.authorMemberId))
@@ -67,6 +71,7 @@ export async function getPublicPostBySlug(slug: string): Promise<BlogPostDetail 
     readTime: estimateReadTime(row.body),
     body: row.body,
     tags: row.tags,
+    coverUrl: blogImageUrl(row.coverPhotoKey),
   };
 }
 
@@ -114,6 +119,7 @@ export async function getAdminPostById(id: string): Promise<AdminBlogPostDetail 
       status: blogPosts.status,
       isPublic: blogPosts.isPublic,
       featured: blogPosts.featured,
+      coverPhotoKey: blogPosts.coverPhotoKey,
     })
     .from(blogPosts)
     .leftJoin(members, eq(members.id, blogPosts.authorMemberId))
@@ -133,5 +139,7 @@ export async function getAdminPostById(id: string): Promise<AdminBlogPostDetail 
     status: row.status,
     isPublic: row.isPublic,
     featured: row.featured,
+    coverKey: row.coverPhotoKey ?? "",
+    coverUrl: blogImageUrl(row.coverPhotoKey),
   };
 }

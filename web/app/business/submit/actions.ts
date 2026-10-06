@@ -1,9 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { businesses } from "@/drizzle/schema";
-import { requireMemberId } from "@/lib/auth/session-member";
+import { getActiveSessionMemberId } from "@/lib/auth/session-member";
+import { MAX_BUSINESSES_PER_MEMBER } from "@/lib/businesses/limits";
 import { parseWebsite } from "@/lib/url";
 import { BUSINESS_CATEGORIES, type BusinessCategory } from "@/lib/types";
 
@@ -16,7 +18,8 @@ function slugify(name: string): string {
 }
 
 export async function submitBusiness(_prevState: string | undefined, formData: FormData) {
-  const memberId = await requireMemberId();
+  const memberId = await getActiveSessionMemberId();
+  if (!memberId) return "Sign in with an active membership to list a business.";
 
   const name = String(formData.get("name") ?? "").trim();
   const category = String(formData.get("category") ?? "") as BusinessCategory;
@@ -50,22 +53,36 @@ export async function submitBusiness(_prevState: string | undefined, formData: F
 
   const slug = `${slugify(name)}-${Math.random().toString(36).slice(2, 7)}`;
 
-  await db.insert(businesses).values({
-    slug,
-    ownerMemberId: memberId,
-    name,
-    category,
-    city: city || null,
-    tagline: tagline || null,
-    description: description || null,
-    offerings,
-    testimonial: null,
-    phone: phone || null,
-    email: email || null,
-    website: websiteUrl,
-    linkedinUrl,
-    facebookUrl,
+  // The cap is checked and the row inserted inside one transaction holding a
+  // per-member advisory lock, so two simultaneous submissions can't both read
+  // "1 of 2 used" and both succeed.
+  const accepted = await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`business-limit:${memberId}`}))`);
+    const [{ used }] = await tx
+      .select({ used: count() })
+      .from(businesses)
+      .where(and(eq(businesses.ownerMemberId, memberId), inArray(businesses.status, ["pending", "active"])));
+    if (used >= MAX_BUSINESSES_PER_MEMBER) return false;
+
+    await tx.insert(businesses).values({
+      slug,
+      ownerMemberId: memberId,
+      name,
+      category,
+      city: city || null,
+      tagline: tagline || null,
+      description: description || null,
+      offerings,
+      testimonial: null,
+      phone: phone || null,
+      email: email || null,
+      website: websiteUrl,
+      linkedinUrl,
+      facebookUrl,
+    });
+    return true;
   });
+  if (!accepted) return `You can list at most ${MAX_BUSINESSES_PER_MEMBER} businesses. Contact the committee if you need another.`;
 
   redirect("/business?submitted=1");
 }

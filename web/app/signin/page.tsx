@@ -23,7 +23,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
             Welcome back, batchmate.
           </h1>
           <p className="max-w-[480px] text-lg leading-relaxed text-brand-green-tint">
-            Sign in to RSVP for events, keep your profile up to date and list your business. Committee
+            Sign in to RSVP for events, keep your profile up to date, write for the blog and list your business. Committee
             admins manage the site from here.
           </p>
         </div>

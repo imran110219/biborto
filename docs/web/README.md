@@ -137,10 +137,11 @@ proxy.ts         Next.js 16's renamed middleware.ts — gates /admin/** by
 types/next-auth.d.ts   Module augmentation adding id/platformRole to
                        Session.user and JWT
 
-components/BlogBody.tsx   Tiny hand-rolled renderer for blog_posts.body's
-                          markdown subset (## headings, > quotes) — not a
-                          full markdown library, since the subset is small
-                          and fully within our control
+components/BlogBody.tsx   Safe Markdown renderer (react-markdown + GFM) for
+                          blog_posts.body — see "Blog editor" below
+components/blog/          RichTextEditor (TipTap), CoverImageField,
+                          PostContentFields (title + cover + editor + Write/
+                          Preview) — shared by the admin and member forms
 ```
 
 ## One real behavior upgrade over the mockup
@@ -241,7 +242,8 @@ the member's `admin`/`superadmin` role, validates JPEG/PNG/WebP/GIF up to
 uploader in Postgres. Admins can update captions and delete photos;
 superadmins can create, edit, and delete empty albums. Public pages resolve
 keys through `R2_PUBLIC_URL`. Member profile and cover photos also use R2
-(uploading them is superadmin-only).
+(a superadmin can upload for anyone; each member uploads their own from
+`/account`).
 Configure an R2 bucket, an Object Read & Write API token scoped to that
 bucket, and a public custom domain (or `r2.dev` for local development).
 The app does not create the bucket or configure its domain.
@@ -303,6 +305,115 @@ behind the `/admin/**` role gate.
 
 **Suggested next tasks**: build admin CSV import for members, then
 complete persistence for settings.
+
+## My account (member self-service)
+
+Every signed-in, active member — admin or not — can manage their own record at
+**`/account`** (linked as "My account" in the public header and as "My profile"
+in the admin avatar menu). Edits go live immediately.
+
+- **Profile** (`updateMyProfile`, `parseSelfProfileForm` in
+  `lib/members/form.ts`): bio, short bio, campus name, favorite campus place,
+  most memorable event, profession, employer, city, country, LinkedIn/Facebook/
+  website links, phone, blood group, date of birth, and the **"show me in the
+  public member directory"** switch (off → the public profile 404s and the
+  member leaves `/members`). It reuses the admin form (`EditMemberForm
+  mode="self"`) and the same validation as the admin side (`parseProfileFields`),
+  with length caps.
+- **Locked fields:** name, discipline, email, student ID, role and status are
+  shown read-only ("managed by the committee") and are never parsed by the
+  self-service action, so a crafted request can't change them — tested by
+  injecting those fields into a submission. The member being edited always
+  comes from the session, never from the request.
+- **Photos:** `POST /api/account/photos` (profile or cover, same validation and R2
+  layout as the admin route, via the shared `lib/members/photo-upload.ts`);
+  it only ever targets the signed-in member. The admin route
+  `/api/admin/members/[id]/photos` stays superadmin-only.
+- **Password:** `changePassword` requires the current password (a Google-only
+  account, which has none, can set one using its live session). Existing JWT
+  sessions on other devices stay valid until they expire (Auth.js JWT sessions
+  can't be revoked individually).
+- **Forgot / reset password:** `/forgot-password` emails a one-time link (hashed
+  token, 1 hour, 1-minute resend cooldown, `reset:` namespace in
+  `verification_tokens`, separate from the `claim:` tokens) to a *claimed,
+  non-suspended* member; `/reset-password` redeems it and sends them to
+  `/signin?reset=1`. The reply is identical for unknown, unclaimed and claimed
+  emails. The link base comes from `APP_URL`/`AUTH_URL`.
+- **Session sync:** `components/SessionSync.tsx` re-fetches the client session on
+  route changes while signed out, so the header and admin menu update right
+  after a Server-Action sign-in (a soft redirect used to leave "Member login"
+  and a "…" avatar showing until reload).
+- **My submissions:** see [Member submissions](#member-submissions).
+- **Not built yet:** members editing a submission after it is in, and sharing
+  photos to the gallery.
+
+## Blog editor
+
+Both the admin post editor (`/admin/edit-post/new` and `/[id]`) and the member
+submit form (`/blog/submit`) use one writing surface, `PostContentFields`:
+
+- **Rich text (WYSIWYG)** — TipTap, with a toolbar for bold, italic, heading,
+  subheading, quote, bulleted/numbered lists, links, images, rule, undo/redo.
+  The editor's value is **Markdown**: `tiptap-markdown` serialises it into a hidden
+  `body` field, so the database still stores plain Markdown text (never HTML),
+  existing posts open in the editor unchanged, and server actions needed no new
+  format. Form submissions turn newlines into CRLF; the actions normalise to LF.
+- **Preview** — a Write / Preview switch renders the current text through the same
+  `BlogBody` component the public post page uses, so the preview is what readers
+  will see (both panes stay mounted, so switching never loses editor state).
+- **Images** — the toolbar's Image button, paste and drag-and-drop upload to R2 via
+  `POST /api/blog/images` (any active member; JPEG/PNG/WebP/GIF sniffed by magic
+  bytes, ≤ 8 MB) into `blog/<member id>/<uuid>.<ext>` and insert `![alt](url)`; each
+  image goes in its own paragraph after the current block and never replaces
+  selected text. Members may hold **40** images each (`MAX_BLOG_IMAGES_PER_MEMBER`,
+  counted by listing their R2 folder); admins are uncapped. Unused uploads are not
+  garbage-collected yet.
+- **Cover photo** — `CoverImageField` uploads through the same route and submits
+  `coverKey`; the actions store it in `blog_posts.cover_photo_key` after
+  `resolveCoverKey` checks it matches `blog/<uuid>/<uuid>.<ext>` **and**, for a
+  member, lives in that member's own folder (an admin may attach any blog image).
+  The public post page and the home/teaser cards show the cover, falling back to the
+  placeholder block.
+- **Rendering is safe by construction** (`components/BlogBody.tsx`): Markdown is
+  turned into React elements, so raw HTML in a post is shown as inert text, never
+  executed — tested with `<script>`, `<img onerror>`, `<iframe>`, `javascript:` and
+  `data:` links; links are limited to http(s)/mailto and open in a new tab with
+  `rel="noopener noreferrer nofollow ugc"`; images only render when their URL starts
+  with the R2 `blog/` base (`getBlogImageBase()`), so external hosts, look-alike
+  hosts and tracking pixels are dropped.
+- Dependencies: `@tiptap/*` v2, `tiptap-markdown`, `react-markdown`, `remark-gfm`
+  (installed with pnpm, which is what `node_modules` and `pnpm-lock.yaml` use).
+
+## Member submissions
+
+Members can contribute in exactly two ways, and only by **submitting** — they
+never publish or edit content themselves. Every submission goes through the
+committee, and members follow each one's status under "My blog posts" and "My
+businesses" on `/account` (read-only).
+
+- **Blog posts** (`/blog/submit`, `submitPost`): title, category, an optional cover
+  photo, a rich-text body written in the [blog editor](#blog-editor) (100–20,000
+  characters of Markdown) and up to 8 tags. Stored as `status =
+  'pending'` with the member as author, `is_public = true`, never featured. A
+  member may have **at most 5 posts pending** at once (`MAX_PENDING_POSTS_PER_MEMBER`
+  in `lib/blog/limits.ts`). Admins review them from the blog list (Approve /
+  Reject buttons) or the dashboard "Blog submissions" panel: approve →
+  `published` (publishes publicly, keeping any existing `published_at`), reject →
+  `rejected`. Public queries only ever return `published` + `is_public` posts, so
+  pending and rejected posts are invisible and 404 by URL.
+- **Businesses** (`/business/submit`, `submitBusiness`): unchanged form, now
+  capped at **2 listings per member** (`MAX_BUSINESSES_PER_MEMBER` in
+  `lib/businesses/limits.ts`). Pending and active listings count; a rejected
+  listing frees its slot. The page shows "x of 2 used" and, at the limit, an
+  explanation instead of the form. Listings a superadmin creates for a member
+  also count toward the cap, but the admin form itself isn't limited.
+- **Race-safe caps:** both limits are checked and the row inserted in one
+  transaction holding a per-member advisory lock (`pg_advisory_xact_lock`).
+  Without the lock, 8 simultaneous submissions all succeeded in a test; with it,
+  exactly the allowed number did.
+- **Active members only:** submitting re-reads the member's status from the
+  database (`getActiveSessionMemberId`), so a member suspended while still
+  holding a login session is refused with a message.
 
 ## Admin members
 

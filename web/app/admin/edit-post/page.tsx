@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/Button";
-import { CategoryTag, VisibilityBadge } from "@/components/ui/Badge";
+import { CategoryTag, PostStatusPill as StatusPill, VisibilityBadge } from "@/components/ui/Badge";
 import { EditIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import { getAdminPosts } from "@/lib/db/queries/blog";
-import { deletePost } from "./actions";
+import { approvePost, deletePost, rejectPost } from "./actions";
 
 export default async function AdminBlogPostsPage() {
   const posts = await getAdminPosts();
@@ -31,7 +31,7 @@ export default async function AdminBlogPostsPage() {
                     {h}
                   </th>
                 ))}
-                <th className="w-[104px] px-4 py-3.5" />
+                <th className="w-[220px] px-4 py-3.5" />
               </tr>
             </thead>
             <tbody>
@@ -41,18 +41,22 @@ export default async function AdminBlogPostsPage() {
                   <td className="px-4 py-3.5"><CategoryTag>{p.category}</CategoryTag></td>
                   <td className="px-4 py-3.5 text-sm text-text-secondary">{p.authorName}</td>
                   <td className="px-4 py-3.5">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        p.status === "published" ? "bg-brand-green-tint text-brand-green" : "bg-accent-amber-tint text-accent-amber-text"
-                      }`}
-                    >
-                      {p.status === "published" ? "Published" : "Draft"}
-                    </span>
+                    <StatusPill status={p.status} />
                   </td>
                   <td className="px-4 py-3.5"><VisibilityBadge isPublic={p.isPublic} /></td>
                   <td className="px-4 py-3.5 text-sm text-text-secondary">{p.updatedAt}</td>
                   <td className="px-4 py-3.5">
-                    <div className="flex gap-1.5">
+                    <div className="flex items-center gap-1.5">
+                      {p.status === "pending" && (
+                        <>
+                          <form action={approvePost.bind(null, p.id)}>
+                            <button className="h-9 rounded-lg bg-brand-green px-3 text-xs font-semibold text-white">Approve</button>
+                          </form>
+                          <form action={rejectPost.bind(null, p.id)}>
+                            <button className="h-9 rounded-lg border border-border-input bg-white px-3 text-xs font-semibold text-[#9C3D10]">Reject</button>
+                          </form>
+                        </>
+                      )}
                       <Link
                         href={`/admin/edit-post/${p.id}`}
                         aria-label={`Edit ${p.title}`}

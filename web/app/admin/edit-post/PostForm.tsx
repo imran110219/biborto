@@ -1,6 +1,7 @@
 import { PublicField } from "@/components/admin/PublicField";
+import { PostStatusPill } from "@/components/ui/Badge";
 import Link from "next/link";
-import { UploadIcon } from "@/components/ui/icons";
+import { PostContentFields } from "@/components/blog/PostContentFields";
 import { BLOG_CATEGORIES, type AdminBlogPostDetail } from "@/lib/types";
 
 const labelClasses = "flex flex-col gap-1.5 text-sm font-semibold";
@@ -14,33 +15,25 @@ export function PostForm({
   draftAction,
   publishAction,
   previewHref,
+  imageBase,
 }: {
   post?: AdminBlogPostDetail;
   draftAction: (formData: FormData) => void | Promise<void>;
   publishAction: (formData: FormData) => void | Promise<void>;
   previewHref?: string;
+  imageBase?: string;
 }) {
   return (
     <form className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-5 rounded-2xl border border-border-default bg-white p-7">
-        <input
-          name="title"
-          defaultValue={post?.title}
-          required
-          placeholder="Post title"
-          className="w-full border-0 font-serif text-[34px] font-medium text-text-primary outline-none"
-        />
-        <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border-default bg-bg-admin py-10 text-center">
-          <UploadIcon size={20} />
-          <span className="font-semibold">Add a cover photo</span>
-          <span className="text-sm text-text-secondary">Not available yet — file storage isn&apos;t wired up</span>
-        </div>
-        <textarea
-          name="body"
-          defaultValue={post?.body}
-          rows={16}
-          placeholder="Write the post, or paste it in..."
-          className="w-full flex-1 resize-none border-0 text-[17px] leading-relaxed text-text-article outline-none"
+        <PostContentFields
+          initialTitle={post?.title}
+          initialBody={post?.body}
+          initialCoverKey={post?.coverKey}
+          initialCoverUrl={post?.coverUrl}
+          imageBase={imageBase}
+          authorLabel={post?.authorName ? `By ${post.authorName}` : undefined}
+          titleClassName="w-full border-0 font-serif text-[34px] font-medium text-text-primary outline-none"
         />
       </div>
 
@@ -48,9 +41,7 @@ export function PostForm({
         <div className="flex flex-col gap-4 rounded-2xl border border-border-default bg-white p-6">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">Publish</h2>
-            <span className="rounded-full bg-accent-amber-tint px-2.5 py-1 text-xs font-semibold text-accent-amber-text">
-              {post?.status === "published" ? "Published" : "Draft"}
-            </span>
+            <PostStatusPill status={post?.status ?? "draft"} />
           </div>
           <PublicField defaultChecked={post?.isPublic ?? true} />
           <div className="flex gap-2">

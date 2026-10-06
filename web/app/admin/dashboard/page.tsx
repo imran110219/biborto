@@ -20,6 +20,7 @@ import { getAdminPosts } from "@/lib/db/queries/blog";
 import { auth } from "@/auth";
 import { approveMember, suspendMember } from "@/app/admin/members/actions";
 import { approveBusiness, rejectBusiness } from "@/app/admin/businesses/actions";
+import { approvePost, rejectPost } from "@/app/admin/edit-post/actions";
 
 export default async function AdminDashboardPage() {
   const session = await auth();
@@ -31,7 +32,7 @@ export default async function AdminDashboardPage() {
   const events = await getAdminUpcomingEvents();
   const eventRsvpSummaries = await Promise.all(events.slice(0, 3).map((e) => getRsvpSummary(e.id)));
   const posts = await getAdminPosts();
-  const draftPosts = posts.filter((p) => p.status === "draft");
+  const pendingPosts = posts.filter((p) => p.status === "pending");
 
   return (
     <AdminLayout>
@@ -47,7 +48,7 @@ export default async function AdminDashboardPage() {
 
       <div className="grid grid-cols-2 gap-5 md:grid-cols-5">
         <AdminStatCard label="Members" value={String(allMembers.length)} caption={`${pendingMembers.length} waiting for approval`} icon={<MembersIcon />} />
-        <AdminStatCard label="Blog posts" value={String(posts.length)} caption={`${draftPosts.length} drafts in review`} icon={<DocumentIcon />} />
+        <AdminStatCard label="Blog posts" value={String(posts.length)} caption={`${pendingPosts.length} waiting for review`} icon={<DocumentIcon />} />
         <AdminStatCard
           label="Upcoming events"
           value={String(events.length)}
@@ -123,6 +124,26 @@ export default async function AdminDashboardPage() {
             onApprove={approveBusiness.bind(null, b.slug)}
             onReject={rejectBusiness.bind(null, b.slug)}
             readOnly={!isSuperadmin}
+          />
+        ))}
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-border-default bg-white">
+        <div className="flex items-center justify-between border-b border-[#EFEAE0] px-6 py-5">
+          <h2 className="text-lg font-semibold">Blog submissions</h2>
+          <Link href="/admin/edit-post" className="text-sm font-semibold">
+            View all
+          </Link>
+        </div>
+        {pendingPosts.length === 0 && <p className="px-6 py-5 text-sm text-text-secondary">No posts waiting for review.</p>}
+        {pendingPosts.map((p) => (
+          <ApprovalRow
+            key={p.id}
+            initials={p.authorName.slice(0, 2).toUpperCase()}
+            title={p.title}
+            subtitle={`${p.category} · By ${p.authorName}`}
+            onApprove={approvePost.bind(null, p.id)}
+            onReject={rejectPost.bind(null, p.id)}
           />
         ))}
       </div>

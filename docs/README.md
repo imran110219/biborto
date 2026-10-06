@@ -45,7 +45,9 @@ component shapes) lives on in `docs/web/DESIGN.md`.
 
 Member accounts are committee-managed: the active-voter CSV is the
 current source for the member seed, with all roster members assigned the
-`member` role. There is no self-service account registration. Superadmins
+`member` role. There is no open account registration, but signed-in members
+manage their own profile, photos and password at `/account` (name, discipline,
+email, student ID, role and status stay committee-managed). Superadmins
 add members manually at `/admin/members/new` (no login account is
 created; the person claims it at `/signup`). Admin CSV import is planned
 but not implemented. Admins have view-only access to member profiles;

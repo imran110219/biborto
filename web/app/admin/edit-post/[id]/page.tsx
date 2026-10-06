@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/Button";
 import { getAdminPostById } from "@/lib/db/queries/blog";
 import { PostForm } from "../PostForm";
 import { savePost } from "../actions";
+import { PostStatusPill } from "@/components/ui/Badge";
+import { getBlogImageBase } from "@/lib/blog/images";
 
 export default async function EditPostPage({ params }: PageProps<"/admin/edit-post/[id]">) {
   const { id } = await params;
@@ -15,7 +17,7 @@ export default async function EditPostPage({ params }: PageProps<"/admin/edit-po
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="font-serif text-3xl font-medium">Edit post</h1>
-          <p className="text-sm text-text-secondary">{post.status === "published" ? "Published" : "Draft"}</p>
+          <PostStatusPill status={post.status} />
         </div>
         <Button href="/admin/edit-post" variant="ghost" size="sm">
           Back to posts
@@ -27,6 +29,7 @@ export default async function EditPostPage({ params }: PageProps<"/admin/edit-po
         draftAction={savePost.bind(null, id, "draft")}
         publishAction={savePost.bind(null, id, "published")}
         previewHref={post.status === "published" ? `/blog/${post.slug}` : undefined}
+        imageBase={getBlogImageBase()}
       />
     </AdminLayout>
   );

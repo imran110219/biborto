@@ -1,9 +1,11 @@
+import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { PlaceholderMedia } from "@/components/ui/PlaceholderMedia";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { FeaturedBlogTeaser } from "@/components/BlogTeaser";
+import { getBlogImageBase } from "@/lib/blog/images";
 import { BlogBody } from "@/components/BlogBody";
 import { MailIcon, ShareIcon } from "@/components/ui/icons";
 import { getPublishedPublicPosts, getPublicPostBySlug } from "@/lib/db/queries/blog";
@@ -55,10 +57,15 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
           </div>
         </div>
 
-        <PlaceholderMedia label="[Cover photo: Khulna University campus]" className="h-[300px] w-full max-w-[1120px] md:h-[480px]" rounded="rounded-3xl" />
+        {post.coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- remote R2 URL
+          <img src={post.coverUrl} alt="" className="h-[300px] w-full max-w-[1120px] rounded-3xl object-cover md:h-[480px]" />
+        ) : (
+          <PlaceholderMedia label="[Cover photo: Khulna University campus]" className="h-[300px] w-full max-w-[1120px] md:h-[480px]" rounded="rounded-3xl" />
+        )}
 
         <div className="flex w-full max-w-[720px] flex-col gap-6">
-          <BlogBody body={post.body} />
+          <BlogBody body={post.body} imageBase={getBlogImageBase()} />
 
           {post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
@@ -72,7 +79,19 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
         </div>
       </article>
 
-      <section className="mt-24 flex flex-col gap-10 bg-[#EDE8DC] px-5 py-20 md:px-20">
+      <section className="mx-5 mt-24 flex flex-col items-start justify-between gap-6 rounded-[20px] bg-brand-green p-8 text-bg-public sm:flex-row sm:items-center md:mx-20">
+        <div className="flex flex-col gap-1.5">
+          <h2 className="font-serif text-2xl font-medium">Have a story to share?</h2>
+          <p className="max-w-[560px] text-sm text-brand-green-tint">
+            Batchmates can write for the blog. The committee reviews every post before it goes live.
+          </p>
+        </div>
+        <Button href="/blog/submit" variant="onDark" className="shrink-0">
+          Write for the blog
+        </Button>
+      </section>
+
+      <section className="mt-12 flex flex-col gap-10 bg-[#EDE8DC] px-5 py-20 md:px-20">
         <SectionHeader eyebrow="Keep reading" title="More stories" viewAllHref="/blog" viewAllLabel="All posts" />
         <div className="grid grid-cols-1 gap-7 md:grid-cols-3">
           {otherPosts.map((p) => (

@@ -14,6 +14,9 @@ import { MemberHeader } from "@/app/admin/members/[id]/MemberHeader";
 import { EditMemberForm } from "@/app/admin/members/[id]/edit/EditMemberForm";
 import { MemberPhotoControls } from "@/app/admin/members/[id]/edit/MemberPhotoControls";
 import { ChangePasswordForm } from "./ChangePasswordForm";
+import { MySubmissions } from "./MySubmissions";
+import { getMySubmissions } from "@/lib/db/queries/submissions";
+import { getBusinessSlots } from "@/lib/businesses/limits";
 
 export const metadata = { title: "My account — Batch 11" };
 
@@ -28,7 +31,8 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
     getCountryOptions(),
     db.select({ passwordHash: users.passwordHash }).from(users).where(eq(users.id, session.user.id)).limit(1),
   ]);
-  const { saved } = await searchParams;
+  const { saved, submitted } = await searchParams;
+  const [submissions, slots] = memberId ? await Promise.all([getMySubmissions(memberId), getBusinessSlots(memberId)]) : [undefined, undefined];
 
   if (!member) {
     return (
@@ -64,7 +68,15 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           </p>
         )}
 
+        {submitted === "blog" && (
+          <p role="status" className="rounded-xl bg-brand-green-tint px-4 py-3 text-sm font-medium text-brand-green">
+            Thanks — your post was submitted and is waiting for committee review.
+          </p>
+        )}
+
         <MemberHeader member={member} />
+
+        {submissions && slots && <MySubmissions submissions={submissions} slots={slots} />}
 
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <EditMemberForm mode="self" member={member} disciplines={disciplines} countries={countries} returnTo="/account" />

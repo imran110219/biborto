@@ -73,7 +73,9 @@ create type business_category as enum (
   'Travel & Tourism'
 );
 
-create type blog_status as enum ('draft', 'published');
+-- draft: admin working copy; pending: submitted by a member, awaiting review;
+-- published / rejected: the outcome of that review (see db/migrations/012).
+create type blog_status as enum ('draft', 'pending', 'published', 'rejected');
 
 -- Scoped to exactly the 4 categories in the current seed data. Add new
 -- values with `alter type blog_category add value 'New Category';`.

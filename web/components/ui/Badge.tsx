@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { BusinessStatus, MemberStatus, SponsorTier } from "@/lib/types";
+import type { BlogPostStatus, BusinessStatus, MemberStatus, SponsorTier } from "@/lib/types";
 
 const base = "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold";
 
@@ -48,4 +48,21 @@ export function VisibilityBadge({ isPublic }: { isPublic: boolean }) {
       {isPublic ? "Public" : "Private"}
     </span>
   );
+}
+
+const postStatusStyles: Record<BlogPostStatus, string> = {
+  published: "bg-brand-green-tint text-brand-green",
+  pending: "bg-accent-amber-tint text-accent-amber-text",
+  draft: "bg-status-neutral-bg text-status-neutral-text",
+  rejected: "bg-status-neutral-bg text-status-neutral-text",
+};
+const postStatusLabels: Record<BlogPostStatus, string> = {
+  published: "Published",
+  pending: "Pending review",
+  draft: "Draft",
+  rejected: "Rejected",
+};
+
+export function PostStatusPill({ status }: { status: BlogPostStatus }) {
+  return <span className={`${base} ${postStatusStyles[status]}`}>{postStatusLabels[status]}</span>;
 }

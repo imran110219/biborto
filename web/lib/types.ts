@@ -208,6 +208,8 @@ export interface BlogPost {
   author: string;
   date: string;
   readTime: string;
+  // Public URL of the post's cover photo, when it has one.
+  coverUrl?: string;
 }
 
 // Only the post detail page needs the full article — BlogTeaser's
@@ -220,7 +222,9 @@ export interface BlogPostDetail extends BlogPost {
 
 export const BLOG_CATEGORIES = ["Reunion", "Memories", "Careers", "Campus"] as const;
 export type BlogCategoryOption = (typeof BLOG_CATEGORIES)[number];
-export type BlogPostStatus = "draft" | "published";
+// draft: admin working copy · pending: submitted by a member, awaiting review ·
+// published / rejected: the outcome of that review.
+export type BlogPostStatus = "draft" | "pending" | "published" | "rejected";
 
 // Admin list row — every post regardless of status/is_public.
 export interface AdminBlogPost {
@@ -246,6 +250,8 @@ export interface AdminBlogPostDetail {
   status: BlogPostStatus;
   isPublic: boolean;
   featured: boolean;
+  coverKey: string;
+  coverUrl?: string;
 }
 
 export type PopupKind = "html" | "image";

@@ -54,6 +54,19 @@ named.
   `getAdminMembersPage`).
 - Manual member creation (`/admin/members/new`, `createMember`) and
   filtered CSV export (`/api/admin/members/export`).
+- Blog rich-text editor (TipTap, stored as Markdown) with Write/Preview, in-body image
+  upload (toolbar, paste, drop) and cover photos on both the admin and member forms;
+  safe Markdown rendering that ignores raw HTML and only shows our own R2 images.
+- Member submissions: members submit blog posts (reviewed → published/rejected;
+  max 5 pending) and business listings (max 2 per member, race-safe), and track
+  each one's status on `/account`. Admins approve/reject posts from the blog
+  list or dashboard. `blog_status` gained `pending` and `rejected`.
+- Member self-service (`/account`): edit your own profile and public-directory
+  visibility, upload your own profile/cover photos, change your password, plus
+  a working forgot/reset-password flow (`/forgot-password`, `/reset-password`)
+  and a header "My account" link for every signed-in member. Identity and
+  access fields stay admin-only. Also fixed the stale client session after
+  sign-in (`SessionSync`) and removed the inert "Keep me signed in".
 - Shared `is_public` visibility on blog posts, events, gallery albums and
   videos (private = hidden from everyone but admins; blog's old
   public/members-only `visibility` replaced by it), with a single

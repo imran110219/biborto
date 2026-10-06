@@ -2,7 +2,7 @@ import { pgTable, unique, uuid, text, timestamp, foreignKey, index, date, boolea
 import { sql } from "drizzle-orm"
 
 export const blogCategory = pgEnum("blog_category", ['Reunion', 'Memories', 'Careers', 'Campus'])
-export const blogStatus = pgEnum("blog_status", ['draft', 'published'])
+export const blogStatus = pgEnum("blog_status", ['draft', 'pending', 'published', 'rejected'])
 export const bloodGroup = pgEnum("blood_group", ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
 export const businessCategory = pgEnum("business_category", ['Food & Catering', 'Tech Services', 'Consulting', 'Education', 'Retail & Trade', 'Travel & Tourism'])
 export const businessStatus = pgEnum("business_status", ['pending', 'active', 'rejected'])

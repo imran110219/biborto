@@ -1,6 +1,7 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { PostForm } from "../PostForm";
 import { createPost } from "../actions";
+import { getBlogImageBase } from "@/lib/blog/images";
 
 export default function NewPostPage() {
   return (
@@ -12,7 +13,11 @@ export default function NewPostPage() {
         </div>
       </div>
 
-      <PostForm draftAction={createPost.bind(null, "draft")} publishAction={createPost.bind(null, "published")} />
+      <PostForm
+        draftAction={createPost.bind(null, "draft")}
+        publishAction={createPost.bind(null, "published")}
+        imageBase={getBlogImageBase()}
+      />
     </AdminLayout>
   );
 }

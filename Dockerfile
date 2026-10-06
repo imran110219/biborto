@@ -1,8 +1,9 @@
 # Build from the repository root: docker build -t biborto .
 FROM node:22-alpine AS dependencies
 WORKDIR /app
-COPY web/package.json web/package-lock.json ./
-RUN npm ci
+COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml web/.npmrc ./
+RUN npm install --global pnpm@12.3.4 \
+    && pnpm install --frozen-lockfile
 
 FROM node:22-alpine AS builder
 WORKDIR /app

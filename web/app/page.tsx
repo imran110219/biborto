@@ -9,18 +9,23 @@ import { MemberCard } from "@/components/MemberCard";
 import { AlbumCard } from "@/components/GalleryCards";
 import { VideoCard } from "@/components/VideoCard";
 import { SponsorStrip } from "@/components/SponsorStrip";
-import { DiamondPopup } from "@/components/DiamondPopup";
+import { CustomPopup } from "@/components/CustomPopup";
+import { getActivePopup } from "@/lib/db/queries/popups";
 import { ArrowRightIcon, CalendarIcon } from "@/components/ui/icons";
 import { getPublicMembers } from "@/lib/db/queries/members";
-import { getActiveSponsors, getDiamondSponsor } from "@/lib/db/queries/sponsors";
+import { getActiveSponsors } from "@/lib/db/queries/sponsors";
 import { getUpcomingEvents } from "@/lib/db/queries/events";
 import { getPublishedPublicPosts } from "@/lib/db/queries/blog";
 import { getGalleryAlbums, getGalleryVideos } from "@/lib/db/queries/gallery";
 import { getHomeStats } from "@/lib/db/queries/stats";
 
 export default async function HomePage() {
-  const [diamondSponsor, stats, events, blogPosts, members, albums, videos, sponsors] = await Promise.all([
-    getDiamondSponsor(),
+  const [activePopup, stats, events, blogPosts, members, albums, videos, sponsors] = await Promise.all([
+    getActivePopup().catch((error) => {
+      // A missing/unmigrated popups table must not take the home page down — it just shows no popup.
+      console.error("Could not load the active popup.", error);
+      return undefined;
+    }),
     getHomeStats(),
     getUpcomingEvents(),
     getPublishedPublicPosts(),
@@ -33,7 +38,8 @@ export default async function HomePage() {
 
   return (
     <PublicLayout>
-      {diamondSponsor && <DiamondPopup sponsor={diamondSponsor} />}
+      {/* Only a superadmin-managed popup is ever shown here; none active = no popup. */}
+      {activePopup && <CustomPopup popup={activePopup} />}
 
       {/* Hero */}
       <section className="grid grid-cols-1 items-center gap-14 px-5 py-16 md:grid-cols-2 md:px-20 md:py-22">
@@ -145,7 +151,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <SponsorStrip sponsors={sponsors.slice(0, 5)} />
+      <SponsorStrip sponsors={sponsors} />
     </PublicLayout>
   );
 }

@@ -31,6 +31,12 @@ this isn't a speculative model, it's what the UI assumes.
   `businesses.linkedin_url` / `facebook_url` and appends them to the
   `public_businesses` view. Apply to an existing database, then
   `npm run db:pull`.
+- `db/migrations/009_popups.sql` — adds the `popups` table and `popup_kind`
+  enum (superadmin-managed home-page popups). Apply to an existing database,
+  then `npm run db:pull`.
+- `db/migrations/010_one_active_diamond_sponsor.sql` — partial unique index so
+  at most one *active* diamond sponsor exists. Deactivate extra active
+  diamonds before applying to an existing database, then `npm run db:pull`.
 - `db/seed.sh` — runs `schema.sql` then every `seed_*.sql` below against
   `$DATABASE_URL` (or `web/.env.local`'s, if unset), in the required
   order. Wired up as `npm run db:seed` / `npm run db:reset` from `web/`
@@ -71,7 +77,8 @@ this isn't a speculative model, it's what the UI assumes.
 | `countries` | ISO 3166-1 countries/territories for the "current country" dropdown. Same reasoning as `disciplines` — see "Countries are a reference table" below. |
 | `members` | The alumni directory / profile data. `slug` powers `web/app/members/[slug]`. `discipline_id` references `disciplines`; `country_id` (nullable) references `countries`. `user_id` links to `users` once a member logs in; a roster row can exist without a login. |
 | `businesses` | Alumni-run Business Directory listings, self-submitted, approve/reject workflow (`status`, `reviewed_by`, `reviewed_at`). Optional contact links: `website`, `linkedin_url`, `facebook_url`. |
-| `sponsors` | Committee-curated sponsor tiers. `business_id` is an *optional* cross-link — sponsors are managed independently of the Business Directory, even though several sponsors are also listed businesses. |
+| `popups` | Superadmin-managed home-page popups: `kind` is `html` (sandboxed iframe) or `image` (R2 `image_key`, animated GIF/WebP animate), optional `link_url`, `active`. A partial unique index allows at most one active row; none active → no popup is shown. |
+| `sponsors` | Committee-curated sponsor tiers (at most one *active* diamond — partial unique index; logos in R2 via `logo_key`). `business_id` is an *optional* cross-link — sponsors are managed independently of the Business Directory, even though several sponsors are also listed businesses. |
 | `events`, `event_rsvps` | Reunion/chapter events and member RSVPs (`going` / `interested` / `declined`). |
 | `blog_posts` | Draft/published, public/members-only visibility, tags. `body` holds the full article; read time is computed at render time, not stored. `author_name` is a free-text byline fallback for posts with no real member author (e.g. "Reunion committee"). |
 | `gallery_albums`, `gallery_photos`, `gallery_videos` | R2-hosted photo albums with optional event/discipline links, plus YouTube videos with optional event/discipline links. Superadmins create, edit, and delete empty albums; admins and superadmins upload, caption, and delete photos. |

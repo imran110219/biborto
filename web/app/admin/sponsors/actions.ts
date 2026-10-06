@@ -2,12 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { sponsors } from "@/drizzle/schema";
-import { parseWebsite } from "@/lib/url";
-import { requireAdminMemberId } from "@/lib/auth/require-admin";
-import type { SponsorTier } from "@/lib/types";
+import { requireSuperadmin } from "@/lib/auth/require-admin";
+import { parseSponsorForm } from "@/lib/sponsors/form";
+import { getR2BucketName, getR2Client } from "@/lib/r2";
+
+// Sponsor management is superadmin-only (admins get a read-only list).
+// There can be at most one *active* diamond sponsor — a partial unique index
+// enforces it, and activating a diamond deactivates the previous one first.
 
 const revalidateSponsorPaths = () => {
   revalidatePath("/admin/sponsors");
@@ -15,35 +20,60 @@ const revalidateSponsorPaths = () => {
   revalidatePath("/events");
 };
 
-function readSponsorForm(formData: FormData) {
-  const name = String(formData.get("name") ?? "").trim();
-  const tier = String(formData.get("tier") ?? "bronze") as SponsorTier;
-  const website = String(formData.get("website") ?? "").trim();
-  const active = formData.get("active") === "on";
-  return { name, tier, website, active };
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Call before writing a row that will be an active diamond.
+async function deactivateOtherDiamonds(tx: Tx, exceptId?: string) {
+  const others = exceptId
+    ? and(eq(sponsors.tier, "diamond"), eq(sponsors.active, true), ne(sponsors.id, exceptId))
+    : and(eq(sponsors.tier, "diamond"), eq(sponsors.active, true));
+  await tx.update(sponsors).set({ active: false }).where(others);
+}
+
+function isForeignKeyError(error: unknown) {
+  const e = error as { code?: string; cause?: { code?: string } };
+  return (e.code ?? e.cause?.code) === "23503";
 }
 
 export async function createSponsor(_prevState: string | undefined, formData: FormData) {
-  await requireAdminMemberId();
-  const { name, tier, website, active } = readSponsorForm(formData);
-  if (!name) return "Name is required.";
-  const websiteUrl = parseWebsite(website);
-  if (websiteUrl === undefined) return "Enter a valid website address (http or https).";
+  await requireSuperadmin();
+  const parsed = parseSponsorForm(formData);
+  if ("error" in parsed) return parsed.error;
+  const values = parsed.values;
 
-  await db.insert(sponsors).values({ name, tier, website: websiteUrl, active });
+  let createdId: string;
+  try {
+    [{ id: createdId }] = await db.transaction(async (tx) => {
+      if (values.active && values.tier === "diamond") await deactivateOtherDiamonds(tx);
+      return tx.insert(sponsors).values(values).returning({ id: sponsors.id });
+    });
+  } catch (error) {
+    if (isForeignKeyError(error)) return "Choose a valid business.";
+    throw error;
+  }
 
   revalidateSponsorPaths();
-  redirect("/admin/sponsors");
+  redirect(`/admin/sponsors/${createdId}/edit`); // next step: add the logo
 }
 
 export async function updateSponsor(id: string, _prevState: string | undefined, formData: FormData) {
-  await requireAdminMemberId();
-  const { name, tier, website, active } = readSponsorForm(formData);
-  if (!name) return "Name is required.";
-  const websiteUrl = parseWebsite(website);
-  if (websiteUrl === undefined) return "Enter a valid website address (http or https).";
+  await requireSuperadmin();
+  const parsed = parseSponsorForm(formData);
+  if ("error" in parsed) return parsed.error;
+  const values = parsed.values;
 
-  await db.update(sponsors).set({ name, tier, website: websiteUrl, active }).where(eq(sponsors.id, id));
+  const [existing] = await db.select({ id: sponsors.id }).from(sponsors).where(eq(sponsors.id, id)).limit(1);
+  if (!existing) return "Sponsor not found.";
+
+  try {
+    await db.transaction(async (tx) => {
+      if (values.active && values.tier === "diamond") await deactivateOtherDiamonds(tx, id);
+      await tx.update(sponsors).set(values).where(eq(sponsors.id, id));
+    });
+  } catch (error) {
+    if (isForeignKeyError(error)) return "Choose a valid business.";
+    throw error;
+  }
 
   revalidateSponsorPaths();
   revalidatePath(`/admin/sponsors/${id}/edit`);
@@ -51,13 +81,30 @@ export async function updateSponsor(id: string, _prevState: string | undefined, 
 }
 
 export async function toggleSponsorActive(id: string, active: boolean, _formData: FormData) {
-  await requireAdminMemberId();
-  await db.update(sponsors).set({ active: !active }).where(eq(sponsors.id, id));
+  await requireSuperadmin();
+  const [existing] = await db.select({ tier: sponsors.tier }).from(sponsors).where(eq(sponsors.id, id)).limit(1);
+  if (!existing) return;
+
+  const next = !active;
+  await db.transaction(async (tx) => {
+    if (next && existing.tier === "diamond") await deactivateOtherDiamonds(tx, id);
+    await tx.update(sponsors).set({ active: next }).where(eq(sponsors.id, id));
+  });
   revalidateSponsorPaths();
 }
 
 export async function deleteSponsor(id: string, _formData: FormData) {
-  await requireAdminMemberId();
+  await requireSuperadmin();
+  const [existing] = await db.select({ logoKey: sponsors.logoKey }).from(sponsors).where(eq(sponsors.id, id)).limit(1);
+  if (!existing) return;
   await db.delete(sponsors).where(eq(sponsors.id, id));
+
+  if (existing.logoKey) {
+    try {
+      await getR2Client().send(new DeleteObjectCommand({ Bucket: getR2BucketName(), Key: existing.logoKey }));
+    } catch (error) {
+      console.error("Sponsor logo cleanup failed.", error); // row is gone; an orphaned object is harmless
+    }
+  }
   revalidateSponsorPaths();
 }

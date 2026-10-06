@@ -14,19 +14,21 @@ import {
   StarIcon,
   BriefcaseIcon,
   EyeIcon,
+  BellIcon,
   LogoutIcon,
 } from "@/components/ui/icons";
 import { initialsOf } from "@/lib/db/format";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { label: string; href: string; icon: typeof DashboardIcon; superadminOnly?: boolean }[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: DashboardIcon },
   { label: "Members", href: "/admin/members", icon: MembersIcon },
   { label: "Businesses", href: "/admin/businesses", icon: BriefcaseIcon },
   { label: "Sponsors", href: "/admin/sponsors", icon: StarIcon },
   { label: "Blog posts", href: "/admin/edit-post", icon: DocumentIcon },
   { label: "Events", href: "/admin/events", icon: CalendarIcon },
-  { label: "Photos", href: "/admin/photos", icon: PhotoIcon },
+  { label: "Gallery", href: "/admin/gallery", icon: PhotoIcon },
   { label: "Videos", href: "/admin/videos", icon: VideoIcon },
+  { label: "Popups", href: "/admin/popups", icon: BellIcon, superadminOnly: true },
   { label: "Settings", href: "/admin/settings", icon: SettingsIcon },
 ];
 
@@ -51,8 +53,8 @@ export function AdminSidebar({ className = "" }: { className?: string }) {
       </div>
 
       <nav aria-label="Admin" className="flex flex-col gap-1">
-        {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href;
+        {NAV_ITEMS.filter((item) => !item.superadminOnly || role === "superadmin").map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
           return (
             <Link

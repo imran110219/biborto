@@ -174,9 +174,9 @@ joins.
   is the cool `diamond`/`diamond-tint` pair, distinct from the warm Gold/
   Silver/Bronze palette, to read as more premium. Exclusivity is a content
   convention, not an enforced rule — nothing in `db/schema.sql` prevents a
-  second Diamond-tier sponsor. `DiamondPopup.tsx` shows a once-per-visit
-  welcome modal (real `useEffect` + `sessionStorage`, see
-  `docs/web/README.md`'s "One real behavior upgrade" section).
+  second Diamond-tier sponsor. (The home-page popup is a separate,
+  superadmin-managed feature and no longer involves sponsors — see
+  `docs/web/README.md`'s "Admin popups" section.)
 
 ## Responsive
 

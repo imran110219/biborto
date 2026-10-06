@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { GalleryPhotoUploader } from "@/app/admin/photos/GalleryPhotoUploader";
+import { GalleryPhotoUploader } from "@/app/admin/gallery/GalleryPhotoUploader";
 import { auth } from "@/auth";
-import { CreateAlbumForm } from "@/app/admin/photos/CreateAlbumForm";
+import { CreateAlbumForm } from "@/app/admin/gallery/CreateAlbumForm";
 import { getGalleryAlbums } from "@/lib/db/queries/gallery";
 import { getAdminEvents } from "@/lib/db/queries/events";
 import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
@@ -16,7 +16,7 @@ export default async function AdminPhotosPage() {
   return (
     <AdminLayout>
       <div className="flex flex-col gap-1.5">
-        <h1 className="font-serif text-4xl font-medium">Photos</h1>
+        <h1 className="font-serif text-4xl font-medium">Gallery</h1>
         <p className="text-text-secondary">Upload and manage photos in the public gallery.</p>
       </div>
 
@@ -61,7 +61,7 @@ export default async function AdminPhotosPage() {
                   <td className="px-4 py-3.5 text-sm text-text-secondary">{album.disciplineName ?? "—"}</td>
                   <td className="px-4 py-3.5 text-sm text-text-secondary">{album.count}</td>
                   <td className="flex gap-4 px-4 py-3.5 text-sm">
-                    <Link href={`/admin/photos/${album.slug}`} className="font-semibold text-brand-green">Edit photos</Link>
+                    <Link href={`/admin/gallery/${album.slug}`} className="font-semibold text-brand-green">Edit photos</Link>
                     <Link href={`/gallery/${album.slug}`} className="font-semibold text-brand-green">View</Link>
                   </td>
                 </tr>

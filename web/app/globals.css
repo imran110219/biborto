@@ -46,7 +46,7 @@ body {
   color: var(--color-text-primary);
 }
 
-@keyframes diamondPopIn {
+@keyframes popupIn {
   from {
     opacity: 0;
     transform: scale(0.94) translateY(10px);

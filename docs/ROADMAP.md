@@ -54,6 +54,15 @@ named.
   `getAdminMembersPage`).
 - Manual member creation (`/admin/members/new`, `createMember`) and
   filtered CSV export (`/api/admin/members/export`).
+- Sponsors: superadmin-only management (admins read-only), logo upload to R2,
+  logos + website links on the home sponsor strip (no more 5-sponsor cap or
+  placeholder boxes), searchable/filterable list, delete confirmation,
+  optional linked business, and at most one active diamond sponsor
+  (`sponsors_one_active_diamond_idx`, auto-deactivating the previous one).
+- Home-page popups: superadmin-managed custom HTML (sandboxed iframe) or
+  image/animated GIF popups (`/admin/popups`, `popups` table, R2 upload),
+  shown on every home-page load; with none active, no popup is shown (the
+  old diamond-sponsor popup was removed — popups are their own feature).
 - Admin account menu (avatar dropdown: My profile, View public site,
   Sign out) and a development-only one-click superadmin sign-in on
   `/signin`.

@@ -81,7 +81,7 @@ app/
   admin/businesses/actions.ts  Server Actions: approveBusiness, rejectBusiness
   admin/sponsors/page.tsx
   admin/events/page.tsx
-  admin/photos/page.tsx
+  admin/gallery/page.tsx
   admin/videos/page.tsx
   admin/settings/page.tsx
   admin/edit-post/page.tsx
@@ -92,7 +92,7 @@ components/
   layout/        Header, Footer, PublicLayout, AdminSidebar, AdminLayout
   admin/         AdminStatCard, ApprovalRow
   *.tsx          Domain cards: MemberCard, BusinessCard, EventCard,
-                 BlogTeaser, GalleryCards, SponsorStrip, DiamondPopup
+                 BlogTeaser, GalleryCards, SponsorStrip, CustomPopup
 
 lib/
   types.ts       Member, Business, Sponsor, EventItem, BlogPost — plus
@@ -151,9 +151,12 @@ hack (no JS was available then). Here they're plain `useState` in
 highlighting uses `usePathname()` instead of a build-time "which page am
 I" flag baked into each HTML file.
 
-The Diamond sponsor popup's once-per-visit `sessionStorage` check is now
-a `useEffect` in `DiamondPopup.tsx` instead of a hand-written inline
-`<script>` — same behavior, real component.
+The home-page popup (see [Admin popups](#admin-popups)) is a real component
+that appears on **every load** of the home page — there is deliberately no
+"already seen" memory. `PopupShell.tsx` provides the shared modal chrome
+(backdrop/Escape/close button, scroll lock, `aria-modal`, reduced-motion);
+`CustomPopup.tsx` builds on it. The popup is its own feature and is not
+tied to sponsors: nothing is shown unless a superadmin has activated one.
 
 ## Data layer
 
@@ -258,7 +261,7 @@ suspension/reactivation and editing (superadmin only — see
 editing (superadmin only — see [Admin businesses](#admin-businesses)); and CRUD for events,
 sponsors, videos and blog posts. The public business submission form and
 event RSVP also write to Postgres. Gallery management lives at
-`/admin/photos`: admins can upload photos, edit captions, and delete
+`/admin/gallery`: admins can upload photos, edit captions, and delete
 photos; superadmins can also create, edit, and delete empty albums. Video
 records have admin CRUD at `/admin/videos` and public cards play linked
 YouTube videos in privacy-enhanced embeds. Member CSV import and
@@ -295,7 +298,7 @@ settings persistence are not implemented.
   same as before this existed.
 
 The gallery upload route and photo actions independently check admin
-roles; album mutations require a superadmin. The Photos page is also
+roles; album mutations require a superadmin. The Gallery page (`/admin/gallery`) is also
 behind the `/admin/**` role gate.
 
 **Suggested next tasks**: build admin CSV import for members, then
@@ -357,6 +360,69 @@ therefore exports as `'+880…`).
 out). My profile needs `memberId`, which `auth.ts` puts in the JWT/session
 at sign-in — sessions created before it existed must sign in again. It goes
 to the edit page for superadmins and the view page for admins.
+
+## Admin popups
+
+Superadmin-only (`/admin/popups`, hidden from the sidebar for admins; pages
+redirect admins to the dashboard; the image route and every action call
+`requireSuperadmin()`).
+
+The home page shows **one popup**: the active custom popup, or **no popup
+at all** when none is active (`app/page.tsx`) — there is no sponsor or other
+fallback. A custom popup is either:
+
+- **Custom HTML** — rendered in an `<iframe sandbox="allow-scripts
+  allow-popups allow-popups-to-escape-sandbox" srcdoc=…>` **without**
+  `allow-same-origin`. Scripts and CSS animations run, but in an opaque
+  origin: the markup can't read this site's cookies, storage or DOM (and the
+  site can't read it). Links open in a new tab (`<base target=_blank>`). Max
+  50,000 characters; frame height 160–900 px.
+- **Image / animated GIF** — uploaded to R2 (`popups/<id>/<uuid>.<ext>`) via
+  `/api/admin/popups/[id]/image` (magic-byte sniffing, JPEG/PNG/WebP/GIF,
+  15 MB). Animated GIF/WebP play natively (rendered with a plain `<img>`, not
+  `next/image`, which would flatten them). Optional alt text and click-through
+  link (http(s) only).
+
+An image popup is created inactive and can't be activated until an image is
+uploaded (the create action redirects straight to the upload step). At most
+**one popup is active** — enforced by a partial unique index; activating one
+(on save or via the list button) deactivates the others in a transaction. The
+list page says what visitors currently see, and each row has Preview (the
+saved version, in the real modal), Edit, Activate/Deactivate and Delete
+(which also removes the R2 object). `getActivePopup()` ignores an active
+popup that has nothing to render, and a failure loading it (e.g. an
+unmigrated table) is logged and simply shows no popup rather than
+breaking the home page.
+
+## Admin sponsors
+
+Same permission model as members/businesses: **admins can browse the list
+(read-only); creating, editing, toggling, deleting and logo upload are
+superadmin-only**, enforced in the Server Actions and the logo route
+(`requireSuperadmin()`), with the controls hidden for admins and `/new` and
+`/edit` redirecting them back to the list.
+
+- **List** (`/admin/sponsors`): search (name, website or linked business) plus
+  tier and status filters, URL-driven (`?q=&tier=&status=`, validated by
+  `lib/sponsors/filters.ts`), with a live count and logo thumbnails. Status is
+  an explicit on/off switch; delete asks for confirmation.
+- **Single active diamond:** Diamond is the one exclusive tier — at most one
+  *active* diamond sponsor, enforced by the partial unique index
+  `sponsors_one_active_diamond_idx`. Creating, editing or toggling a sponsor
+  into "active diamond" first deactivates the previous one in the same
+  transaction, and the form warns which sponsor it will replace. Inactive
+  diamonds may coexist.
+- **Logo:** uploaded on the edit page (create redirects there) to R2 as
+  `sponsors/<id>/<uuid>.<ext>` via `/api/admin/sponsors/[id]/logo` (POST
+  replaces, DELETE removes; magic-byte validated JPEG/PNG/WebP/GIF, 15 MB).
+  Deleting a sponsor or replacing/removing a logo also deletes the old object.
+- **Linked business:** the optional `business_id` cross-link is settable in
+  the form and shown in the list.
+- **Public:** the home page's sponsor strip shows **every** active sponsor
+  (diamond first), each as its logo — or initials + name until one is
+  uploaded — linking to the sponsor's website when it has one. The strip is
+  hidden when no sponsor is active. The events pages' "Sponsored by" banner
+  uses `getDiamondSponsor()`, which is now unambiguous.
 
 ## Admin businesses
 

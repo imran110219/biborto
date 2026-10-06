@@ -1,4 +1,4 @@
-import { pgTable, unique, uuid, text, timestamp, foreignKey, index, date, boolean, time, primaryKey, integer, pgView, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, unique, uuid, text, timestamp, foreignKey, index, date, boolean, uniqueIndex, time, check, integer, primaryKey, pgView, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blogCategory = pgEnum("blog_category", ['Reunion', 'Memories', 'Careers', 'Campus'])
@@ -10,6 +10,7 @@ export const businessStatus = pgEnum("business_status", ['pending', 'active', 'r
 export const eventCategory = pgEnum("event_category", ['Reunion', 'Online', 'Chapter', 'Volunteer'])
 export const memberPlatformRole = pgEnum("member_platform_role", ['member', 'admin', 'superadmin'])
 export const memberStatus = pgEnum("member_status", ['pending', 'active', 'suspended'])
+export const popupKind = pgEnum("popup_kind", ['html', 'image'])
 export const rsvpStatus = pgEnum("rsvp_status", ['going', 'interested', 'declined'])
 export const schoolName = pgEnum("school_name", ['Science, Engineering & Technology School', 'Management & Business Administration School', 'Life Science School', 'Arts & Humanities School', 'Social Science School', 'Fine Arts School', 'Law School', 'Education School'])
 export const sponsorTier = pgEnum("sponsor_tier", ['diamond', 'gold', 'silver', 'bronze'])
@@ -142,6 +143,7 @@ export const sponsors = pgTable("sponsors", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
+	uniqueIndex("sponsors_one_active_diamond_idx").using("btree", table.tier.asc().nullsLast().op("enum_ops")).where(sql`(active AND (tier = 'diamond'::sponsor_tier))`),
 	index("sponsors_tier_idx").using("btree", table.tier.asc().nullsLast().op("enum_ops")),
 	foreignKey({
 			columns: [table.businessId],
@@ -362,6 +364,29 @@ export const businesses = pgTable("businesses", {
 			name: "businesses_reviewed_by_fkey"
 		}).onDelete("set null"),
 	unique("businesses_slug_key").on(table.slug),
+]);
+
+export const popups = pgTable("popups", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	title: text().notNull(),
+	kind: popupKind().notNull(),
+	htmlContent: text("html_content"),
+	imageKey: text("image_key"),
+	altText: text("alt_text"),
+	linkUrl: text("link_url"),
+	heightPx: integer("height_px").default(420).notNull(),
+	active: boolean().default(false).notNull(),
+	createdBy: uuid("created_by"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	uniqueIndex("popups_one_active_idx").using("btree", table.active.asc().nullsLast().op("bool_ops")).where(sql`active`),
+	foreignKey({
+			columns: [table.createdBy],
+			foreignColumns: [members.id],
+			name: "popups_created_by_fkey"
+		}).onDelete("set null"),
+	check("popups_height_px_check", sql`(height_px >= 160) AND (height_px <= 900)`),
 ]);
 
 export const verificationTokens = pgTable("verification_tokens", {

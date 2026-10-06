@@ -9,7 +9,7 @@ import { auth } from "@/auth";
 import { getAdminEvents } from "@/lib/db/queries/events";
 import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
 
-export default async function AdminAlbumPhotosPage({ params }: PageProps<"/admin/photos/[slug]">) {
+export default async function AdminAlbumPhotosPage({ params }: PageProps<"/admin/gallery/[slug]">) {
   const { slug } = await params;
   const album = await getAlbumBySlug(slug);
   if (!album) notFound();
@@ -20,7 +20,7 @@ export default async function AdminAlbumPhotosPage({ params }: PageProps<"/admin
 
   return (
     <AdminLayout>
-      <Link href="/admin/photos" className="text-sm font-semibold text-brand-green">← All albums</Link>
+      <Link href="/admin/gallery" className="text-sm font-semibold text-brand-green">← All albums</Link>
       <div className="mt-3 flex flex-col gap-1.5">
         <h1 className="font-serif text-4xl font-medium">{album.name}</h1>
         <p className="text-text-secondary">

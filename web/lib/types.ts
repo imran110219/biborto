@@ -144,6 +144,10 @@ export interface Sponsor {
   tier: SponsorTier;
   website: string;
   active: boolean;
+  logoUrl?: string;
+  // Optional cross-link to a Business Directory listing (admin-facing).
+  businessId?: string | null;
+  businessName?: string;
 }
 
 export type RsvpStatus = "going" | "interested" | "declined";
@@ -237,4 +241,20 @@ export interface AdminBlogPostDetail {
   status: BlogPostStatus;
   visibility: BlogVisibility;
   featured: boolean;
+}
+
+export type PopupKind = "html" | "image";
+
+// Superadmin-managed home-page popup. Public-safe by design: everything here
+// is shown to visitors (the admin-facing `title` is just a label).
+export interface Popup {
+  id: string;
+  title: string;
+  kind: PopupKind;
+  htmlContent: string;
+  imageUrl?: string;
+  altText: string;
+  linkUrl: string;
+  heightPx: number;
+  active: boolean;
 }

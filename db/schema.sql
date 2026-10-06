@@ -335,6 +335,11 @@ create table sponsors (
 );
 
 create index sponsors_tier_idx on sponsors (tier);
+-- At most one active diamond sponsor (see db/migrations/010); the admin
+-- actions deactivate the previous one when another is activated.
+create unique index sponsors_one_active_diamond_idx
+  on sponsors (tier)
+  where active and tier = 'diamond';
 
 create trigger sponsors_set_updated_at
   before update on sponsors
@@ -483,6 +488,35 @@ create table gallery_videos (
 
 create index gallery_videos_event_idx on gallery_videos (event_id);
 create index gallery_videos_discipline_idx on gallery_videos (discipline_id);
+
+-- ---------------------------------------------------------------------
+-- popups — superadmin-managed home-page popups (custom HTML or an
+-- image/animated GIF). With none active the site falls back to the
+-- diamond sponsor popup. See db/migrations/009_popups.sql.
+-- ---------------------------------------------------------------------
+create type popup_kind as enum ('html', 'image');
+
+create table popups (
+  id           uuid primary key default gen_random_uuid(),
+  title        text not null,                 -- admin-facing label only
+  kind         popup_kind not null,
+  html_content text,                          -- kind = 'html'; rendered in a sandboxed iframe
+  image_key    text,                          -- kind = 'image'; R2 object key
+  alt_text     text,
+  link_url     text,                          -- optional click-through for image popups
+  height_px    integer not null default 420 check (height_px between 160 and 900),
+  active       boolean not null default false,
+  created_by   uuid references members (id) on delete set null,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+-- At most one popup is active; the actions deactivate the others first.
+create unique index popups_one_active_idx on popups (active) where active;
+
+create trigger popups_set_updated_at
+  before update on popups
+  for each row execute function set_updated_at();
 
 -- ---------------------------------------------------------------------
 -- activity_log — backs the admin dashboard's "Recent activity" panel.

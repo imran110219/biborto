@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, sessions, members, disciplines, countries, businesses, sponsors, events, eventRsvps, blogPosts, galleryAlbums, galleryPhotos, galleryVideos, activityLog, accounts } from "./schema";
+import { users, sessions, members, disciplines, countries, businesses, sponsors, events, eventRsvps, blogPosts, galleryAlbums, galleryPhotos, galleryVideos, activityLog, popups, accounts } from "./schema";
 
 export const sessionsRelations = relations(sessions, ({one}) => ({
 	user: one(users, {
@@ -48,6 +48,7 @@ export const membersRelations = relations(members, ({one, many}) => ({
 	businesses_reviewedBy: many(businesses, {
 		relationName: "businesses_reviewedBy_members_id"
 	}),
+	popups: many(popups),
 }));
 
 export const disciplinesRelations = relations(disciplines, ({many}) => ({
@@ -154,6 +155,13 @@ export const galleryVideosRelations = relations(galleryVideos, ({one}) => ({
 export const activityLogRelations = relations(activityLog, ({one}) => ({
 	member: one(members, {
 		fields: [activityLog.actorMemberId],
+		references: [members.id]
+	}),
+}));
+
+export const popupsRelations = relations(popups, ({one}) => ({
+	member: one(members, {
+		fields: [popups.createdBy],
 		references: [members.id]
 	}),
 }));

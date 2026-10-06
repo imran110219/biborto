@@ -58,8 +58,8 @@ export async function createAlbum(_prevState: string | undefined, formData: Form
 
   revalidatePath("/gallery");
   revalidatePath(`/gallery/${slug}`);
-  revalidatePath("/admin/photos");
-  revalidatePath(`/admin/photos/${slug}`);
+  revalidatePath("/admin/gallery");
+  revalidatePath(`/admin/gallery/${slug}`);
   return undefined;
 }
 
@@ -83,8 +83,8 @@ export async function updateAlbum(albumId: string, slug: string, _prevState: str
 
   revalidatePath("/gallery");
   revalidatePath(`/gallery/${slug}`);
-  revalidatePath("/admin/photos");
-  revalidatePath(`/admin/photos/${slug}`);
+  revalidatePath("/admin/gallery");
+  revalidatePath(`/admin/gallery/${slug}`);
   return "Album saved.";
 }
 
@@ -100,9 +100,9 @@ export async function deleteAlbum(albumId: string, slug: string, _prevState: str
 
   revalidatePath("/gallery");
   revalidatePath(`/gallery/${slug}`);
-  revalidatePath("/admin/photos");
-  revalidatePath(`/admin/photos/${slug}`);
-  redirect("/admin/photos");
+  revalidatePath("/admin/gallery");
+  revalidatePath(`/admin/gallery/${slug}`);
+  redirect("/admin/gallery");
 }
 
 export async function updatePhotoCaption(photoId: string, albumSlug: string, _prevState: string | undefined, formData: FormData) {
@@ -123,7 +123,7 @@ export async function updatePhotoCaption(photoId: string, albumSlug: string, _pr
   await db.update(galleryPhotos).set({ caption: caption || null }).where(eq(galleryPhotos.id, photoId));
 
   revalidatePath(`/gallery/${albumSlug}`);
-  revalidatePath(`/admin/photos/${albumSlug}`);
+  revalidatePath(`/admin/gallery/${albumSlug}`);
   return "Saved.";
 }
 
@@ -152,7 +152,7 @@ export async function deletePhoto(photoId: string, albumSlug: string, _prevState
 
   revalidatePath("/gallery");
   revalidatePath(`/gallery/${albumSlug}`);
-  revalidatePath("/admin/photos");
-  revalidatePath(`/admin/photos/${albumSlug}`);
+  revalidatePath("/admin/gallery");
+  revalidatePath(`/admin/gallery/${albumSlug}`);
   return `Photo deleted.${cleanupWarning}`;
 }

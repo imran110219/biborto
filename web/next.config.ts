@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   async redirects() {
     // The admin Gallery lived at /admin/photos before it was renamed; keep old
     // bookmarks and links working.

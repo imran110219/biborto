@@ -807,7 +807,8 @@ the write succeeds.
 ## Site settings
 
 `/admin/settings` edits the `site_settings` key/value table (`lib/settings.ts` lists the
-keys; superadmin-only to edit, admins can view). Used by the footer (organization name,
+keys; superadmin-only to edit, admins can view). Used by the home-page headline (`motto`,
+default "One as an individual, united as one"; a comma starts a new line), the footer (organization name,
 contact email, YouTube/Facebook links — each link appears only when set) and by
 `fillReunionPlaceholders()`, which swaps `[AMOUNT]`/`[DEADLINE]` in the reunion blog post
 and event description (and says "to be announced" while unset). Links from settings are

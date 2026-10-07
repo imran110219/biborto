@@ -22,6 +22,11 @@ export function SettingsForm({ settings, canEdit }: { settings: SiteSettings; ca
             <input name="org_name" defaultValue={settings.org_name} required maxLength={100} className={input} />
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-semibold">
+            Batch motto
+            <input name="motto" defaultValue={settings.motto} required maxLength={100} className={input} />
+            <span className="text-xs font-normal text-text-secondary">The headline on the home page. A comma starts a new line.</span>
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-semibold">
             Committee contact email
             <input name="contact_email" type="email" defaultValue={settings.contact_email} maxLength={120} placeholder="committee@example.com" className={input} />
             <span className="text-xs font-normal text-text-secondary">Shown as &ldquo;Contact the committee&rdquo; in the site footer. Leave empty to hide the link.</span>

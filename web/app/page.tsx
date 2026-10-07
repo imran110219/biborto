@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Button } from "@/components/ui/Button";
 import { PlaceholderMedia } from "@/components/ui/PlaceholderMedia";
@@ -18,9 +19,11 @@ import { getUpcomingEvents } from "@/lib/db/queries/events";
 import { getPublishedPublicPosts } from "@/lib/db/queries/blog";
 import { getGalleryAlbums, getGalleryVideos } from "@/lib/db/queries/gallery";
 import { getHomeStats } from "@/lib/db/queries/stats";
+import { getSiteSettings } from "@/lib/settings";
 
 export default async function HomePage() {
-  const [activePopup, stats, events, blogPosts, members, albums, videos, sponsors] = await Promise.all([
+  const [settings, activePopup, stats, events, blogPosts, members, albums, videos, sponsors] = await Promise.all([
+    getSiteSettings(),
     getActivePopup().catch((error) => {
       // A missing/unmigrated popups table must not take the home page down — it just shows no popup.
       console.error("Could not load the active popup.", error);
@@ -35,6 +38,9 @@ export default async function HomePage() {
     getActiveSponsors(),
   ]);
   const [featuredPost, ...otherPosts] = blogPosts;
+  const nextEvent = events.find((e) => e.featured) ?? events[0];
+  // "One as an individual, united as one" → two lines, breaking after each comma.
+  const mottoLines = settings.motto.split(/,\s*/).filter(Boolean).map((line, i, all) => (i < all.length - 1 ? `${line},` : line));
 
   return (
     <PublicLayout>
@@ -50,10 +56,13 @@ export default async function HomePage() {
               Khulna University · Batch 11
             </span>
           </div>
-          <h1 className="font-serif text-6xl font-medium leading-[0.95] tracking-tight md:text-8xl">
-            Different paths.
-            <br />
-            One batch.
+          <h1 className="font-serif text-5xl font-medium leading-[1.02] tracking-tight md:text-6xl lg:text-[3.6rem]">
+            {mottoLines.map((line, i) => (
+              <span key={line}>
+                {i > 0 && <br />}
+                {line}
+              </span>
+            ))}
           </h1>
           <p className="max-w-[520px] text-lg leading-relaxed text-text-muted">
             The home of Khulna University Batch 11. Find batchmates, read their stories, join the next
@@ -72,15 +81,19 @@ export default async function HomePage() {
         <div className="grid grid-cols-2 grid-rows-[250px_210px] gap-4">
           <div className="relative row-span-2 overflow-hidden rounded-[20px]">
             <PlaceholderMedia label="[Batch group photo]" className="h-full" rounded="rounded-none" />
-            <div className="absolute inset-x-4 bottom-4 flex items-center gap-3.5 rounded-2xl bg-white p-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-green text-bg-public">
-                <CalendarIcon />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm text-text-secondary">Next gathering</span>
-                <span className="text-sm font-semibold">Grand Reunion · Dec 12</span>
-              </div>
-            </div>
+            {nextEvent && (
+              <Link href={`/events/${nextEvent.slug}`} className="absolute inset-x-4 bottom-4 flex items-center gap-3.5 rounded-2xl bg-white p-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-green text-bg-public">
+                  <CalendarIcon />
+                </div>
+                <div className="flex min-w-0 flex-col">
+                  <span className="text-sm text-text-secondary">Next gathering</span>
+                  <span className="truncate text-sm font-semibold">
+                    {nextEvent.title} · {nextEvent.month.charAt(0) + nextEvent.month.slice(1).toLowerCase()} {Number(nextEvent.day)}
+                  </span>
+                </div>
+              </Link>
+            )}
           </div>
           <PlaceholderMedia label="[Campus photo]" className="h-[250px]" />
           <PlaceholderMedia label="[Reunion photo]" className="h-[210px]" />
@@ -97,6 +110,7 @@ export default async function HomePage() {
       />
 
       {/* Events */}
+{events.length > 0 && (
       <section className="flex flex-col gap-10 px-5 pt-24 md:px-20">
         <SectionHeader eyebrow="Events" title="Coming up next" viewAllHref="/events" viewAllLabel="All events" />
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -105,6 +119,7 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+      )}
 
       {/* Blog */}
       {featuredPost && (
@@ -132,6 +147,7 @@ export default async function HomePage() {
       </section>
 
       {/* Gallery */}
+{albums.length > 0 && (
       <section className="flex flex-col gap-10 px-5 pt-24 md:px-20">
         <SectionHeader eyebrow="Gallery" title="Campus days, in pictures" viewAllHref="/gallery" viewAllLabel="Open the gallery" />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
@@ -140,8 +156,10 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+      )}
 
       {/* Videos */}
+{videos.length > 0 && (
       <section className="flex flex-col gap-10 px-5 py-24 md:px-20">
         <SectionHeader eyebrow="Videos" title="Watch on our YouTube channel" viewAllHref="/gallery" viewAllLabel="All videos" />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
@@ -150,6 +168,7 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+      )}
 
       <SponsorStrip sponsors={sponsors} />
     </PublicLayout>

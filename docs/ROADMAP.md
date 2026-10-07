@@ -168,6 +168,9 @@ named.
 - Dashboard: real "Recent activity" feed (`activity_log`, written by `lib/activity.ts`
   on approvals, submissions, member creation, events and settings), real photo/video
   counts, greeting from the signed-in name; the dead "Export report" button is gone.
+- Home page: the hero headline is the batch motto ("One as an individual, united as one",
+  editable in Settings), the "Next gathering" card shows the real next event, and the
+  events/gallery/videos sections hide themselves when empty.
 - Blog post share buttons (copy link, share by email) work; mock-only `lib/mock-data.ts`
   and bracketed placeholder captions were removed.
 - CI now type-checks and lints before building the image.

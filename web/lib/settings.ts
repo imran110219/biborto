@@ -6,6 +6,7 @@ import { siteSettings } from "@/drizzle/schema";
 // site_settings table (key → text); a missing row means "not set".
 export const SETTING_KEYS = [
   "org_name",
+  "motto",
   "contact_email",
   "youtube_url",
   "facebook_url",
@@ -17,6 +18,7 @@ export type SiteSettings = Record<SettingKey, string>;
 
 export const SETTING_DEFAULTS: SiteSettings = {
   org_name: "Batch 11, Khulna University",
+  motto: "One as an individual, united as one",
   contact_email: "",
   youtube_url: "",
   facebook_url: "",

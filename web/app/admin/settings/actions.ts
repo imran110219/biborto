@@ -10,6 +10,7 @@ import { sql } from "drizzle-orm";
 
 const MAX_LENGTH: Record<SettingKey, number> = {
   org_name: 100,
+  motto: 100,
   contact_email: 120,
   youtube_url: 300,
   facebook_url: 300,
@@ -27,6 +28,7 @@ export async function saveSettings(_prev: string | undefined, formData: FormData
   for (const key of SETTING_KEYS) if (values[key].length > MAX_LENGTH[key]) return "One of the fields is too long.";
 
   if (!values.org_name) return "Organization name is required.";
+  if (!values.motto) return "The batch motto can't be empty.";
   if (values.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.contact_email)) return "Enter a valid contact email address.";
   for (const key of ["youtube_url", "facebook_url"] as const) {
     if (values[key] && !safeHttpUrl(values[key])) return "Social links must be full http(s) addresses.";

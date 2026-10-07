@@ -3,7 +3,7 @@
 import { logActivity, memberNames } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { members } from "@/drizzle/schema";
 import { requireAdmin, requireSuperadmin } from "@/lib/auth/require-admin";
@@ -100,6 +100,15 @@ export async function updateMember(memberId: string, _prevState: string | undefi
     .limit(1);
   if (!target) return "Member not found.";
 
+  if (values.studentId) {
+    const [clash] = await db
+      .select({ name: members.name })
+      .from(members)
+      .where(and(eq(members.studentId, values.studentId), ne(members.id, memberId)))
+      .limit(1);
+    if (clash) return `Student ID ${values.studentId} already belongs to ${clash.name}.`;
+  }
+
   if (values.platformRole !== target.platformRole) {
     if (actor.role !== "superadmin") return "Only a superadmin can change platform roles.";
     if (memberId === actor.id) return "You can't change your own role.";
@@ -136,6 +145,10 @@ export async function createMember(_prevState: string | undefined, formData: For
     .where(sql`lower(${members.email}) = ${values.email}`)
     .limit(1);
   if (existing) return "A member with this email already exists.";
+  if (values.studentId) {
+    const [clash] = await db.select({ name: members.name }).from(members).where(eq(members.studentId, values.studentId)).limit(1);
+    if (clash) return `Student ID ${values.studentId} already belongs to ${clash.name}.`;
+  }
 
   const base = slugify(values.name);
   let slug = base;
@@ -154,7 +167,7 @@ export async function createMember(_prevState: string | undefined, formData: For
   } catch (error) {
     // Lost a race on the unique email/slug between the checks above and the insert.
     const code = (error as { code?: string; cause?: { code?: string } }).code ?? (error as { cause?: { code?: string } }).cause?.code;
-    if (code === "23505") return "A member with this email already exists.";
+    if (code === "23505") return "A member with this email or student ID already exists.";
     throw error;
   }
 

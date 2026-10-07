@@ -21,6 +21,9 @@ export interface Member {
 // can't round-trip into a <select>'s value).
 export interface AdminMemberDetail {
   id: string;
+  // Public profile addresses (`/members/<slug>`); absent on the blank "new member" form.
+  slug?: string;
+  rollSlug?: string; // `<discipline short code>-<roll>`, only when the member has both
   name: string;
   disciplineId: string | null;
   campusName: string;

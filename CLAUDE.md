@@ -51,6 +51,8 @@ Reference data (`disciplines`, `countries`) is normalized into real tables with 
 
 No Supabase, no row-level security. RLS leaned on Supabase's `auth.uid()` JWT wiring, which a plain Postgres connection doesn't get for free. Authorization instead lives in application code: Server Components enforce the same `status`/`is_public`/`visibility` filters the `public_*` views encode for reads, and `web/proxy.ts` (see "Auth" below) does the same for `/admin/**` access.
 
+Each member has two profile URLs: `/members/<name-slug>` (`members.slug`, canonical) and `/members/<discipline-short-code>-<roll>` (e.g. `arch-110101`; `student_id` is unique); see "Member profile URLs" in `docs/web/README.md`.
+
 Sensitive member fields (`email`, `phone_number`, `student_id`, `blood_group`, `date_of_birth`) are admin-only by convention — always excluded from the `public_members` view and from the `PublicMember`/`PublicMemberDetail` types in `web/lib/types.ts`. This isn't just a UI filter: a Server Component's props get serialized to the client, so leaving one of these in the returned object would leak it over the wire even if no component renders it.
 
 ### `web/lib/db/` — the data layer

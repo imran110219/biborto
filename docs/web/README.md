@@ -762,7 +762,7 @@ there's no "my account" or "edit my profile" page yet.
 Rules (all in `lib/members/import.ts`): `Name` and `Email` are required; headers are
 case/punctuation-insensitive with aliases (Roll → Student ID, Dept → Discipline, …);
 discipline matches the department short code, code or full name; country matches ISO code or
-name; dates accept `YYYY-MM-DD` or `DD/MM/YYYY`; "Public profile" is Yes/No. Existing members
+name; dates accept `YYYY-MM-DD` or `DD/MM/YYYY`; "Public profile" is Yes/No. A roll that already belongs to another member (or repeats in the file) skips the row. Existing members
 are matched by **email, case-insensitively**; with "update existing" on, only cells that have a
 value are applied (a blank cell never erases data). A duplicate email later in the file is
 skipped. **Role, Status and Joined columns are ignored** — access is never granted from a
@@ -770,6 +770,29 @@ spreadsheet; new members are always `member`, with status Active or Pending chos
 and are created without a login (they claim the row at `/signup`). A leading `'` added by
 the exporter's formula protection is stripped. Limits: 1 MB, 2,000 rows. Because the export
 and import share column names, an exported file can be edited and imported back.
+
+## Member profile URLs
+
+Every member has two URLs that show the same profile:
+
+- `/members/<name-slug>` — `members.slug`, the slugified name (lowercase, hyphens,
+  `-2`/`-3` only when two names collide). This is the **canonical** address: it is what
+  links, the sitemap and `<link rel="canonical">` use.
+- `/members/<discipline>-<roll>` — e.g. `/members/arch-110101`: the discipline short code
+  and the member's `student_id`, lowercase and hyphen-separated. The roll is **unique**
+  (partial unique index `members_student_id_key`, migration 015), so the pair is too. A
+  member with no discipline or no roll has only the name URL. A bare `/members/110101`
+  does not resolve.
+
+`getPublicMemberBySlug` accepts either (the name slug wins in the unlikely event of a
+clash; the roll form is matched case-insensitively) and only *finds* the row by roll: the student ID is never selected or sent to the
+browser, and the page still requires `active` + `is_public`. Slugs are generated once and not
+changed when a name is edited, so existing links stay valid. Creating a member, editing one
+and the CSV import all reject a roll that already belongs to someone else.
+
+The admin member page (`/admin/members/[id]`) has a "Profile URLs" card listing both
+addresses; they're links only while the member is active and public, plain text otherwise,
+and the roll URL reads "Needs a discipline and a student ID" when it can't be formed.
 
 ## Activity feed
 

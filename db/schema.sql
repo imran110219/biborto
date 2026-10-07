@@ -249,6 +249,9 @@ create table members (
 create index members_status_idx on members (status);
 create index members_discipline_idx on members (discipline_id);
 create index members_city_idx on members (city);
+-- Roll is unique per member; it is also a second profile URL (/members/<short-code>-<roll>).
+-- See db/migrations/015_member_slugs.sql.
+create unique index members_student_id_key on members (student_id) where student_id is not null;
 
 create trigger members_set_updated_at
   before update on members

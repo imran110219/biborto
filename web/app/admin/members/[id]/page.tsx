@@ -44,6 +44,45 @@ function Card({ title, hint, children }: { title: string; hint?: string; childre
   );
 }
 
+// The member's two public addresses. They only work while the profile is active and public.
+function ProfileUrls({ slug, rollSlug, live }: { slug?: string; rollSlug?: string; live: boolean }) {
+  if (!slug) return null;
+  const rows = [
+    { label: "Name URL (canonical)", path: `/members/${slug}` },
+    { label: "Roll URL", path: rollSlug ? `/members/${rollSlug}` : undefined },
+  ];
+  return (
+    <section className="rounded-2xl border border-border-default bg-white p-5 sm:p-6">
+      <div className="mb-4">
+        <h2 className="font-serif text-xl font-medium">Profile URLs</h2>
+        <p className="mt-0.5 text-sm text-text-secondary">
+          {live ? "Both addresses open the same public profile." : "Not reachable yet: the profile must be active and public."}
+        </p>
+      </div>
+      <dl className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+        {rows.map((r) => (
+          <div key={r.label} className="flex flex-col gap-1">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{r.label}</dt>
+            <dd className="break-all text-sm">
+              {r.path ? (
+                live ? (
+                  <Link href={r.path} target="_blank" className="font-mono font-semibold text-brand-green underline">
+                    {r.path}
+                  </Link>
+                ) : (
+                  <span className="font-mono">{r.path}</span>
+                )
+              ) : (
+                <span className="text-text-secondary">Needs a discipline and a student ID</span>
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
 export default async function ViewMemberPage({ params, searchParams }: PageProps<"/admin/members/[id]">) {
   const { id } = await params;
   const { from } = await searchParams;
@@ -88,6 +127,8 @@ export default async function ViewMemberPage({ params, searchParams }: PageProps
             </Link>
           )}
         </div>
+
+        <ProfileUrls slug={member.slug} rollSlug={member.rollSlug} live={member.status === "active" && member.isPublic} />
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <Card title="Profile">

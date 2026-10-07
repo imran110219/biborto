@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { members, disciplines, countries } from "@/drizzle/schema";
 import { initialsOf, formatMonthYear } from "@/lib/db/format";
@@ -125,7 +125,12 @@ export async function getPublicMemberFilterOptions() {
   };
 }
 
-export async function getPublicMemberBySlug(slug: string): Promise<PublicMemberDetail | undefined> {
+// A profile has two URLs: the name slug (`/members/md-zahidur-rahman`, members.slug) and the
+// roll slug (`/members/arch-110101`: discipline short code + roll, lowercase, hyphenated).
+// Either resolves here. The roll is only used to *find* the row; it is never selected or
+// returned (student ID stays admin-only). A member with no discipline or roll has no roll slug.
+export async function getPublicMemberBySlug(slugOrRoll: string): Promise<PublicMemberDetail | undefined> {
+  const slug = slugOrRoll;
   const [row] = await db
     .select({
       id: members.id,
@@ -151,7 +156,9 @@ export async function getPublicMemberBySlug(slug: string): Promise<PublicMemberD
     .from(members)
     .leftJoin(disciplines, eq(disciplines.id, members.disciplineId))
     .leftJoin(countries, eq(countries.id, members.countryId))
-    .where(and(eq(members.slug, slug), eq(members.status, "active"), eq(members.isPublic, true)))
+    .where(and(or(eq(members.slug, slug), sql`lower(${disciplines.shortCode} || '-' || ${members.studentId}) = ${slug.toLowerCase()}`), eq(members.status, "active"), eq(members.isPublic, true)))
+    // If a roll ever equalled another member's name slug, the name slug wins.
+    .orderBy(sql`(${members.slug} = ${slug}) desc`)
     .limit(1);
 
   if (!row) return undefined;
@@ -349,6 +356,8 @@ export async function getAdminMemberById(id: string): Promise<AdminMemberDetail 
   const [row] = await db
     .select({
       id: members.id,
+      slug: members.slug,
+      disciplineShortCode: disciplines.shortCode,
       name: members.name,
       disciplineId: members.disciplineId,
       campusName: members.campusName,
@@ -375,6 +384,7 @@ export async function getAdminMemberById(id: string): Promise<AdminMemberDetail 
       isPublic: members.isPublic,
     })
     .from(members)
+    .leftJoin(disciplines, eq(disciplines.id, members.disciplineId))
     .where(eq(members.id, id))
     .limit(1);
 
@@ -382,6 +392,8 @@ export async function getAdminMemberById(id: string): Promise<AdminMemberDetail 
 
   return {
     id: row.id,
+    slug: row.slug,
+    rollSlug: row.disciplineShortCode && row.studentId ? `${row.disciplineShortCode}-${row.studentId}`.toLowerCase() : undefined,
     name: row.name,
     disciplineId: row.disciplineId,
     campusName: row.campusName ?? "",

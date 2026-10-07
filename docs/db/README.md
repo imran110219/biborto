@@ -37,6 +37,10 @@ this isn't a speculative model, it's what the UI assumes.
 - `db/migrations/010_one_active_diamond_sponsor.sql` — partial unique index so
   at most one *active* diamond sponsor exists. Deactivate extra active
   diamonds before applying to an existing database, then `npm run db:pull`.
+- `db/migrations/015_member_slugs.sql` — makes `members.student_id` unique (partial
+  unique index) and **rewrites every `members.slug`** to the slugified name, so old
+  `/members/<slug>` links break. `seed_members.sql` now uses name slugs too; the second URL, `/members/<discipline short code>-<roll>`, is computed at request time, not stored. Apply to an
+  existing database, then `npm run db:pull`.
 - `db/migrations/014_site_settings.sql` — adds the `site_settings` key/value table
   behind `/admin/settings` (organization name, contact email, social links, reunion
   fee and deadline). Apply to an existing database, then `npm run db:pull`.

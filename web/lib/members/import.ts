@@ -213,6 +213,15 @@ async function plan(csvText: string, options: ImportOptions): Promise<{ analysis
     : [];
   const byEmail = new Map(existing.map((m) => [m.email.toLowerCase(), m]));
 
+  // Roll (student ID) is unique per member and doubles as a profile URL, so a roll that
+  // already belongs to someone else — in the database or earlier in this file — is an error.
+  const rolls = [...new Set(parsed.flatMap((p) => (p.values?.studentId ? [p.values.studentId] : [])))];
+  const rollOwners = rolls.length
+    ? await db.select({ id: members.id, name: members.name, studentId: members.studentId }).from(members).where(inArray(members.studentId, rolls))
+    : [];
+  const ownerOfRoll = new Map(rollOwners.map((r) => [r.studentId!, r]));
+  const seenRolls = new Set<string>();
+
   const seen = new Set<string>();
   const rows: RowResult[] = [];
   const items: (PlanItem | null)[] = [];
@@ -233,6 +242,19 @@ async function plan(csvText: string, options: ImportOptions): Promise<{ analysis
     seen.add(p.email);
 
     const current = byEmail.get(p.email);
+    const roll = p.values.studentId;
+    if (roll) {
+      const owner = ownerOfRoll.get(roll);
+      if (seenRolls.has(roll)) {
+        push({ action: "error", error: `Student ID ${roll} appears earlier in the file.` }, null);
+        continue;
+      }
+      if (owner && owner.id !== current?.id) {
+        push({ action: "error", error: `Student ID ${roll} already belongs to ${owner.name}.` }, null);
+        continue;
+      }
+      seenRolls.add(roll);
+    }
     if (!current) {
       push({ action: "create" }, { kind: "create", values: p.values as Values & { name: string; email: string } });
       continue;

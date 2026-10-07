@@ -1,4 +1,4 @@
-import { pgTable, unique, uuid, text, timestamp, foreignKey, index, date, boolean, uniqueIndex, time, check, integer, primaryKey, pgView, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, unique, uuid, text, timestamp, foreignKey, index, uniqueIndex, date, boolean, time, check, integer, primaryKey, pgView, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blogCategory = pgEnum("blog_category", ['Reunion', 'Memories', 'Careers', 'Campus'])
@@ -107,6 +107,7 @@ export const members = pgTable("members", {
 	index("members_city_idx").using("btree", table.city.asc().nullsLast().op("text_ops")),
 	index("members_discipline_idx").using("btree", table.disciplineId.asc().nullsLast().op("uuid_ops")),
 	index("members_status_idx").using("btree", table.status.asc().nullsLast().op("enum_ops")),
+	uniqueIndex("members_student_id_key").using("btree", table.studentId.asc().nullsLast().op("text_ops")).where(sql`(student_id IS NOT NULL)`),
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.id],

@@ -1,5 +1,6 @@
 "use server";
 
+import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
@@ -53,6 +54,8 @@ export async function createEvent(_prevState: string | undefined, formData: Form
     isPublic,
     createdBy: adminId,
   });
+
+  await logActivity({ actorId: adminId, action: "event.created", targetType: "event", summary: `{actor} created the event "${title}"` });
 
   revalidatePath("/admin/events");
   revalidatePath("/admin/dashboard");

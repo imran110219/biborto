@@ -1,5 +1,6 @@
 "use server";
 
+import { logActivity, memberNames } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq, inArray, sql } from "drizzle-orm";
@@ -23,6 +24,8 @@ export async function approveMember(memberId: string, _formData: FormData) {
     .update(members)
     .set({ status: "active", reviewedBy: adminId, reviewedAt: new Date().toISOString() })
     .where(eq(members.id, memberId));
+  const [name] = await memberNames([memberId]);
+  await logActivity({ actorId: adminId, action: "member.approved", targetType: "member", targetId: memberId, summary: `{actor} approved ${name ?? "a member"}` });
 
   revalidateMemberPaths();
 }
@@ -34,6 +37,8 @@ export async function suspendMember(memberId: string, _formData: FormData) {
     .update(members)
     .set({ status: "suspended", reviewedBy: adminId, reviewedAt: new Date().toISOString() })
     .where(eq(members.id, memberId));
+  const [name] = await memberNames([memberId]);
+  await logActivity({ actorId: adminId, action: "member.suspended", targetType: "member", targetId: memberId, summary: `{actor} suspended ${name ?? "a member"}` });
 
   revalidateMemberPaths();
 }
@@ -44,6 +49,8 @@ export async function reactivateMember(memberId: string, _formData: FormData) {
     .update(members)
     .set({ status: "active", reviewedBy: adminId, reviewedAt: new Date().toISOString() })
     .where(eq(members.id, memberId));
+  const [name] = await memberNames([memberId]);
+  await logActivity({ actorId: adminId, action: "member.reactivated", targetType: "member", targetId: memberId, summary: `{actor} reactivated ${name ?? "a member"}` });
 
   revalidateMemberPaths();
 }
@@ -59,6 +66,12 @@ async function bulkSetMemberStatus(status: MemberStatus, formData: FormData) {
     .update(members)
     .set({ status, reviewedBy: adminId, reviewedAt: new Date().toISOString() })
     .where(inArray(members.id, targets));
+  await logActivity({
+    actorId: adminId,
+    action: status === "active" ? "member.bulk_activated" : "member.bulk_suspended",
+    targetType: "member",
+    summary: `{actor} ${status === "active" ? "activated" : "suspended"} ${targets.length} member${targets.length === 1 ? "" : "s"}`,
+  });
 
   revalidateMemberPaths();
 }
@@ -144,6 +157,8 @@ export async function createMember(_prevState: string | undefined, formData: For
     if (code === "23505") return "A member with this email already exists.";
     throw error;
   }
+
+  await logActivity({ actorId, action: "member.created", targetType: "member", targetId: created.id, summary: `{actor} added ${values.name} to the roster` });
 
   revalidateMemberPaths();
   redirect(`/admin/members/${created.id}`);

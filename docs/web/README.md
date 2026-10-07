@@ -27,7 +27,7 @@ real. Member and business approval are real writes now too — see
 events, sponsors, videos and blog posts; business submission and event
 RSVP are real. The 241-member seed is based on the active-voter CSV.
 There is no open account registration; superadmins add members manually
-and export CSV, while CSV import is planned but not built. Gallery images
+export CSV and import CSV. Gallery images
 upload to Cloudflare
 R2 through an admin-only server route and display from the bucket's public
 domain. Configure R2 variables in `.env.local` before uploading. Other
@@ -98,8 +98,6 @@ lib/
   types.ts       Member, Business, Sponsor, EventItem, BlogPost — plus
                  PublicMember/BlogPostDetail, the narrower shapes the
                  real public pages use (see Data layer below)
-  mock-data.ts   The mockup's sample content, typed — still what most
-                 admin pages and forms render from (see Why this exists)
   fonts.ts       next/font/google setup
   auth/
     require-admin.ts   requireAdminMemberId() — shared by every admin
@@ -248,10 +246,8 @@ Configure an R2 bucket, an Object Read & Write API token scoped to that
 bucket, and a public custom domain (or `r2.dev` for local development).
 The app does not create the bucket or configure its domain.
 
-**Still on mock data**: `lib/mock-data.ts` remains in use for dashboard
-activity placeholders, settings, and some inert
-controls. Admin CSV import is not implemented; members come from seed
-data, manual creation by a superadmin, or a pending request created by an
+`lib/mock-data.ts` has been removed — nothing renders mock content any more. Members come from seed
+data, manual creation or CSV import by a superadmin, or a pending request created by an
 unmatched Google sign-in. That request does not create an account or
 grant access until an admin approves it.
 
@@ -267,7 +263,7 @@ event RSVP also write to Postgres. Gallery management lives at
 photos; superadmins can also create, edit, and delete empty albums. Video
 records have admin CRUD at `/admin/videos` and public cards play linked
 YouTube videos in privacy-enhanced embeds. Member CSV import and
-settings persistence are not implemented.
+site settings are implemented.
 
 - **`lib/db/queries/{members,businesses}.ts`** export `getAdminMembers()`/
   `getAdminBusinesses()` alongside the existing public-facing queries —
@@ -303,8 +299,13 @@ The gallery upload route and photo actions independently check admin
 roles; album mutations require a superadmin. The Gallery page (`/admin/gallery`) is also
 behind the `/admin/**` role gate.
 
-**Suggested next tasks**: build admin CSV import for members, then
-complete persistence for settings.
+**Suggested next tasks**: see the nice-to-have list in docs/ROADMAP.md §8.
+
+> Since this section was written, `/account` was split into tabs — Profile (`/account`),
+> Submissions & events (`/account/submissions`, including "My events") and Security
+> (`/account/security`) — sharing `app/account/layout.tsx`. Signed-in members get an
+> avatar dropdown in the navbar (`components/layout/MemberMenu.tsx`) with My account,
+> Write a post, List a business, Admin dashboard (admins) and Sign out.
 
 ## My account (member self-service)
 
@@ -663,8 +664,8 @@ membership" in the UI) lets a person claim an existing `members` row by
 email; it does not create an active member account. The committee-managed
 roster is currently loaded from `active-voter-list.csv` via
 `db/seed_members.sql`; superadmins can add members manually (see
-[Admin members](#admin-members)), and CSV import is planned but not
-implemented. Claiming is email-verified: enter the email on
+[Admin members](#admin-members)), and a CSV import (see
+[Member CSV import](#member-csv-import)) adds or updates roster rows. Claiming is email-verified: enter the email on
 file → a one-time link (sha256-hashed token in `verification_tokens`, 1 hour,
 single use, sent via Resend — see `lib/email.ts`; without `RESEND_API_KEY` in
 dev the link is logged to the server console) → `/signup/verify` sets the
@@ -727,6 +728,68 @@ separate infrastructure decision, same shape of gap as R2), and any
 member-facing area beyond the public profile pages that already exist —
 there's no "my account" or "edit my profile" page yet.
 
+## Security hardening
+
+- **Rate limiting** (`lib/security/rate-limit.ts`, limits in `lib/security/limits.ts`): Postgres-backed fixed windows in the `rate_limits` table (migration 013). Sign-in is limited per email+IP, per email and per IP inside `authorize()` (so direct POSTs to `/api/auth/callback/credentials` are covered); password reset, claim, password change and photo upload have their own limits. The client IP is the first `X-Forwarded-For` entry, so the reverse proxy must overwrite that header.
+- **Live role/status check**: the `jwt` callback re-reads the member row on every request, so promotion, demotion and suspension apply immediately (a suspended member's session ends). `proxy.ts` runs on the Node.js runtime (Next 16 default), which is why this works there.
+- **Analytics consent** (`components/AnalyticsConsent.tsx`): Google Analytics loads only after the visitor accepts, never on private/token routes, and sends path-only page views. "Cookie settings" in the footer reopens the choice.
+- **CSP and headers** (`proxy.ts`, `lib/security/csp.ts`): per-request nonce CSP (`script-src 'nonce-…' 'strict-dynamic'`), `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, and HSTS/`upgrade-insecure-requests` in production when `APP_URL` is https. Pages are therefore dynamically rendered. New third-party origins (images, embeds, scripts) must be added to `buildCsp`.
+- **Popup frame**: custom-HTML popups are served from `/popup-frame/[id]` with their own sandboxing CSP and shown via `<iframe src>`, so they don't inherit the site policy. Only the active popup is public; superadmins can preview inactive ones.
+
+## Public pages that took work after the port
+
+- **`/members`**: URL-driven filters (`lib/members/public-filters.ts`,
+  `getPublicMembersPage`) — `q` searches name, profession, company and city;
+  `discipline` and `city` options come from members actually published, so every choice
+  returns results. 24 per page. Only the public columns are selected.
+- **`/events`**: Upcoming / Past tabs (`?view=past`), real going counts, "Add to calendar"
+  via `app/events/[slug]/calendar.ics/route.ts` (floating local times, one-hour default
+  when no end time). Past events stay reachable by link with RSVP closed; `rsvpGoing`
+  also refuses past or private events when called directly.
+
+## Member CSV import
+
+`/admin/members/import` (superadmin-only; linked as "Import CSV" on the members list).
+
+1. **Preview** — the page posts the file to `POST /api/admin/members/import`
+   (`intent=preview`), which parses it (`lib/members/csv.ts`), validates every row and
+   returns what would happen to each: **New**, **Update** (with the changed fields),
+   **No change**, or **Skipped** (with the reason). Nothing is written.
+2. **Import** — the same file is posted again with `intent=apply`; the server re-analyzes
+   it (the preview is never trusted) and writes all valid rows in **one transaction**.
+   Skipped rows don't block the rest. One `activity_log` entry is written.
+
+Rules (all in `lib/members/import.ts`): `Name` and `Email` are required; headers are
+case/punctuation-insensitive with aliases (Roll → Student ID, Dept → Discipline, …);
+discipline matches the department short code, code or full name; country matches ISO code or
+name; dates accept `YYYY-MM-DD` or `DD/MM/YYYY`; "Public profile" is Yes/No. Existing members
+are matched by **email, case-insensitively**; with "update existing" on, only cells that have a
+value are applied (a blank cell never erases data). A duplicate email later in the file is
+skipped. **Role, Status and Joined columns are ignored** — access is never granted from a
+spreadsheet; new members are always `member`, with status Active or Pending chosen on the page,
+and are created without a login (they claim the row at `/signup`). A leading `'` added by
+the exporter's formula protection is stripped. Limits: 1 MB, 2,000 rows. Because the export
+and import share column names, an exported file can be edited and imported back.
+
+## Activity feed
+
+`lib/activity.ts`'s `logActivity()` writes a human-readable row to `activity_log`
+(`{actor}` in the summary is replaced with the acting member's name). It is called from
+member approve/suspend/reactivate/create (and bulk), business approve/reject (and bulk),
+post approve/reject, blog and business submissions, event creation and settings saves.
+It never throws — a logging failure doesn't fail the action. The dashboard reads the
+latest rows with `getRecentActivity()`. To log a new action, call `logActivity` after
+the write succeeds.
+
+## Site settings
+
+`/admin/settings` edits the `site_settings` key/value table (`lib/settings.ts` lists the
+keys; superadmin-only to edit, admins can view). Used by the footer (organization name,
+contact email, YouTube/Facebook links — each link appears only when set) and by
+`fillReunionPlaceholders()`, which swaps `[AMOUNT]`/`[DEADLINE]` in the reunion blog post
+and event description (and says "to be announced" while unset). Links from settings are
+rendered only if they are http(s).
+
 ## Build output
 
 ```bash
@@ -757,12 +820,13 @@ restructure first.
   placeholder body the mockup always showed for them — see
   `db/seed_blog_posts.sql`.
 - Sign-in/sign-up, member and business review, business submission,
-  event RSVP, and admin CRUD for events, sponsors, videos and blog posts
+  event RSVP, settings, and admin CRUD for events, sponsors, videos and blog posts
   use real database writes. Gallery image upload and public display also
   use R2. Gallery album management, photo captions/deletion, and the
-  album/video tabs are implemented. The members and business lists
-  (admin and public directory) have real search/filters and pagination, but
-  search/filter controls on other pages,
-  settings persistence and member CSV import remain unbuilt.
+  album/video tabs are implemented. The members, events and business lists
+  (admin and public) have real search/filters/tabs and pagination. Member CSV
+  import remains unbuilt, and event banners and the home page's photo slots still
+  show neutral placeholder tiles because there is no image source for them yet
+  (see "Nice-to-have suggestions" in docs/ROADMAP.md).
 - The seed has 241 active roster members and 0 gallery photos. Country
   reference data has 243 rows, while member country fields remain empty.

@@ -19,7 +19,7 @@ export default async function SubmitPostPage() {
             <h1 className="font-serif text-3xl font-medium">Write for the blog</h1>
             <p className="text-sm text-text-secondary">Share a story with the batch. The committee reviews every post before it goes live.</p>
           </div>
-          <Link href="/account" className="text-sm font-semibold text-brand-green">
+          <Link href="/account/submissions" className="text-sm font-semibold text-brand-green">
             My submissions →
           </Link>
         </div>

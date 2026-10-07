@@ -14,7 +14,7 @@ web/    Next.js app — public pages read from Postgres; Auth.js signs in
         event/sponsor/video/blog editing, business submissions and RSVPs
         have real writes. Gallery album and photo management is
         implemented; manual member creation and CSV export are (superadmin
-        only); CSV import is not.
+        only); CSV import is too.
 db/     Full Postgres data model and seed data, including the current
         active-voter roster (members, businesses, sponsors, events,
         blog, gallery, auth) — wired into web/'s public pages and login
@@ -49,9 +49,9 @@ current source for the member seed, with all roster members assigned the
 manage their own profile, photos and password at `/account` (name, discipline,
 email, student ID, role and status stay committee-managed). Superadmins
 add members manually at `/admin/members/new` (no login account is
-created; the person claims it at `/signup`). Admin CSV import is planned
-but not implemented. Admins have view-only access to member profiles;
-only superadmins edit, moderate, create and export members.
+created; the person claims it at `/signup`). Superadmins can also import members from a CSV at
+`/admin/members/import`. Admins have view-only access to member profiles;
+only superadmins edit, moderate, create, import and export members.
 
 Gallery image upload and public display are wired through Cloudflare R2.
 The application still needs R2 account credentials and a public bucket
@@ -69,8 +69,7 @@ superadmins manage albums. Albums must be empty before deletion.
 - **File storage**: Cloudflare R2 (avatars, gallery media, business
   photos).
 - **Member management**: committee-managed roster; superadmin-only
-  manual creation, editing, moderation and CSV export; planned admin CSV
-  import. Admins have view-only profile access. No open account
+  manual creation, editing, moderation, CSV export and CSV import. Admins have view-only profile access. No open account
   registration.
 
 ## Getting started

@@ -8,6 +8,9 @@ import { db } from "@/lib/db/client";
 import { users, verificationTokens } from "@/lib/db/auth-schema";
 import { members } from "@/drizzle/schema";
 import { resetLink, sendPasswordResetEmail } from "@/lib/email";
+import { headers } from "next/headers";
+import { clientIp, consume, formatWait, normalizeKeyPart } from "@/lib/security/rate-limit";
+import { LIMITS } from "@/lib/security/limits";
 
 // Password reset for members who have already claimed their account. The
 // mailbox on the roster is the proof of ownership: a one-time, hashed,
@@ -29,6 +32,18 @@ export async function requestPasswordReset(_prevState: string | undefined, formD
   const email = formData.get("email");
   if (typeof email !== "string" || !email.includes("@")) return "Enter your email address.";
   const normalizedEmail = email.trim().toLowerCase();
+
+  // Cap how many of these emails one address / one IP can trigger (they cost money
+  // and can be used to pester a member). Keyed on the typed email, so the answer
+  // never reveals whether an account exists.
+  const ip = clientIp(await headers());
+  const [perEmail, perIp] = await Promise.all([
+    consume(`reset:email:${normalizeKeyPart(normalizedEmail)}`, LIMITS.emailRequestEmail),
+    consume(`reset:ip:${ip}`, LIMITS.emailRequestIp),
+  ]);
+  if (!perEmail.allowed || !perIp.allowed) {
+    return `Too many requests. Please try again in ${formatWait(Math.max(perEmail.retryAfterSeconds, perIp.retryAfterSeconds))}.`;
+  }
 
   const [member] = await db
     .select({ name: members.name, status: members.status, userId: members.userId })

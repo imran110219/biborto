@@ -21,7 +21,7 @@ values
   ('batchworks-catering', (select id from members where name = 'Tahmina Akter'),
    'BatchWorks Catering', 'Food & Catering', 'Dhaka', 'active',
    'Home-style Bengali catering for reunions, office lunches and family events — run by a batchmate, trusted by the batch.',
-   'BatchWorks Catering started in [YEAR] out of a batchmate''s home kitchen in Dhaka. We now cater office lunches, family gatherings, and — every December — the Batch 11 Grand Reunion itself. Every order is prepared fresh, with menus that can flex for vegetarian, halal, and allergy needs.',
+   'BatchWorks Catering started out of a batchmate''s home kitchen in Dhaka. We now cater office lunches, family gatherings, and — every December — the Batch 11 Grand Reunion itself. Every order is prepared fresh, with menus that can flex for vegetarian, halal, and allergy needs.',
    array['Event catering', 'Office lunch plans', 'Home delivery', 'Custom menus'],
    'Booked BatchWorks for our department reunion — tasted like home. Highly recommend to any batchmate planning an event.',
    '2026-01-01'),

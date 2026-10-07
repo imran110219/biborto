@@ -5,24 +5,21 @@ import { PopupShell } from "@/components/PopupShell";
 import { externalUrl } from "@/lib/url";
 import type { Popup } from "@/lib/types";
 
-// Wraps superadmin-supplied markup in a minimal document. Links open in a new
-// tab (<base target>), and the page gets no margin so it fills the frame.
-function frameDocument(html: string) {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank"><style>html,body{margin:0}</style></head><body>${html}</body></html>`;
-}
-
 // The popup body, without any modal chrome — also used by the admin preview.
 export function PopupContent({ popup }: { popup: Popup }) {
   if (popup.kind === "html") {
     return (
       <iframe
         title={popup.title}
-        // Untrusted-by-design markup: scripts may run (for animations) but in an
-        // opaque origin — no allow-same-origin, so it can't touch this site's
-        // cookies, storage or DOM. Popups/links may open in new tabs only.
+        // Untrusted-by-design markup, so it is loaded as its own document from
+        // /popup-frame/<id> (which sends a sandbox CSP — see app/popup-frame) rather than
+        // inlined: scripts may run (for animations) but in an opaque origin — no
+        // allow-same-origin, so it can't touch this site's cookies, storage or DOM.
+        // Popups/links may open in new tabs only. The attribute below repeats the
+        // sandbox so it holds even if the response header were ever lost.
         sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
         referrerPolicy="no-referrer"
-        srcDoc={frameDocument(popup.htmlContent)}
+        src={`/popup-frame/${popup.id}`}
         style={{ height: popup.heightPx }}
         className="block w-full max-w-full border-0 bg-white"
       />

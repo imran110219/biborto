@@ -1,5 +1,6 @@
 "use server";
 
+import { logActivity } from "@/lib/activity";
 import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -69,8 +70,10 @@ export async function submitPost(_prevState: string | undefined, formData: FormD
   });
   if (!accepted) return `You already have ${MAX_PENDING_POSTS_PER_MEMBER} posts waiting for review. Please wait for the committee to review them first.`;
 
+  await logActivity({ actorId: memberId, action: "blog_post.submitted", targetType: "blog_post", summary: `{actor} submitted the blog post "${title}" for review` });
+
   revalidatePath("/admin/edit-post");
   revalidatePath("/admin/dashboard");
-  revalidatePath("/account");
-  redirect("/account?submitted=blog");
+  revalidatePath("/account", "layout");
+  redirect("/account/submissions?submitted=blog");
 }

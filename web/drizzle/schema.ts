@@ -368,6 +368,12 @@ export const businesses = pgTable("businesses", {
 	unique("businesses_slug_key").on(table.slug),
 ]);
 
+export const siteSettings = pgTable("site_settings", {
+	key: text().primaryKey().notNull(),
+	value: text().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
 export const popups = pgTable("popups", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	title: text().notNull(),
@@ -397,6 +403,15 @@ export const verificationTokens = pgTable("verification_tokens", {
 	expires: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
 }, (table) => [
 	primaryKey({ columns: [table.token, table.identifier], name: "verification_tokens_pkey"}),
+]);
+
+export const rateLimits = pgTable("rate_limits", {
+	key: text().notNull(),
+	windowStart: timestamp("window_start", { withTimezone: true, mode: 'string' }).notNull(),
+	hits: integer().default(0).notNull(),
+}, (table) => [
+	index("rate_limits_window_idx").using("btree", table.windowStart.asc().nullsLast().op("timestamptz_ops")),
+	primaryKey({ columns: [table.windowStart, table.key], name: "rate_limits_pkey"}),
 ]);
 
 export const accounts = pgTable("accounts", {

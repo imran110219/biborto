@@ -525,6 +525,32 @@ create trigger popups_set_updated_at
   for each row execute function set_updated_at();
 
 -- ---------------------------------------------------------------------
+-- site_settings — committee-editable settings (see db/migrations/014_site_settings.sql).
+-- ---------------------------------------------------------------------
+create table site_settings (
+  key         text        primary key,
+  value       text        not null,
+  updated_at  timestamptz not null default now()
+);
+
+create trigger site_settings_set_updated_at
+  before update on site_settings
+  for each row execute function set_updated_at();
+
+-- ---------------------------------------------------------------------
+-- rate_limits — fixed-window counters used by lib/security/rate-limit.ts
+-- (see db/migrations/013_rate_limits.sql).
+-- ---------------------------------------------------------------------
+create table rate_limits (
+  key          text        not null,
+  window_start timestamptz not null,
+  hits         integer     not null default 0,
+  primary key (key, window_start)
+);
+
+create index rate_limits_window_idx on rate_limits (window_start);
+
+-- ---------------------------------------------------------------------
 -- activity_log — backs the admin dashboard's "Recent activity" panel.
 -- summary is a precomputed human-readable string (not reconstructed
 -- from target_type/target_id at read time) so entries stay meaningful

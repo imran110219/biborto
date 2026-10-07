@@ -37,6 +37,12 @@ this isn't a speculative model, it's what the UI assumes.
 - `db/migrations/010_one_active_diamond_sponsor.sql` — partial unique index so
   at most one *active* diamond sponsor exists. Deactivate extra active
   diamonds before applying to an existing database, then `npm run db:pull`.
+- `db/migrations/014_site_settings.sql` — adds the `site_settings` key/value table
+  behind `/admin/settings` (organization name, contact email, social links, reunion
+  fee and deadline). Apply to an existing database, then `npm run db:pull`.
+- `db/migrations/013_rate_limits.sql` — adds the `rate_limits` table (fixed-window
+  counters used by `web/lib/security/rate-limit.ts`). Apply to an existing database,
+  then `npm run db:pull`.
 - `db/migrations/012_blog_submissions.sql` — adds `pending` and `rejected` to the
   `blog_status` enum (member blog submissions awaiting / failing review). Apply to
   an existing database, then `npm run db:pull`.
@@ -222,12 +228,12 @@ then seeds from scratch.
 - **Most core write paths are wired into `web/`.** Auth, member and
   business review/edit, business submission, event RSVP, and admin CRUD
   for events, sponsors, videos and blog posts write to Postgres.
-- Admin CSV import is not implemented; the current roster is loaded
-  through `db/seed_members.sql`, and a superadmin can add individual
-  members at `/admin/members/new` (a `members` row only — no `users` row
+- The current roster is loaded through `db/seed_members.sql`; a superadmin can add
+  individual members at `/admin/members/new` or in bulk with the CSV import at
+  `/admin/members/import` (a `members` row only — no `users` row
   until the person claims it). There is no open account registration.
-- No `activity_log` seed data — no source for it in `mock-data.ts` (the
-  dashboard's activity feed text is hardcoded in the page component).
+- No `activity_log` seed data: the dashboard feed fills as admins and members act
+  (`web/lib/activity.ts` writes the rows; see "Activity feed" in docs/web/README.md).
 - Gallery R2 configuration is per environment: credentials, bucket name,
   and a public bucket URL must be set before uploads and image display
   work. Upload and photo-management actions check admin/superadmin access

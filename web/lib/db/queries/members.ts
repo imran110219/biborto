@@ -40,6 +40,91 @@ export async function getPublicMembers(): Promise<PublicMember[]> {
   }));
 }
 
+export const PUBLIC_MEMBERS_PAGE_SIZE = 24;
+
+export interface PublicMemberFilters {
+  q?: string;
+  disciplineId?: string;
+  city?: string;
+}
+
+function publicMemberWhere(filters: PublicMemberFilters) {
+  const conditions: (SQL | undefined)[] = [eq(members.status, "active"), eq(members.isPublic, true)];
+  const q = filters.q?.trim();
+  if (q) {
+    // Escape LIKE wildcards so a literal % or _ isn't treated as a pattern.
+    const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
+    conditions.push(
+      or(
+        ilike(members.name, pattern),
+        ilike(members.profession, pattern),
+        ilike(members.currentEmployer, pattern),
+        ilike(members.city, pattern),
+      ),
+    );
+  }
+  if (filters.disciplineId) conditions.push(eq(members.disciplineId, filters.disciplineId));
+  if (filters.city) conditions.push(eq(members.city, filters.city));
+  return and(...conditions);
+}
+
+// Filtered, paginated public directory. Only the columns PublicMember carries
+// are selected (no email/phone/etc. — see the comment on getPublicMembers).
+export async function getPublicMembersPage(filters: PublicMemberFilters & { page: number }) {
+  const where = publicMemberWhere(filters);
+  const [{ total }] = await db.select({ total: count() }).from(members).where(where);
+  const pageCount = Math.max(1, Math.ceil(total / PUBLIC_MEMBERS_PAGE_SIZE));
+  const page = Math.min(Math.max(1, filters.page), pageCount);
+
+  const rows = await db
+    .select({
+      id: members.id,
+      slug: members.slug,
+      name: members.name,
+      discipline: disciplines.name,
+      profession: members.profession,
+      city: members.city,
+      avatarKey: members.avatarKey,
+    })
+    .from(members)
+    .leftJoin(disciplines, eq(disciplines.id, members.disciplineId))
+    .where(where)
+    .orderBy(members.name)
+    .limit(PUBLIC_MEMBERS_PAGE_SIZE)
+    .offset((page - 1) * PUBLIC_MEMBERS_PAGE_SIZE);
+
+  const items: PublicMember[] = rows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    initials: initialsOf(row.name),
+    discipline: row.discipline ?? "Not provided",
+    profession: row.profession ?? "",
+    city: row.city ?? "",
+    avatarKey: row.avatarKey ?? undefined,
+    avatarUrl: row.avatarKey ? getR2PublicUrl(row.avatarKey) : undefined,
+  }));
+  return { items, total, page, pageCount };
+}
+
+// Filter options drawn from what's actually published, so every choice returns results.
+export async function getPublicMemberFilterOptions() {
+  const visible = and(eq(members.status, "active"), eq(members.isPublic, true));
+  const [disciplineRows, cityRows] = await Promise.all([
+    db
+      .selectDistinct({ id: disciplines.id, name: disciplines.name })
+      .from(members)
+      .innerJoin(disciplines, eq(disciplines.id, members.disciplineId))
+      .where(visible)
+      .orderBy(disciplines.name),
+    db.selectDistinct({ city: members.city }).from(members).where(visible).orderBy(members.city),
+  ]);
+  return {
+    disciplines: disciplineRows,
+    cities: cityRows.map((r) => r.city).filter((c): c is string => !!c),
+  };
+}
+
 export async function getPublicMemberBySlug(slug: string): Promise<PublicMemberDetail | undefined> {
   const [row] = await db
     .select({

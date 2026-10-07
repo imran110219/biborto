@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { connection } from "next/server";
 import { SessionProvider } from "next-auth/react";
 import { SessionSync } from "@/components/SessionSync";
-import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 import { fraunces, instrumentSans } from "@/lib/fonts";
 import "./globals.css";
 
@@ -19,6 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   await connection();
+  const nonce = (await headers()).get("x-nonce") ?? undefined; // set per request by proxy.ts for the CSP
 
   return (
     <html lang="en" className={`${fraunces.variable} ${instrumentSans.variable}`}>
@@ -27,7 +29,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <SessionSync />
           {children}
         </SessionProvider>
-        <GoogleAnalytics measurementId={process.env.GA_MEASUREMENT_ID} />
+        <AnalyticsConsent measurementId={process.env.GA_MEASUREMENT_ID} nonce={nonce} />
       </body>
     </html>
   );

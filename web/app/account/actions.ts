@@ -9,6 +9,8 @@ import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/auth-schema";
 import { members } from "@/drizzle/schema";
 import { parseSelfProfileForm } from "@/lib/members/form";
+import { consume, formatWait, peek, reset } from "@/lib/security/rate-limit";
+import { LIMITS } from "@/lib/security/limits";
 
 // Self-service: every action here acts on the signed-in member only. The member
 // id is resolved from the session (never taken from the form), and the profile
@@ -66,10 +68,16 @@ export async function changePassword(_prevState: PasswordState, formData: FormDa
   const [user] = await db.select({ id: users.id, passwordHash: users.passwordHash }).from(users).where(eq(users.id, session.user.id)).limit(1);
   if (!user) return { ok: false, message: "Sign in again to change your password." };
 
+  // Guessing the current password from a hijacked session is the attack this stops.
+  const lockKey = `pwchange:user:${user.id}`;
+  const lock = await peek(lockKey, LIMITS.passwordChange);
+  if (lock.blocked) return { ok: false, message: `Too many incorrect attempts. Try again in ${formatWait(lock.retryAfterSeconds)}.` };
+
   // A Google-only account has no password yet, so there's nothing to confirm —
   // the live session is the proof. Everyone else must give their current one.
   if (user.passwordHash) {
     if (!current || !(await bcrypt.compare(current, user.passwordHash))) {
+      await consume(lockKey, LIMITS.passwordChange);
       return { ok: false, message: "Your current password is incorrect." };
     }
     if (await bcrypt.compare(next, user.passwordHash)) {
@@ -78,5 +86,6 @@ export async function changePassword(_prevState: PasswordState, formData: FormDa
   }
 
   await db.update(users).set({ passwordHash: await bcrypt.hash(next, 10) }).where(eq(users.id, user.id));
+  await reset(lockKey);
   return { ok: true, message: user.passwordHash ? "Password updated." : "Password set. You can now sign in with your email and password too." };
 }

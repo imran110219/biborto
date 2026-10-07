@@ -51,6 +51,12 @@ export default async function AdminMembersPage({ searchParams }: PageProps<"/adm
             >
               <DownloadIcon /> Export CSV
             </a>
+            <Link
+              href="/admin/members/import"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-border-default bg-white px-5 text-sm font-semibold text-text-primary transition-colors hover:bg-black/5"
+            >
+              Import CSV
+            </Link>
             <Button size="sm" href="/admin/members/new">
               <PlusIcon /> Add member
             </Button>

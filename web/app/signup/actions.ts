@@ -9,6 +9,9 @@ import { members } from "@/drizzle/schema";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { claimLink, sendClaimEmail } from "@/lib/email";
+import { headers } from "next/headers";
+import { clientIp, consume, formatWait, normalizeKeyPart } from "@/lib/security/rate-limit";
+import { LIMITS } from "@/lib/security/limits";
 
 // "Claim" not "sign up": members are committee-entered before anyone
 // ever logs in (see db/schema.sql's comment on `members`), so this
@@ -36,6 +39,18 @@ export async function requestClaim(_prevState: string | undefined, formData: For
   const email = formData.get("email");
   if (typeof email !== "string" || !email.includes("@")) return "Enter your email address.";
   const normalizedEmail = email.trim().toLowerCase();
+
+  // Cap how many of these emails one address / one IP can trigger (they cost money
+  // and can be used to pester a member). Keyed on the typed email, so the answer
+  // never reveals whether an account exists.
+  const ip = clientIp(await headers());
+  const [perEmail, perIp] = await Promise.all([
+    consume(`claim:email:${normalizeKeyPart(normalizedEmail)}`, LIMITS.emailRequestEmail),
+    consume(`claim:ip:${ip}`, LIMITS.emailRequestIp),
+  ]);
+  if (!perEmail.allowed || !perIp.allowed) {
+    return `Too many requests. Please try again in ${formatWait(Math.max(perEmail.retryAfterSeconds, perIp.retryAfterSeconds))}.`;
+  }
 
   const [member] = await db
     .select()

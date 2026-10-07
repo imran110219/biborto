@@ -179,6 +179,8 @@ export interface EventItem {
   description: string;
   featured?: boolean;
   isPublic: boolean;
+  // True once the event date has passed (Asia/Dhaka calendar day).
+  past?: boolean;
 }
 
 export const EVENT_CATEGORIES = ["Reunion", "Online", "Chapter", "Volunteer"] as const;

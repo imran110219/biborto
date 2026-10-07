@@ -1,5 +1,6 @@
 "use server";
 
+import { logActivity } from "@/lib/activity";
 import { redirect } from "next/navigation";
 import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
@@ -83,6 +84,8 @@ export async function submitBusiness(_prevState: string | undefined, formData: F
     return true;
   });
   if (!accepted) return `You can list at most ${MAX_BUSINESSES_PER_MEMBER} businesses. Contact the committee if you need another.`;
+
+  await logActivity({ actorId: memberId, action: "business.submitted", targetType: "business", summary: `{actor} submitted the business listing "${name}" for review` });
 
   redirect("/business?submitted=1");
 }

@@ -1,8 +1,11 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { events } from "@/drizzle/schema";
 import { eventMonthAbbrev, eventDayPadded, eventDateLabel, eventTimeLabel } from "@/lib/db/format";
 import type { AdminEventDetail, EventItem } from "@/lib/types";
+
+// "Today" as the committee sees it (Bangladesh), not the server's timezone.
+const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(new Date());
 
 function toEventItem(row: typeof events.$inferSelect): EventItem {
   return {
@@ -18,6 +21,7 @@ function toEventItem(row: typeof events.$inferSelect): EventItem {
     description: row.description ?? "",
     featured: row.featured,
     isPublic: row.isPublic,
+    past: row.eventDate < today(),
   };
 }
 
@@ -46,19 +50,45 @@ export async function getAdminUpcomingEvents(): Promise<EventItem[]> {
   return rows.map(toEventItem);
 }
 
-// Scoped to upcoming events only, same as getUpcomingEvents() — there's
-// no "past events" page anywhere on the public site yet (the /events
-// "Past events" tab is a decorative placeholder), so a past event's
-// detail page correctly 404s for now rather than existing with nothing
-// linking to it.
+// Past events stay reachable by their link (RSVP is closed on them) and are
+// listed under the "Past events" tab of /events.
+export async function getPastEvents(): Promise<EventItem[]> {
+  const rows = await db
+    .select()
+    .from(events)
+    .where(and(lt(events.eventDate, sql`current_date`), eq(events.isPublic, true)))
+    .orderBy(desc(events.eventDate));
+
+  return rows.map(toEventItem);
+}
+
 export async function getEventBySlug(slug: string): Promise<EventItem | undefined> {
   const [row] = await db
     .select()
     .from(events)
-    .where(and(eq(events.slug, slug), gte(events.eventDate, sql`current_date`), eq(events.isPublic, true)))
+    .where(and(eq(events.slug, slug), eq(events.isPublic, true)))
     .limit(1);
 
   return row ? toEventItem(row) : undefined;
+}
+
+// Raw date/time fields for the .ics download (EventItem only has display strings).
+export async function getEventCalendarData(slug: string) {
+  const [row] = await db
+    .select({
+      slug: events.slug,
+      title: events.title,
+      eventDate: events.eventDate,
+      startTime: events.startTime,
+      endTime: events.endTime,
+      location: events.location,
+      description: events.description,
+      updatedAt: events.updatedAt,
+    })
+    .from(events)
+    .where(and(eq(events.slug, slug), eq(events.isPublic, true)))
+    .limit(1);
+  return row;
 }
 
 // Admin-only: every event regardless of date, newest first — unlike the

@@ -1,5 +1,6 @@
 "use server";
 
+import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq, inArray } from "drizzle-orm";
@@ -17,12 +18,24 @@ const revalidateBusinessPaths = () => {
   revalidatePath("/business");
 };
 
+async function logBusiness(actorId: string, slug: string, verb: "approved" | "rejected") {
+  const [row] = await db.select({ id: businesses.id, name: businesses.name }).from(businesses).where(eq(businesses.slug, slug)).limit(1);
+  await logActivity({
+    actorId,
+    action: `business.${verb}`,
+    targetType: "business",
+    targetId: row?.id,
+    summary: `{actor} ${verb} the business listing "${row?.name ?? slug}"`,
+  });
+}
+
 export async function approveBusiness(slug: string, _formData: FormData) {
   const adminId = await requireSuperadmin();
   await db
     .update(businesses)
     .set({ status: "active", reviewedBy: adminId, reviewedAt: new Date().toISOString() })
     .where(eq(businesses.slug, slug));
+  await logBusiness(adminId, slug, "approved");
 
   revalidateBusinessPaths();
 }
@@ -33,6 +46,7 @@ export async function rejectBusiness(slug: string, _formData: FormData) {
     .update(businesses)
     .set({ status: "rejected", reviewedBy: adminId, reviewedAt: new Date().toISOString() })
     .where(eq(businesses.slug, slug));
+  await logBusiness(adminId, slug, "rejected");
 
   revalidateBusinessPaths();
 }
@@ -46,6 +60,12 @@ async function bulkSetBusinessStatus(status: BusinessStatus, formData: FormData)
     .update(businesses)
     .set({ status, reviewedBy: adminId, reviewedAt: new Date().toISOString() })
     .where(inArray(businesses.slug, slugs));
+  await logActivity({
+    actorId: adminId,
+    action: status === "active" ? "business.bulk_approved" : "business.bulk_rejected",
+    targetType: "business",
+    summary: `{actor} ${status === "active" ? "approved" : "rejected"} ${slugs.length} business listing${slugs.length === 1 ? "" : "s"}`,
+  });
 
   revalidateBusinessPaths();
 }

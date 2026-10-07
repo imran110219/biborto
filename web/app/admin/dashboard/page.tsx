@@ -2,12 +2,10 @@ import Link from "next/link";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminStatCard } from "@/components/admin/AdminStatCard";
 import { ApprovalRow } from "@/components/admin/ApprovalRow";
-import { Button } from "@/components/ui/Button";
 import {
   BriefcaseIcon,
   CalendarIcon,
   DocumentIcon,
-  DownloadIcon,
   EditIcon,
   MembersIcon,
   PhotoIcon,
@@ -17,6 +15,8 @@ import { getAdminBusinesses } from "@/lib/db/queries/businesses";
 import { getAdminUpcomingEvents } from "@/lib/db/queries/events";
 import { getRsvpSummary } from "@/lib/db/queries/rsvps";
 import { getAdminPosts } from "@/lib/db/queries/blog";
+import { getAdminMediaStats } from "@/lib/db/queries/stats";
+import { getRecentActivity, timeAgo } from "@/lib/db/queries/activity";
 import { auth } from "@/auth";
 import { approveMember, suspendMember } from "@/app/admin/members/actions";
 import { approveBusiness, rejectBusiness } from "@/app/admin/businesses/actions";
@@ -33,17 +33,16 @@ export default async function AdminDashboardPage() {
   const eventRsvpSummaries = await Promise.all(events.slice(0, 3).map((e) => getRsvpSummary(e.id)));
   const posts = await getAdminPosts();
   const pendingPosts = posts.filter((p) => p.status === "pending");
+  const [media, activity] = await Promise.all([getAdminMediaStats(), getRecentActivity()]);
+  const firstName = session?.user?.name?.split(" ")[0];
 
   return (
     <AdminLayout>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
-          <h1 className="font-serif text-4xl font-medium">Good morning, Sadman</h1>
+          <h1 className="font-serif text-4xl font-medium">{firstName ? `Welcome back, ${firstName}` : "Welcome back"}</h1>
           <p className="text-text-secondary">Here is what needs your attention today.</p>
         </div>
-        <Button variant="ghost" size="sm">
-          <DownloadIcon /> Export report
-        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-5 md:grid-cols-5">
@@ -55,7 +54,7 @@ export default async function AdminDashboardPage() {
           caption={events[0] ? `Next: ${events[0].title}, ${events[0].dateLabel}` : "None scheduled"}
           icon={<CalendarIcon />}
         />
-        <AdminStatCard label="Photos & videos" value="[000]" caption="[00] uploads this month" icon={<PhotoIcon />} />
+        <AdminStatCard label="Photos & videos" value={String(media.photos + media.videos)} caption={`${media.uploadsThisMonth} added this month`} icon={<PhotoIcon />} />
         <AdminStatCard label="Business listings" value={String(allBusinesses.length)} caption={`${pendingBusinesses.length} waiting for approval`} icon={<BriefcaseIcon />} />
       </div>
 
@@ -152,18 +151,14 @@ export default async function AdminDashboardPage() {
         <div className="border-b border-[#EFEAE0] px-6 py-5">
           <h2 className="text-lg font-semibold">Recent activity</h2>
         </div>
-        {[
-          { text: "Arif Khan submitted a blog post for review", time: "2 hours ago" },
-          { text: 'Nusrat Jahan uploaded photos to "Convocation"', time: "Yesterday" },
-          { text: "A new video was added from YouTube", time: "2 days ago" },
-          { text: 'Event "Tree planting at Gollamari" was published', time: "3 days ago" },
-        ].map((a) => (
-          <div key={a.text} className="flex items-center gap-3.5 border-b border-[#EFEAE0] px-6 py-3.5 text-[15px] last:border-0">
+        {activity.length === 0 && <p className="px-6 py-5 text-sm text-text-secondary">Nothing has happened yet. Approvals, submissions and new events will show up here.</p>}
+        {activity.map((a) => (
+          <div key={a.id} className="flex items-center gap-3.5 border-b border-[#EFEAE0] px-6 py-3.5 text-[15px] last:border-0">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-amber-tint text-accent-amber-text">
               <EditIcon />
             </span>
-            <span className="flex-1">{a.text}</span>
-            <span className="text-sm text-text-secondary">{a.time}</span>
+            <span className="flex-1">{a.summary}</span>
+            <span className="text-sm text-text-secondary">{timeAgo(a.createdAt)}</span>
           </div>
         ))}
       </div>

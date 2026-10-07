@@ -1,5 +1,6 @@
 "use server";
 
+import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq, sql } from "drizzle-orm";
@@ -108,21 +109,28 @@ export async function savePost(id: string, status: BlogPostStatus, formData: For
 
 // Review of a member-submitted post. Approving publishes it (keeping an existing
 // published_at); rejecting keeps it out of the public site.
+async function logPost(actorId: string, id: string, verb: "approved" | "rejected") {
+  const [row] = await db.select({ title: blogPosts.title }).from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
+  await logActivity({ actorId, action: `blog_post.${verb}`, targetType: "blog_post", targetId: id, summary: `{actor} ${verb} the blog post "${row?.title ?? "(untitled)"}"` });
+}
+
 export async function approvePost(id: string, _formData: FormData) {
-  await requireAdminMemberId();
+  const adminId = await requireAdminMemberId();
   await db
     .update(blogPosts)
     .set({ status: "published", publishedAt: sql`coalesce(${blogPosts.publishedAt}, now())` })
     .where(eq(blogPosts.id, id));
+  await logPost(adminId, id, "approved");
   revalidatePostPaths(id);
-  revalidatePath("/account");
+  revalidatePath("/account", "layout");
 }
 
 export async function rejectPost(id: string, _formData: FormData) {
-  await requireAdminMemberId();
+  const adminId = await requireAdminMemberId();
   await db.update(blogPosts).set({ status: "rejected" }).where(eq(blogPosts.id, id));
+  await logPost(adminId, id, "rejected");
   revalidatePostPaths(id);
-  revalidatePath("/account");
+  revalidatePath("/account", "layout");
 }
 
 export async function deletePost(id: string, _formData: FormData) {

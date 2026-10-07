@@ -7,6 +7,29 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db/client";
 import { users, accounts, sessions, verificationTokens } from "@/lib/db/auth-schema";
 import { members } from "@/drizzle/schema";
+import { clientIp, consume, normalizeKeyPart, peek, reset } from "@/lib/security/rate-limit";
+import { LIMITS } from "@/lib/security/limits";
+
+// A genuine bcrypt hash, compared against when the email is unknown so a missing
+// account takes as long to reject as a wrong password does (no timing oracle).
+const DUMMY_HASH = bcrypt.hashSync("not-a-real-password-used-for-timing", 10);
+
+export const signInKeys = (email: string, ip: string) => ({
+  pair: `signin:pair:${normalizeKeyPart(email)}|${ip}`,
+  email: `signin:email:${normalizeKeyPart(email)}`,
+  ip: `signin:ip:${ip}`,
+});
+
+/** Seconds until sign-in is allowed again for this email/IP, or 0 when it is. */
+export async function signInLockSeconds(email: string, ip: string): Promise<number> {
+  const keys = signInKeys(email, ip);
+  const [pair, perEmail, perIp] = await Promise.all([
+    peek(keys.pair, LIMITS.signInPair),
+    peek(keys.email, LIMITS.signInEmail),
+    peek(keys.ip, LIMITS.signInIp),
+  ]);
+  return Math.max(...[pair, perEmail, perIp].map((r) => (r.blocked ? r.retryAfterSeconds : 0)));
+}
 
 // Members are committee-entered before anyone ever logs in (see
 // db/schema.sql's comment on `members`) — there is no open signup.
@@ -50,7 +73,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         // Returns null (never a distinguishing error) for every failure
         // case — wrong password, no account, unclaimed member, no
         // longer active — so the sign-in form can't be used to probe
@@ -60,17 +83,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (typeof email !== "string" || typeof password !== "string") return null;
         const normalizedEmail = email.trim().toLowerCase();
 
+        // Brute-force protection lives here, not only in the sign-in form's action,
+        // because anyone can POST straight to /api/auth/callback/credentials.
+        const ip = clientIp(request.headers);
+        if ((await signInLockSeconds(normalizedEmail, ip)) > 0) return null;
+        const keys = signInKeys(normalizedEmail, ip);
+        const fail = async () => {
+          await Promise.all([
+            consume(keys.pair, LIMITS.signInPair),
+            consume(keys.email, LIMITS.signInEmail),
+            consume(keys.ip, LIMITS.signInIp),
+          ]);
+          return null;
+        };
+
         const [user] = await db
           .select()
           .from(users)
           .where(sql`lower(${users.email}) = ${normalizedEmail}`)
           .limit(1);
-        if (!user?.passwordHash) return null;
-        if (!(await bcrypt.compare(password, user.passwordHash))) return null;
+        if (!user?.passwordHash) {
+          await bcrypt.compare(password, DUMMY_HASH);
+          return fail();
+        }
+        if (!(await bcrypt.compare(password, user.passwordHash))) return fail();
 
         const member = await activeMemberByEmail(normalizedEmail);
-        if (!member) return null; // claimed, but not (or no longer) an active member
+        if (!member) return fail(); // claimed, but not (or no longer) an active member
 
+        await reset(keys.pair); // a good sign-in clears this pair's failures (the per-email/IP ceilings keep counting)
         return { id: user.id, email: user.email, name: user.name };
       },
     }),
@@ -113,22 +154,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         .onConflictDoNothing({ target: members.email });
       return false;
     },
-    // Role goes into the token (not re-fetched from the DB on every
-    // request) specifically so middleware.ts can gate /admin/** by role
-    // from the decoded JWT alone — middleware runs on the Edge runtime,
-    // where `postgres` (a raw TCP driver) doesn't work. A role change
-    // takes effect on that member's next sign-in, not instantly.
+    // The token carries the member's role so the proxy and pages can gate /admin/**
+    // without a lookup of their own — but a role in a token goes stale: a demoted
+    // admin or a suspended member would keep access until the token expires (7
+    // days). So on every request after sign-in the member row is re-read here: a
+    // changed role takes effect immediately, and a member who is no longer active
+    // (suspended, deleted) gets their session ended — returning null from this
+    // callback clears the session. It is one indexed lookup per request. (Next 16's
+    // proxy runs on Node.js, so this works there too.)
     async jwt({ token, user }) {
+      const userId = user?.id ?? (token.userId as string | undefined);
+      if (!userId) return token;
+
+      const [member] = await db
+        .select({ id: members.id, platformRole: members.platformRole, status: members.status })
+        .from(members)
+        .where(eq(members.userId, userId))
+        .limit(1);
+
       if (user?.id) {
+        // Signing in: the sign-in gates already required an active member.
         token.userId = user.id;
-        const [member] = await db
-          .select({ id: members.id, platformRole: members.platformRole })
-          .from(members)
-          .where(eq(members.userId, user.id))
-          .limit(1);
         token.platformRole = member?.platformRole ?? "member";
         token.memberId = member?.id;
+        return token;
       }
+
+      if (!member || member.status !== "active") return null; // end the session
+      token.platformRole = member.platformRole;
+      token.memberId = member.id;
       return token;
     },
     async session({ session, token }) {

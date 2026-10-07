@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { signOut, useSession } from "next-auth/react";
-import { clearAllDrafts } from "@/lib/blog/draft";
+import { useSession } from "next-auth/react";
+import { MEMBER_LINKS, MemberMenu, signOutMember } from "@/components/layout/MemberMenu";
 import { LockIcon, MenuIcon } from "@/components/ui/icons";
 
 const NAV_ITEMS = [
@@ -41,32 +41,22 @@ function AccountActions({
     );
   }
 
+  if (!mobile) return <MemberMenu isAdmin={isAdmin} />;
+
+  const item = "flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold text-text-primary";
   return (
-    <div className={`${mobile ? "mt-2 flex flex-col" : "hidden md:flex"} items-center gap-2`}>
-      <Link
-        href="/account"
-        onClick={onNavigate}
-        className={`${mobile ? "h-11 w-full justify-center" : "h-9 px-3"} flex items-center rounded-full text-sm font-semibold text-text-primary`}
-      >
-        My account
-      </Link>
+    <div className="mt-2 flex flex-col gap-1 border-t border-border-default pt-2">
+      {MEMBER_LINKS.map((l) => (
+        <Link key={l.href} href={l.href} onClick={onNavigate} className={item}>
+          {l.label}
+        </Link>
+      ))}
       {isAdmin && (
-        <Link
-          href="/admin/dashboard"
-          onClick={onNavigate}
-          className="flex h-11 items-center rounded-full bg-brand-green px-5 text-sm font-semibold text-white"
-        >
+        <Link href="/admin/dashboard" onClick={onNavigate} className="flex h-11 items-center justify-center rounded-full bg-brand-green px-5 text-sm font-semibold text-white">
           Admin dashboard
         </Link>
       )}
-      <button
-        type="button"
-        onClick={() => {
-          clearAllDrafts(); // unsent blog drafts stay private to the person who wrote them
-          void signOut({ redirectTo: "/" });
-        }}
-        className={`${mobile ? "h-11 w-full" : "h-9 px-3"} rounded-full text-sm font-semibold text-text-secondary`}
-      >
+      <button type="button" onClick={signOutMember} className="h-11 w-full rounded-full text-sm font-semibold text-text-secondary">
         Sign out
       </button>
     </div>

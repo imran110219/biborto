@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { CookieSettingsLink } from "@/components/AnalyticsConsent";
+import { getSiteSettings, safeHttpUrl } from "@/lib/settings";
 
-export function Footer() {
+export async function Footer() {
+  const settings = await getSiteSettings();
+  const youtube = safeHttpUrl(settings.youtube_url);
+  const facebook = safeHttpUrl(settings.facebook_url);
+  const contact = settings.contact_email;
   return (
     <footer className="mt-auto flex flex-col gap-12 bg-brand-green-dark px-5 py-16 text-bg-public md:px-20">
       <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
@@ -29,19 +35,24 @@ export function Footer() {
 
         <FooterColumn title="Community">
           <FooterLink href="/signin">Member login</FooterLink>
-          <FooterLink href="/signin">Share your story</FooterLink>
-          <FooterLink href="#">Contact the committee</FooterLink>
+          <FooterLink href="/blog/submit">Share your story</FooterLink>
+          {contact && <FooterLink href={`mailto:${contact}`}>Contact the committee</FooterLink>}
         </FooterColumn>
 
-        <FooterColumn title="Follow us">
-          <FooterLink href="#">YouTube channel</FooterLink>
-          <FooterLink href="#">Facebook group</FooterLink>
-        </FooterColumn>
+        {(youtube || facebook) && (
+          <FooterColumn title="Follow us">
+            {youtube && <FooterLink href={youtube} external>YouTube channel</FooterLink>}
+            {facebook && <FooterLink href={facebook} external>Facebook group</FooterLink>}
+          </FooterColumn>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 border-t border-brand-green-mid pt-6 text-sm text-brand-green-tint sm:flex-row sm:justify-between">
-        <span>© Batch 11, Khulna University</span>
-        <span>Maintained by the Batch 11 committee</span>
+        <span>© {settings.org_name}</span>
+        <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
+          <CookieSettingsLink />
+          <span>Maintained by the Batch 11 committee</span>
+        </span>
       </div>
     </footer>
   );
@@ -56,7 +67,14 @@ function FooterColumn({ title, children }: { title: string; children: React.Reac
   );
 }
 
-function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+function FooterLink({ href, children, external }: { href: string; children: React.ReactNode; external?: boolean }) {
+  if (external || href.startsWith("mailto:")) {
+    return (
+      <a href={href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-sm text-bg-public hover:underline">
+        {children}
+      </a>
+    );
+  }
   return (
     <Link href={href} className="text-sm text-bg-public hover:underline">
       {children}

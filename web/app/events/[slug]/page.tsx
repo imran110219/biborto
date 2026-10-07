@@ -9,6 +9,7 @@ import { EventCard } from "@/components/EventCard";
 import { ArrowRightIcon, CalendarIcon, ClockIcon, MembersIcon, PinIcon } from "@/components/ui/icons";
 import { getUpcomingEvents, getEventBySlug } from "@/lib/db/queries/events";
 import { getDiamondSponsor } from "@/lib/db/queries/sponsors";
+import { fillReunionPlaceholders, getSiteSettings } from "@/lib/settings";
 import { getGoingCount, getMemberRsvpStatus } from "@/lib/db/queries/rsvps";
 import { getSessionMemberId } from "@/lib/auth/session-member";
 import { rsvpGoing, cancelRsvp } from "./actions";
@@ -21,6 +22,7 @@ export default async function EventDetailPage({ params }: PageProps<"/events/[sl
   const others = (await getUpcomingEvents()).filter((e) => e.slug !== event.slug).slice(0, 3);
   const sponsor = event.featured ? await getDiamondSponsor() : undefined;
   const memberId = await getSessionMemberId();
+  const settings = await getSiteSettings();
   const [goingCount, rsvpStatus] = await Promise.all([
     getGoingCount(event.id),
     memberId ? getMemberRsvpStatus(event.id, memberId) : Promise.resolve(undefined),
@@ -50,7 +52,7 @@ export default async function EventDetailPage({ params }: PageProps<"/events/[sl
               <PinIcon className="text-brand-green" size={18} /> {event.location}
             </span>
             <span className="flex items-center gap-2.5">
-              <MembersIcon className="text-brand-green" /> {goingCount} batchmate{goingCount === 1 ? "" : "s"} going
+              <MembersIcon className="text-brand-green" /> {goingCount} batchmate{goingCount === 1 ? "" : "s"} {event.past ? "went" : "going"}
             </span>
           </div>
         </div>
@@ -58,7 +60,7 @@ export default async function EventDetailPage({ params }: PageProps<"/events/[sl
         <PlaceholderMedia label={`[Event banner: ${event.title}]`} className="h-[300px] w-full max-w-[1120px] md:h-[480px]" rounded="rounded-3xl" />
 
         <div className="flex w-full max-w-[720px] flex-col gap-6">
-          {event.description && <p className="text-lg leading-relaxed text-text-article">{event.description}</p>}
+          {event.description && <p className="text-lg leading-relaxed text-text-article">{fillReunionPlaceholders(event.description, settings)}</p>}
 
           {sponsor && (
             <div className="flex items-center gap-2.5 text-sm text-text-secondary">
@@ -71,7 +73,9 @@ export default async function EventDetailPage({ params }: PageProps<"/events/[sl
           )}
 
           <div className="flex flex-wrap gap-3">
-            {!memberId ? (
+            {event.past ? (
+              <p className="rounded-xl bg-white px-4 py-3 text-sm text-text-secondary">This event has ended. RSVP is closed.</p>
+            ) : !memberId ? (
               <Button href={`/signin?callbackUrl=/events/${event.slug}`}>
                 RSVP, I&apos;m going <ArrowRightIcon />
               </Button>
@@ -88,9 +92,11 @@ export default async function EventDetailPage({ params }: PageProps<"/events/[sl
                 </Button>
               </form>
             )}
-            <Button href="#" variant="secondary">
-              Add to calendar
-            </Button>
+            {!event.past && (
+              <Button href={`/events/${event.slug}/calendar.ics`} variant="secondary">
+                Add to calendar
+              </Button>
+            )}
           </div>
         </div>
       </article>

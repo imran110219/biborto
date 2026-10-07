@@ -5,14 +5,23 @@ import { PlaceholderMedia } from "@/components/ui/PlaceholderMedia";
 import { CategoryTag } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ArrowRightIcon, CalendarIcon, ClockIcon, MembersIcon, PinIcon } from "@/components/ui/icons";
-import { getUpcomingEvents } from "@/lib/db/queries/events";
+import { getPastEvents, getUpcomingEvents } from "@/lib/db/queries/events";
+import { getGoingCounts } from "@/lib/db/queries/rsvps";
 import { getDiamondSponsor } from "@/lib/db/queries/sponsors";
+import { fillReunionPlaceholders, getSiteSettings } from "@/lib/settings";
 
-export default async function EventsPage() {
-  const events = await getUpcomingEvents();
-  const featured = events.find((e) => e.featured);
-  const rest = events.filter((e) => !e.featured);
-  const sponsor = await getDiamondSponsor();
+export const metadata = { title: "Events — Batch 11" };
+
+export default async function EventsPage({ searchParams }: PageProps<"/events">) {
+  const { view } = await searchParams;
+  const past = view === "past";
+  const events = past ? await getPastEvents() : await getUpcomingEvents();
+  const featured = past ? undefined : events.find((e) => e.featured);
+  const rest = events.filter((e) => e !== featured);
+  const settings = await getSiteSettings();
+  const sponsor = featured ? await getDiamondSponsor() : undefined;
+  const goingCounts = await getGoingCounts(featured ? [featured.id] : []);
+  const featuredGoing = featured ? (goingCounts.get(featured.id) ?? 0) : 0;
 
   return (
     <PublicLayout>
@@ -24,12 +33,20 @@ export default async function EventsPage() {
 
       <section className="flex flex-col gap-8 px-5 pb-24 md:px-20">
         <div className="flex gap-2">
-          <button className="h-11 rounded-full bg-text-primary px-5 text-sm font-semibold text-bg-public">
+          <Link
+            href="/events"
+            aria-current={!past ? "page" : undefined}
+            className={`flex h-11 items-center rounded-full px-5 text-sm font-semibold ${!past ? "bg-text-primary text-bg-public" : "border border-border-input bg-white"}`}
+          >
             Upcoming
-          </button>
-          <button className="h-11 rounded-full border border-border-input bg-white px-5 text-sm font-semibold">
+          </Link>
+          <Link
+            href="/events?view=past"
+            aria-current={past ? "page" : undefined}
+            className={`flex h-11 items-center rounded-full px-5 text-sm font-semibold ${past ? "bg-text-primary text-bg-public" : "border border-border-input bg-white"}`}
+          >
             Past events
-          </button>
+          </Link>
         </div>
 
         {featured && (
@@ -49,10 +66,10 @@ export default async function EventsPage() {
                   <PinIcon className="text-brand-green" size={18} /> {featured.location}
                 </span>
                 <span className="flex items-center gap-2.5">
-                  <MembersIcon className="text-brand-green" /> [00] batchmates going
+                  <MembersIcon className="text-brand-green" /> {featuredGoing} batchmate{featuredGoing === 1 ? "" : "s"} going
                 </span>
               </div>
-              <p className="leading-relaxed text-text-muted">{featured.description}</p>
+              <p className="leading-relaxed text-text-muted">{fillReunionPlaceholders(featured.description, settings)}</p>
               {sponsor && (
                 <div className="flex items-center gap-2.5 text-sm text-text-secondary">
                   <span>Sponsored by</span>
@@ -63,10 +80,10 @@ export default async function EventsPage() {
                 </div>
               )}
               <div className="mt-auto flex flex-wrap gap-3">
-                <Button href="/signin">
+                <Button href={`/events/${featured.slug}`}>
                   RSVP, I&apos;m going <ArrowRightIcon />
                 </Button>
-                <Button href="#" variant="secondary">
+                <Button href={`/events/${featured.slug}/calendar.ics`} variant="secondary">
                   Add to calendar
                 </Button>
               </div>
@@ -74,7 +91,12 @@ export default async function EventsPage() {
           </article>
         )}
 
-        <h2 className="mt-6 font-serif text-2xl font-medium">More upcoming events</h2>
+        <h2 className="mt-6 font-serif text-2xl font-medium">{past ? "Past events" : featured ? "More upcoming events" : "Upcoming events"}</h2>
+        {rest.length === 0 && !featured && (
+          <p className="rounded-[20px] border border-border-default bg-white p-8 text-text-secondary">
+            {past ? "No past events yet." : "No upcoming events right now — check back soon."}
+          </p>
+        )}
         <div className="flex flex-col rounded-[20px] border border-border-default bg-white">
           {rest.map((e) => (
             <div

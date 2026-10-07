@@ -23,7 +23,11 @@ Set `GA_MEASUREMENT_ID` and `GOOGLE_SITE_VERIFICATION` there when needed;
 the running server reads both values at request time. Add Google OAuth, R2,
 and Resend settings if those features are enabled. Keep `.env` private. Point
 the server's TLS reverse proxy to `http://127.0.0.1:3000` (or the selected
-`PORT`).
+`PORT`). The reverse proxy must **overwrite** (not append to) the `X-Forwarded-For`
+header with the real client address — sign-in and form rate limiting key on its
+first entry, so a client-supplied value would let an attacker dodge the limits.
+Serve the site over HTTPS and set `APP_URL` to the `https://` origin: that turns on
+HSTS and `upgrade-insecure-requests` in the security headers.
 
 For a private Docker Hub repository, log in once on the server with a Docker
 Hub access token that can pull images:

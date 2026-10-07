@@ -123,12 +123,11 @@ named.
   `coalesce(published_at, now())` rather than overwriting it.
 - Dashboard's events widget, blog-post count, and RSVP progress bars
   now read live data instead of `lib/mock-data.ts`.
-- **Member CSV import is still missing.** `db/seed_members.sql`
-  contains the 241-row active-voter roster. Superadmins can now add a
-  member manually (`/admin/members/new`) and export the filtered list as
-  CSV, but there is no importing of an updated CSV. Other member records
-  come from seed data, with pending records also created by unmatched
-  Google sign-in attempts. No open account registration is available.
+- Member CSV import (`/admin/members/import`, superadmin-only): upload → preview of what
+  would be added / updated / skipped with per-row reasons → confirm. See "Member CSV
+  import" in docs/web/README.md. `db/seed_members.sql` still holds the original
+  241-row roster; other records come from manual creation, import, or pending
+  requests from unmatched Google sign-ins. No open account registration is available.
 - Gallery image uploads now go through a Node Route Handler that checks
   for `admin`/`superadmin`, validates JPEG/PNG/WebP/GIF signatures and a
   15 MB limit, stores the object in R2, and inserts its key into
@@ -146,3 +145,74 @@ named.
 - Google OAuth — provider code exists and local client settings are in
   the ignored `.env.local`; the flow still needs end-to-end verification.
   Keep `.env.example` as a placeholder, with no client secret.
+
+## 7. Hardening and completion pass (shipped)
+
+- Security: Postgres-backed rate limiting (sign-in per email+IP / email / IP, reset and
+  claim emails, password change, photo upload); live role/status re-check so demotion
+  or suspension applies immediately; Google Analytics only after consent and never on
+  token routes; nonce-based CSP and security headers via `proxy.ts`; custom popup HTML
+  served from its own sandboxed `/popup-frame/[id]` document. See "Security hardening"
+  in docs/web/README.md.
+- Public `/members` directory: real search (name, profession, company, city),
+  discipline and city filters built from published data, 24-per-page pagination.
+- Events: working Upcoming / Past tabs, real "N going" counts, `.ics` "Add to
+  calendar" (`/events/[slug]/calendar.ics`), past events stay viewable with RSVP closed
+  (the action also rejects past or private events).
+- Member account is three tabs — Profile, Submissions & events, Security — with a
+  "My events" list (cancel upcoming RSVPs) and an avatar dropdown in the navbar.
+- Admin Settings is real (`site_settings`, superadmin-only edit): organization name,
+  contact email, YouTube/Facebook links (footer) and the reunion fee/deadline that fill
+  the `[AMOUNT]`/`[DEADLINE]` markers in the reunion post and event text. Footer
+  links that had nowhere to go are shown only when configured.
+- Dashboard: real "Recent activity" feed (`activity_log`, written by `lib/activity.ts`
+  on approvals, submissions, member creation, events and settings), real photo/video
+  counts, greeting from the signed-in name; the dead "Export report" button is gone.
+- Blog post share buttons (copy link, share by email) work; mock-only `lib/mock-data.ts`
+  and bracketed placeholder captions were removed.
+- CI now type-checks and lints before building the image.
+
+## 8. Nice-to-have suggestions (not built)
+
+Ideas that would improve the site but are not required for the existing features to
+be complete. Pick from here deliberately; none is committed work.
+
+**Members**
+- CSV import extras: downloadable error report for skipped rows, matching by student ID
+  as well as email, and bulk-importing photos.
+- Self-serve "request a correction" form for fields members can't edit themselves.
+- Birthday / "joined this month" highlights on the home page.
+
+**Events**
+- Event banner image (needs a column plus R2 upload, then replaces the neutral tile).
+- Capacity limits, waitlist, and an "interested" state alongside "going".
+- Admin RSVP list with CSV export; reminder emails the day before.
+- Recurring or multi-day events.
+
+**Communication**
+- Email notifications to admins for new membership requests, business and blog
+  submissions (the removed Settings "Notifications" toggles were never wired up; they
+  need a mail queue and per-admin preferences first).
+- Email the author when their post or listing is approved or rejected, with the reason.
+- Announcement banner / newsletter digest of new posts and events.
+
+**Content**
+- Business images/logo upload (R2) and a "claim this listing" flow.
+- Blog comments or reactions (needs moderation tooling), post scheduling.
+- Gallery: bulk upload progress, album cover picker, member photo tagging.
+- Site-wide search across members, posts, events and businesses.
+
+**Admin**
+- Field-level audit trail (who changed what), beyond the activity feed's summaries.
+- Admin activity feed filters and an "export report" (the old placeholder button).
+- Bulk actions for blog posts; role-change confirmation with reason.
+
+**Engineering**
+- Automated tests (unit tests for `lib/` helpers, Playwright smoke tests for sign-in,
+  RSVP, submissions) and a CI database for `next build`.
+- A migration runner that records applied files instead of applying `db/migrations/*`
+  by hand, and a health-check endpoint for the container.
+- Error reporting (Sentry or similar) and uptime monitoring.
+- Move rate limiting to Redis if the site ever runs on multiple instances.
+- Accessibility audit (keyboard paths for menus, focus management in dialogs) and a
+  Lighthouse performance pass on the home page.

@@ -9,7 +9,31 @@ permissions:
   contents: read
 
 jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: |
+          npm install --global pnpm@12.3.4
+          pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint (errors fail, warnings don't)
+        run: npx eslint --quiet
+
   build:
+    needs: checks
     runs-on: ubuntu-latest
     permissions:
       contents: read

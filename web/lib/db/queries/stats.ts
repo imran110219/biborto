@@ -1,6 +1,6 @@
-import { and, count, countDistinct, eq } from "drizzle-orm";
+import { and, count, countDistinct, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { galleryAlbums, galleryPhotos, members } from "@/drizzle/schema";
+import { galleryAlbums, galleryPhotos, galleryVideos, members } from "@/drizzle/schema";
 
 export interface HomeStats {
   registeredBatchmates: number;
@@ -34,5 +34,27 @@ export async function getHomeStats(): Promise<HomeStats> {
     disciplinesRepresented: memberStats?.disciplinesRepresented ?? 0,
     countriesRepresented: memberStats?.countriesRepresented ?? 0,
     photosInArchive: photoStats?.photosInArchive ?? 0,
+  };
+}
+
+export interface AdminMediaStats {
+  photos: number;
+  videos: number;
+  uploadsThisMonth: number;
+}
+
+// Dashboard "Photos & videos" card: totals across all albums/videos (public or not)
+// and how many were added since the start of the current month.
+export async function getAdminMediaStats(): Promise<AdminMediaStats> {
+  const [photos, videos, photosMonth, videosMonth] = await Promise.all([
+    db.select({ n: count() }).from(galleryPhotos),
+    db.select({ n: count() }).from(galleryVideos),
+    db.select({ n: count() }).from(galleryPhotos).where(sql`${galleryPhotos.createdAt} >= date_trunc('month', now())`),
+    db.select({ n: count() }).from(galleryVideos).where(sql`${galleryVideos.createdAt} >= date_trunc('month', now())`),
+  ]);
+  return {
+    photos: photos[0].n,
+    videos: videos[0].n,
+    uploadsThisMonth: photosMonth[0].n + videosMonth[0].n,
   };
 }

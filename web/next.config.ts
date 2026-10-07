@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false, // don't advertise "X-Powered-By: Next.js"
   async redirects() {
     // The admin Gallery lived at /admin/photos before it was renamed; keep old
     // bookmarks and links working.

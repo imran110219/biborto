@@ -16,7 +16,8 @@ export function PlaceholderMedia({
         <circle cx="9" cy="10" r="2" />
         <path d="m21 16-5-5-9 9" />
       </svg>
-      <span>{label}</span>
+      {/* The mockup's bracketed caption is kept for assistive tech only — visitors just see a neutral tile. */}
+      <span className="sr-only">{label.replace(/^\[|\]$/g, "")}</span>
     </div>
   );
 }

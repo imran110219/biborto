@@ -7,7 +7,8 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { FeaturedBlogTeaser } from "@/components/BlogTeaser";
 import { getBlogImageBase } from "@/lib/blog/images";
 import { BlogBody } from "@/components/BlogBody";
-import { MailIcon, ShareIcon } from "@/components/ui/icons";
+import { ShareButtons } from "@/components/blog/ShareButtons";
+import { fillReunionPlaceholders, getSiteSettings } from "@/lib/settings";
 import { getPublishedPublicPosts, getPublicPostBySlug } from "@/lib/db/queries/blog";
 
 export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">) {
@@ -15,6 +16,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
   const post = await getPublicPostBySlug(slug);
   if (!post) notFound();
 
+  const settings = await getSiteSettings();
   const otherPosts = (await getPublishedPublicPosts()).filter((p) => p.slug !== post.slug);
 
   return (
@@ -41,14 +43,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
                 </span>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button aria-label="Copy link" className="flex h-11 w-11 items-center justify-center rounded-full border border-border-input bg-white">
-                <ShareIcon />
-              </button>
-              <button aria-label="Share by email" className="flex h-11 w-11 items-center justify-center rounded-full border border-border-input bg-white">
-                <MailIcon />
-              </button>
-            </div>
+            <ShareButtons title={post.title} />
           </div>
         </div>
 
@@ -60,7 +55,7 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
         )}
 
         <div className="flex w-full max-w-[720px] flex-col gap-6">
-          <BlogBody body={post.body} imageBase={getBlogImageBase()} />
+          <BlogBody body={fillReunionPlaceholders(post.body, settings)} imageBase={getBlogImageBase()} />
 
           {post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2">

@@ -2,7 +2,9 @@
 
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
-import { signIn } from "@/auth";
+import { headers } from "next/headers";
+import { signIn, signInLockSeconds } from "@/auth";
+import { clientIp, formatWait } from "@/lib/security/rate-limit";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { members } from "@/drizzle/schema";
@@ -11,6 +13,11 @@ export async function credentialsSignIn(_prevState: string | undefined, formData
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const callbackUrl = String(formData.get("callbackUrl") ?? "");
   let redirectTo = callbackUrl || "/";
+
+  // Locked out after repeated failures? Say so instead of a misleading "wrong password".
+  // (The lock is keyed on whatever email was typed, so this reveals nothing about accounts.)
+  const lockedFor = await signInLockSeconds(email, clientIp(await headers()));
+  if (lockedFor > 0) return `Too many sign-in attempts. Please wait ${formatWait(lockedFor)} and try again.`;
 
   if (!callbackUrl && email) {
     const [member] = await db

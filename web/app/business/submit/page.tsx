@@ -36,7 +36,7 @@ export default async function SubmitBusinessPage() {
                 Each member can list up to {slots.max} businesses, and you have {slots.used}. You can follow their
                 review status on your account page. If one is rejected, that slot becomes free again.
               </p>
-              <Link href="/account" className="font-semibold text-brand-green">
+              <Link href="/account/submissions" className="font-semibold text-brand-green">
                 Go to my account
               </Link>
             </div>

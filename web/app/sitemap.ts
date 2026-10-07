@@ -5,6 +5,8 @@ import { getUpcomingEvents } from "@/lib/db/queries/events";
 import { getGalleryAlbums } from "@/lib/db/queries/gallery";
 import { getPublicMembers } from "@/lib/db/queries/members";
 
+export const dynamic = "force-dynamic";
+
 function siteOrigin(): string {
   const value = process.env.APP_URL;
   if (!value) throw new Error("APP_URL must be set to generate the sitemap.");

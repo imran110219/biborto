@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 
 config({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../.env.local") });
 
-const email = "superadmin@biborto11.com";
+// Same default and normalization as db/seed.sh, which seeds the member row this looks up.
+const email = (process.env.SUPERADMIN_EMAIL || "superadmin@biborto11.com").trim().toLowerCase();
+if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error(`SUPERADMIN_EMAIL is not a valid email address: ${email}`);
 const databaseUrl = process.env.DATABASE_URL;
 const password = process.env.SUPERADMIN_PASSWORD;
 

@@ -47,7 +47,10 @@ this isn't a speculative model, it's what the UI assumes.
   `member`. Profession, city and country are left unset.
 - `db/seed_superadmin.sql` and `web/scripts/seed-superadmin-login.mjs`
   create the non-public bootstrap superadmin and its password login. Set
-  `SUPERADMIN_PASSWORD` before seeding; only a bcrypt hash is stored.
+  `SUPERADMIN_PASSWORD` before seeding (required, 8+ characters; only a bcrypt hash is stored) and,
+  optionally, `SUPERADMIN_EMAIL` (default `superadmin@biborto11.com`; lower-cased and validated;
+  a blank value means the default). Both come from the environment or `web/.env.local`. `seed.sh`
+  passes the email to the SQL as the psql variable `superadmin_email`.
 - `db/seed_site_settings.sql` (core) seeds the default
   batch name, institution, motto, theme colours and intro texts (idempotent: `on conflict do nothing`, so
   it can also be run by hand against a database that already has settings). Optional
@@ -180,17 +183,19 @@ Docker, RDS, etc.):
    should return 243; with the full seed `select count(*) from businesses;` should return 8 (0 with `--core`).
 
 The initial platform superadmin is seeded as an active, non-public member
-and a password login with email `superadmin@biborto11.com`. Set
+and a password login with email `SUPERADMIN_EMAIL` (default `superadmin@biborto11.com`). Set
 `SUPERADMIN_PASSWORD` in the environment or `web/.env.local` before running
 `npm run db:seed`; the seed stores a bcrypt hash, not the plaintext password.
 For a database that already has the superadmin member, set the same variable
 and run `npm run db:seed-superadmin` from `web/` to create or reset its
-password login without reseeding other data.
+password login without reseeding other data. `db:seed-superadmin` looks the member up by
+`SUPERADMIN_EMAIL`, so it can't change the address of an existing superadmin: the email isn't editable
+in the admin UI either, so to change it later run an `update` on `members` and `users` by hand.
 
 **Development** uses the full seed (`npm run db:seed` / `db:reset`). **Production** should use
 `npm run db:seed:core` (or `bash db/seed.sh --core`): the 241-member roster, disciplines, countries,
 default settings and the bootstrap superadmin, with none of the sample content. After seeding,
-sign in as the superadmin (`superadmin@biborto11.com`, the `SUPERADMIN_PASSWORD` you set) and fill in
+sign in as the superadmin (your `SUPERADMIN_EMAIL`, with the `SUPERADMIN_PASSWORD` you set) and fill in
 Settings; there is nothing to migrate. Because the app isn't deployed yet, any change to
 `schema.sql` is applied with `npm run db:reset` — it drops everything.
 

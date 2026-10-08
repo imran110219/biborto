@@ -66,7 +66,7 @@ export async function devSuperadminSignIn(formData: FormData) {
   if (!password) throw new Error("SUPERADMIN_PASSWORD is not set.");
   const callbackUrl = String(formData.get("callbackUrl") ?? "");
   await signIn("credentials", {
-    email: "superadmin@biborto11.com",
+    email: (process.env.SUPERADMIN_EMAIL || "superadmin@biborto11.com").trim().toLowerCase(),
     password,
     redirectTo: callbackUrl || "/admin/dashboard",
   });

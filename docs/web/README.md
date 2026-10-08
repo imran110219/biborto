@@ -649,7 +649,7 @@ names that aren't in the member roster, so their owner is empty until set.
 **Development shortcut**: under `next dev` (never in production — the
 button is not rendered and the action throws unless
 `NODE_ENV === "development"`), `/signin` shows "Dev: sign in as
-superadmin". It signs in as `superadmin@biborto11.com` using
+superadmin". It signs in as your `SUPERADMIN_EMAIL` (default `superadmin@biborto11.com`) using
 `SUPERADMIN_PASSWORD` from the server env (`devSuperadminSignIn` in
 `app/signin/actions.ts`); the password never reaches the client. Run
 `npm run db:seed` (or `db:seed-superadmin`) first so that login exists.

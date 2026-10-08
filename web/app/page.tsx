@@ -32,7 +32,7 @@ export default async function HomePage() {
     getHomeStats(),
     getUpcomingEvents(),
     getPublishedPublicPosts(),
-    getPublicMembers(),
+    getPublicMembers({ limit: 4 }),
     getGalleryAlbums(),
     getGalleryVideos(),
     getActiveSponsors(),

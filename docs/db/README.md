@@ -16,48 +16,20 @@ this isn't a speculative model, it's what the UI assumes.
   `updated_at` triggers, and `public_*` views that expose only
   public-safe columns. See the file's header comment for the auth,
   authorization, and file-storage decisions baked into it.
-- `db/migrations/001_google_membership_requests.sql` — one-time migration
-  for an existing database, allowing pending Google membership requests
-  to omit discipline until an admin collects it.
-- `db/migrations/002_member_campus_name.sql` through
-  `db/migrations/004_member_cover_photo.sql` — optional member campus/profile
-  fields and cover-photo storage.
-- `db/migrations/005_gallery_album_links.sql` and
-  `db/migrations/006_gallery_video_links.sql` — optional event and discipline
-  links for gallery albums and videos.
-- `db/migrations/007_gallery_videos.sql` — creates the video table for an
-  existing database that predates gallery videos.
-- `db/migrations/008_business_social_links.sql` — adds optional
-  `businesses.linkedin_url` / `facebook_url` and appends them to the
-  `public_businesses` view. Apply to an existing database, then
-  `npm run db:pull`.
-- `db/migrations/009_popups.sql` — adds the `popups` table and `popup_kind`
-  enum (superadmin-managed home-page popups). Apply to an existing database,
-  then `npm run db:pull`.
-- `db/migrations/010_one_active_diamond_sponsor.sql` — partial unique index so
-  at most one *active* diamond sponsor exists. Deactivate extra active
-  diamonds before applying to an existing database, then `npm run db:pull`.
-- `db/migrations/015_member_slugs.sql` — makes `members.student_id` unique (partial
-  unique index) and **rewrites every `members.slug`** to the slugified name, so old
-  `/members/<slug>` links break. `seed_members.sql` now uses name slugs too; the second URL, `/members/<discipline short code>-<roll>`, is computed at request time, not stored. Apply to an
-  existing database, then `npm run db:pull`.
-- `db/migrations/014_site_settings.sql` — adds the `site_settings` key/value table
-  behind `/admin/settings` (organization name, contact email, social links, reunion
-  fee and deadline). Apply to an existing database, then `npm run db:pull`.
-- `db/migrations/013_rate_limits.sql` — adds the `rate_limits` table (fixed-window
-  counters used by `web/lib/security/rate-limit.ts`). Apply to an existing database,
-  then `npm run db:pull`.
-- `db/migrations/012_blog_submissions.sql` — adds `pending` and `rejected` to the
-  `blog_status` enum (member blog submissions awaiting / failing review). Apply to
-  an existing database, then `npm run db:pull`.
-- `db/migrations/011_is_public.sql` — adds a shared `is_public` flag to
-  `blog_posts`, `events`, `gallery_albums` and `gallery_videos`, and replaces
-  `blog_posts.visibility` (dropping the `blog_visibility` enum) with it. Apply
-  to an existing database, then `npm run db:pull`.
-- `db/seed.sh` — runs `schema.sql` then every `seed_*.sql` below against
-  `$DATABASE_URL` (or `web/.env.local`'s, if unset), in the required
-  order. Wired up as `npm run db:seed` / `npm run db:reset` from `web/`
-  — see "How to run this" below.
+- `db/migrations/` — empty on purpose (just a README). The app isn't in production yet, so
+  `schema.sql` is edited in place and the database rebuilt with `npm run db:reset`; the fifteen
+  incremental files from development were folded into `schema.sql` and removed (a database built
+  from `schema.sql` alone was verified identical to the one they produced). **From the first
+  production deploy on**, each schema change needs both an edit to `schema.sql` and a numbered
+  forward-only file in `db/migrations/` that upgrades a live database, applied by hand before
+  the app code that needs it, then `npm run db:pull`. See `db/migrations/README.md`.
+- `db/seed.sh` — runs `schema.sql` then the `seed_*.sql` files below against
+  `$DATABASE_URL` (or `web/.env.local`'s, if unset), in the required order. Two groups:
+  **core** (`disciplines`, `countries`, `members`, `superadmin`, `site_settings`) is what a real
+  deployment needs; **sample** (`businesses`, `sponsors`, `events`, `blog_posts`, `gallery`) is
+  invented demo content for development and tests. Wired up from `web/` as `npm run db:seed` /
+  `db:reset` (core + sample, for development) and `npm run db:seed:core` / `db:reset:core`
+  (core only, **use these for production**) — see "How to run this" below.
 - `db/seed_disciplines.sql` — Khulna University's discipline reference
   list, codes 01-24 (code, school, name, short code, slug, website
   path), supplied directly as authoritative data, not derived from the
@@ -76,16 +48,16 @@ this isn't a speculative model, it's what the UI assumes.
 - `db/seed_superadmin.sql` and `web/scripts/seed-superadmin-login.mjs`
   create the non-public bootstrap superadmin and its password login. Set
   `SUPERADMIN_PASSWORD` before seeding; only a bcrypt hash is stored.
-- `db/seed_businesses.sql`, `db/seed_sponsors.sql`,
-  `db/seed_events.sql`, `db/seed_blog_posts.sql`, and
-  `db/seed_gallery.sql` seed the remaining sample content in dependency
-  order (businesses link to members; sponsors can link to businesses;
-  blog posts can link to members). Their headers document mockup gaps
-  rather than invent missing source values. `db/seed_site_settings.sql` seeds the default
+- `db/seed_site_settings.sql` (core) seeds the default
   batch name, institution, motto, theme colours and intro texts (idempotent: `on conflict do nothing`, so
   it can also be run by hand against a database that already has settings). Optional
   settings — contact email, social links, reunion fee/deadline — are left unset on purpose.
   `activity_log` has no seed.
+- **Sample content (skipped by `--core`):** `db/seed_businesses.sql`, `db/seed_sponsors.sql`,
+  `db/seed_events.sql`, `db/seed_blog_posts.sql` and `db/seed_gallery.sql` — fictional listings,
+  `.example` sponsors, a pretend Grand Reunion on 2026-12-12, four blog posts and six empty albums,
+  in dependency order (businesses link to members; sponsors can link to businesses; blog posts can
+  link to members). The test suites (`npm run test:smoke`) and CI use them.
   `users`/`accounts`/`sessions` are populated at runtime by claiming an
   account or signing in, not by a SQL seed.
 
@@ -205,7 +177,7 @@ Docker, RDS, etc.):
 3. Confirm: `select count(*) from public_members;` should return 241
    roster members (the separate superadmin is private); `select count(*)
    from disciplines;` should return 24; `select count(*) from countries;`
-   should return 243; `select count(*) from businesses;` should return 8.
+   should return 243; with the full seed `select count(*) from businesses;` should return 8 (0 with `--core`).
 
 The initial platform superadmin is seeded as an active, non-public member
 and a password login with email `superadmin@biborto11.com`. Set
@@ -214,12 +186,13 @@ and a password login with email `superadmin@biborto11.com`. Set
 For a database that already has the superadmin member, set the same variable
 and run `npm run db:seed-superadmin` from `web/` to create or reset its
 password login without reseeding other data.
-For an already-seeded database, apply
-`db/migrations/001_google_membership_requests.sql` once before deploying
-the Google membership-request flow.
-For an already-seeded database that does not have `gallery_videos`, apply
-`db/migrations/007_gallery_videos.sql` once before deploying the gallery
-video query. It is safe to rerun if the table already exists.
+
+**Development** uses the full seed (`npm run db:seed` / `db:reset`). **Production** should use
+`npm run db:seed:core` (or `bash db/seed.sh --core`): the 241-member roster, disciplines, countries,
+default settings and the bootstrap superadmin, with none of the sample content. After seeding,
+sign in as the superadmin (`superadmin@biborto11.com`, the `SUPERADMIN_PASSWORD` you set) and fill in
+Settings; there is nothing to migrate. Because the app isn't deployed yet, any change to
+`schema.sql` is applied with `npm run db:reset` — it drops everything.
 
 **Re-seeding a non-empty database**: `npm run db:seed` applies
 `schema.sql` and the seed files as plain `INSERT`s (not idempotent

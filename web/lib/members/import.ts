@@ -77,12 +77,12 @@ export interface ImportAnalysis {
   counts: Record<RowAction, number>;
 }
 
-type Values = Partial<{
+export type Values = Partial<{
   name: string; email: string; phoneNumber: string; studentId: string; disciplineId: string; campusName: string;
   profession: string; currentEmployer: string; city: string; countryId: string; bloodGroup: BloodGroup;
   dateOfBirth: string; isPublic: boolean; linkedinUrl: string; facebookUrl: string; websiteUrl: string;
 }>;
-type PlanItem = { kind: "create"; values: Values & { name: string; email: string } } | { kind: "update"; id: string; set: Values };
+export type PlanItem = { kind: "create"; values: Values & { name: string; email: string } } | { kind: "update"; id: string; set: Values };
 
 const emptyCounts = (): Record<RowAction, number> => ({ create: 0, update: 0, unchanged: 0, error: 0 });
 const fatal = (message: string): ImportAnalysis => ({ fatal: message, columns: { recognized: [], ignored: [], unknown: [] }, rows: [], counts: emptyCounts() });
@@ -113,9 +113,19 @@ function isHttpUrl(value: string) {
   }
 }
 
-async function plan(csvText: string, options: ImportOptions): Promise<{ analysis: ImportAnalysis; items: (PlanItem | null)[] }> {
-  const table = parseCsv(csvText);
-  if (table.length === 0) return { analysis: fatal("The file is empty."), items: [] };
+export interface Lookups {
+  disciplineBy: Map<string, string>; // lowercase short code / code / full name → discipline id
+  countryBy: Map<string, string>; // lowercase ISO code / name → country id
+}
+
+export type ParsedRow = { line: number; values?: Values; name: string; email: string; error?: string };
+export type Interpreted =
+  | { fatal: string }
+  | { columns: ImportAnalysis["columns"]; parsed: ParsedRow[] };
+
+// Pure: reads the header, validates every row and turns cells into typed values. No database.
+export function interpretTable(table: string[][], { disciplineBy, countryBy }: Lookups): Interpreted {
+  if (table.length === 0) return { fatal: "The file is empty." };
 
   const header = table[0];
   const fieldAt = new Map<number, Field>();
@@ -132,24 +142,14 @@ async function plan(csvText: string, options: ImportOptions): Promise<{ analysis
   });
   const have = new Set(fieldAt.values());
   if (!have.has("name") || !have.has("email")) {
-    return { analysis: fatal("The first row must be a header with at least “Name” and “Email” columns."), items: [] };
+    return { fatal: "The first row must be a header with at least “Name” and “Email” columns." };
   }
   const dataRows = table.slice(1);
-  if (dataRows.length === 0) return { analysis: fatal("The file has a header but no members."), items: [] };
-  if (dataRows.length > MAX_IMPORT_ROWS) return { analysis: fatal(`Too many rows (${dataRows.length}). Split the file into batches of ${MAX_IMPORT_ROWS} or fewer.`), items: [] };
-
-  const [disciplineRows, countryRows] = await Promise.all([
-    db.select({ id: disciplines.id, code: disciplines.code, shortCode: disciplines.shortCode, name: disciplines.name }).from(disciplines),
-    db.select({ id: countries.id, isoCode: countries.isoCode, name: countries.name }).from(countries),
-  ]);
-  const disciplineBy = new Map<string, string>();
-  for (const d of disciplineRows) for (const k of [d.shortCode, d.code, d.name]) disciplineBy.set(k.toLowerCase().trim(), d.id);
-  const countryBy = new Map<string, string>();
-  for (const c of countryRows) for (const k of [c.isoCode, c.name]) countryBy.set(k.toLowerCase().trim(), c.id);
+  if (dataRows.length === 0) return { fatal: "The file has a header but no members." };
+  if (dataRows.length > MAX_IMPORT_ROWS) return { fatal: `Too many rows (${dataRows.length}). Split the file into batches of ${MAX_IMPORT_ROWS} or fewer.` };
 
   // Parse every row first so one query can load all the members the file refers to.
-  type Parsed = { line: number; values?: Values; name: string; email: string; error?: string };
-  const parsed: Parsed[] = dataRows.map((cells, idx) => {
+  const parsed: ParsedRow[] = dataRows.map((cells, idx) => {
     const line = idx + 2;
     const raw: Partial<Record<Field, string>> = {};
     for (const [col, field] of fieldAt) {
@@ -160,7 +160,7 @@ async function plan(csvText: string, options: ImportOptions): Promise<{ analysis
     }
     const name = raw.name ?? "";
     const email = (raw.email ?? "").toLowerCase();
-    const fail = (error: string): Parsed => ({ line, name, email, error });
+    const fail = (error: string): ParsedRow => ({ line, name, email, error });
 
     if (!name) return fail("Name is missing.");
     if (!email) return fail("Email is missing.");
@@ -206,22 +206,37 @@ async function plan(csvText: string, options: ImportOptions): Promise<{ analysis
     }
     return { line, name, email, values };
   });
+  return { columns: { recognized, ignored, unknown }, parsed };
+}
 
-  const emails = [...new Set(parsed.filter((p) => p.values).map((p) => p.email))];
-  const existing = emails.length
-    ? await db.select().from(members).where(inArray(sql`lower(${members.email})`, emails))
-    : [];
-  const byEmail = new Map(existing.map((m) => [m.email.toLowerCase(), m]));
+export interface ExistingMember {
+  id: string;
+  name: string;
+  phoneNumber: string | null;
+  studentId: string | null;
+  disciplineId: string | null;
+  campusName: string | null;
+  profession: string | null;
+  currentEmployer: string | null;
+  city: string | null;
+  countryId: string | null;
+  bloodGroup: string | null;
+  dateOfBirth: string | null;
+  isPublic: boolean;
+  linkedinUrl: string | null;
+  facebookUrl: string | null;
+  websiteUrl: string | null;
+}
 
-  // Roll (student ID) is unique per member and doubles as a profile URL, so a roll that
-  // already belongs to someone else — in the database or earlier in this file — is an error.
-  const rolls = [...new Set(parsed.flatMap((p) => (p.values?.studentId ? [p.values.studentId] : [])))];
-  const rollOwners = rolls.length
-    ? await db.select({ id: members.id, name: members.name, studentId: members.studentId }).from(members).where(inArray(members.studentId, rolls))
-    : [];
-  const ownerOfRoll = new Map(rollOwners.map((r) => [r.studentId!, r]));
+// Pure: decides what happens to each parsed row given who already exists (matched by lower-cased
+// email) and who already owns each roll. No database.
+export function decideRows(
+  parsed: ParsedRow[],
+  byEmail: Map<string, ExistingMember>,
+  ownerOfRoll: Map<string, { id: string; name: string }>,
+  options: ImportOptions,
+): { rows: RowResult[]; items: (PlanItem | null)[]; counts: Record<RowAction, number> } {
   const seenRolls = new Set<string>();
-
   const seen = new Set<string>();
   const rows: RowResult[] = [];
   const items: (PlanItem | null)[] = [];
@@ -294,7 +309,39 @@ async function plan(csvText: string, options: ImportOptions): Promise<{ analysis
 
   const counts = emptyCounts();
   for (const r of rows) counts[r.action]++;
-  return { analysis: { columns: { recognized, ignored, unknown }, rows, counts }, items };
+  return { rows, items, counts };
+}
+
+async function plan(csvText: string, options: ImportOptions): Promise<{ analysis: ImportAnalysis; items: (PlanItem | null)[] }> {
+  const table = parseCsv(csvText);
+
+  const [disciplineRows, countryRows] = await Promise.all([
+    db.select({ id: disciplines.id, code: disciplines.code, shortCode: disciplines.shortCode, name: disciplines.name }).from(disciplines),
+    db.select({ id: countries.id, isoCode: countries.isoCode, name: countries.name }).from(countries),
+  ]);
+  const disciplineBy = new Map<string, string>();
+  for (const d of disciplineRows) for (const k of [d.shortCode, d.code, d.name]) disciplineBy.set(k.toLowerCase().trim(), d.id);
+  const countryBy = new Map<string, string>();
+  for (const c of countryRows) for (const k of [c.isoCode, c.name]) countryBy.set(k.toLowerCase().trim(), c.id);
+
+  const interpreted = interpretTable(table, { disciplineBy, countryBy });
+  if ("fatal" in interpreted) return { analysis: fatal(interpreted.fatal), items: [] };
+  const { columns, parsed } = interpreted;
+
+  const emails = [...new Set(parsed.filter((p) => p.values).map((p) => p.email))];
+  const existing = emails.length ? await db.select().from(members).where(inArray(sql`lower(${members.email})`, emails)) : [];
+  const byEmail = new Map(existing.map((m) => [m.email.toLowerCase(), m]));
+
+  // Roll (student ID) is unique per member and doubles as a profile URL, so a roll that
+  // already belongs to someone else — in the database or earlier in this file — is an error.
+  const rolls = [...new Set(parsed.flatMap((p) => (p.values?.studentId ? [p.values.studentId] : [])))];
+  const rollOwners = rolls.length
+    ? await db.select({ id: members.id, name: members.name, studentId: members.studentId }).from(members).where(inArray(members.studentId, rolls))
+    : [];
+  const ownerOfRoll = new Map(rollOwners.map((r) => [r.studentId!, { id: r.id, name: r.name }]));
+
+  const { rows, items, counts } = decideRows(parsed, byEmail, ownerOfRoll, options);
+  return { analysis: { columns, rows, counts }, items };
 }
 
 export async function analyzeImport(csvText: string, options: ImportOptions): Promise<ImportAnalysis> {

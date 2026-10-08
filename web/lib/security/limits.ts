@@ -18,6 +18,20 @@ export const LIMITS = {
   // Wrong "current password" when changing a password (someone on a stolen session).
   passwordChange: { limit: 5, windowSeconds: FIFTEEN_MIN } satisfies Rule,
 
+  // Content a member submits for review. The per-member caps (pending posts, listings) already
+  // bound what is stored; these also bound the *attempts* (each one parses a large form).
+  blogSubmit: { limit: 10, windowSeconds: HOUR } satisfies Rule,
+  businessSubmit: { limit: 6, windowSeconds: HOUR } satisfies Rule,
+
+  // Blog editor image uploads per member (each reads up to 8 MB and writes to R2).
+  blogImageUpload: { limit: 60, windowSeconds: HOUR } satisfies Rule,
+
+  // RSVP toggles per member (cheap, but a script could hammer them).
+  rsvp: { limit: 60, windowSeconds: HOUR } satisfies Rule,
+
+  // CSV member imports per superadmin (each analyzes up to 2,000 rows).
+  memberImport: { limit: 30, windowSeconds: HOUR } satisfies Rule,
+
   // Profile / cover photo uploads per member (each writes to R2).
   photoUpload: { limit: 30, windowSeconds: HOUR } satisfies Rule,
 } as const;

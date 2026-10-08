@@ -9,8 +9,15 @@
     "lint": "eslint",
     "db:pull": "drizzle-kit pull",
     "db:seed": "bash ../db/seed.sh",
+    "db:seed:core": "bash ../db/seed.sh --core",
     "db:seed-superadmin": "node scripts/seed-superadmin-login.mjs",
-    "db:reset": "bash ../db/seed.sh --reset"
+    "db:reset": "bash ../db/seed.sh --reset",
+    "db:reset:core": "bash ../db/seed.sh --reset --core",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "test:smoke": "vitest run --config vitest.smoke.config.mts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
@@ -44,6 +51,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.3"
   }
 }

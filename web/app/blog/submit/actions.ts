@@ -1,5 +1,7 @@
 "use server";
 
+import { consume, formatWait } from "@/lib/security/rate-limit";
+import { LIMITS } from "@/lib/security/limits";
 import { logActivity } from "@/lib/activity";
 import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
@@ -22,6 +24,9 @@ function slugify(title: string) {
 export async function submitPost(_prevState: string | undefined, formData: FormData) {
   const memberId = await getActiveSessionMemberId();
   if (!memberId) return "Sign in with an active membership to submit a post.";
+
+  const limit = await consume(`blog-submit:member:${memberId}`, LIMITS.blogSubmit);
+  if (!limit.allowed) return `You're submitting too quickly. Please try again in ${formatWait(limit.retryAfterSeconds)}.`;
 
   const title = String(formData.get("title") ?? "").trim();
   const category = String(formData.get("category") ?? "") as BlogCategoryOption;

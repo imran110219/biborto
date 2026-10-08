@@ -251,12 +251,3 @@ values
   ('shakila-alam', 'Shakila Alam', (select id from disciplines where short_code = 'BAN'), 'shakilasr.ku26@gmail.com', '01778714954', '111926', 'member', 'active', true),
   ('sabuj-kumar-mondal', 'Sabuj Kumar Mondal', (select id from disciplines where short_code = 'BAN'), 'mondalsabuj07@gmail.com', '+880 1920-587415', '111928', 'member', 'active', true),
   ('sufal-das', 'Sufal das', (select id from disciplines where short_code = 'BAN'), 'sufal.dmtcl.ku@gmail.com', '+880 01739322587', '111933', 'member', 'active', true);
-
--- Roll numbers are admin-only, so they must not double as public URLs.
--- Rewrites the slugs inserted above (see db/migrations/007).
-update members
-set slug = coalesce(
-      nullif(trim(both '-' from left(regexp_replace(lower(name), '[^a-z0-9]+', '-', 'g'), 40)), ''),
-      'member'
-    ) || '-' || substr(md5(random()::text || id::text), 1, 6)
-where student_id is not null and slug = student_id;

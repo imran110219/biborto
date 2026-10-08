@@ -22,7 +22,7 @@ export function VerifyForm({ token, email }: { token: string; email: string }) {
         </p>
       )}
 
-      <form onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-[22px]">
+      <form method="post" onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-[22px]">
         <input type="hidden" name="token" value={token} />
         <input type="hidden" name="email" value={email} />
         {(["password", "confirmPassword"] as const).map((name) => (

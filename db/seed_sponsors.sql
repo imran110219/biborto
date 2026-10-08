@@ -1,12 +1,10 @@
--- Migrates the 5 sample sponsors from web/lib/mock-data.ts into real
--- rows. Depends on seed_businesses.sql having run first — all 5 mock
--- sponsors happen to match a business by name, so business_id is
--- resolved via that match (see docs/db/README.md "Sponsors are not
--- businesses" for why this is a cross-link, not a requirement).
---
--- Known gap: logo_key is left NULL for all 5 — the mockup never had a
--- real sponsor logo file, only initials rendered by the Avatar
--- component (see schema.sql's comment on this column).
+-- Sample sponsors.
+-- SAMPLE CONTENT: invented demo data for development and tests. `seed.sh --core`
+-- (use it for production) skips this file.
+-- Depends on seed_businesses.sql: business_id is resolved by matching the sponsor's name to
+-- a sample business (a sponsor does not have to be a business — see docs/db/README.md,
+-- "Sponsors are not businesses"). logo_key is NULL: sponsors show their initials until a
+-- real logo is uploaded. Websites use reserved .example domains.
 
 insert into sponsors
   (business_id, name, tier, website, active)

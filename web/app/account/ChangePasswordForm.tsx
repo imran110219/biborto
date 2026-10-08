@@ -25,7 +25,7 @@ export function ChangePasswordForm({ hasPassword }: { hasPassword: boolean }) {
             : "You sign in with Google. Set a password if you also want to sign in with your email."}
         </p>
       </div>
-      <form
+      <form method="post"
         ref={formRef}
         onSubmit={(e) => {
           e.preventDefault();

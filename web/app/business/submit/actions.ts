@@ -1,5 +1,7 @@
 "use server";
 
+import { consume, formatWait } from "@/lib/security/rate-limit";
+import { LIMITS } from "@/lib/security/limits";
 import { logActivity } from "@/lib/activity";
 import { redirect } from "next/navigation";
 import { and, count, eq, inArray, sql } from "drizzle-orm";
@@ -21,6 +23,9 @@ function slugify(name: string): string {
 export async function submitBusiness(_prevState: string | undefined, formData: FormData) {
   const memberId = await getActiveSessionMemberId();
   if (!memberId) return "Sign in with an active membership to list a business.";
+
+  const limit = await consume(`business-submit:member:${memberId}`, LIMITS.businessSubmit);
+  if (!limit.allowed) return `You're submitting too quickly. Please try again in ${formatWait(limit.retryAfterSeconds)}.`;
 
   const name = String(formData.get("name") ?? "").trim();
   const category = String(formData.get("category") ?? "") as BusinessCategory;

@@ -23,11 +23,21 @@ npm run dev           # dev server
 npm run build         # production build — requires a live DATABASE_URL, see "Data layer" below
 npm run lint          # eslint
 npm run db:pull       # regenerate web/drizzle/schema.ts + relations.ts by introspecting the live DB
-npm run db:seed       # apply db/schema.sql + db/seed_*.sql to $DATABASE_URL (fails fast on a non-empty DB)
+npm run db:seed       # apply db/schema.sql + all db/seed_*.sql (core + sample) to $DATABASE_URL (fails fast on a non-empty DB)
 npm run db:reset      # drop schema public cascade, then db:seed — safe to rerun anytime
+npm run db:seed:core  # same, but core data only (roster, reference data, settings, superadmin) — use for production
+npm run db:reset:core # drop schema public cascade, then db:seed:core
 ```
 
-There is no test suite in this repo (no test runner installed, no test files).
+Tests (Vitest, all from `web/`; see "Testing" in `docs/web/README.md`):
+
+```bash
+npm test                  # unit tests — pure logic, no server or database (tests/unit)
+npm run test:integration  # needs the dev Postgres from .env.local: rate limiting + schema invariants (tests/integration)
+npm run test:smoke        # needs a running, seeded server (npm run dev): HTTP checks of pages, headers, access control (tests/smoke)
+```
+
+New logic that doesn't touch the database should be written so it can be unit-tested (see how `lib/members/import.ts` splits `interpretTable`/`decideRows` from its queries). CI runs all three.
 
 Database setup (see `docs/db/README.md` for detail): provision Postgres, point `web/.env.local`'s `DATABASE_URL` at it, then `npm run db:seed` (or `npm run db:reset` if it's not empty) — this runs `db/seed.sh`, which applies `db/schema.sql` followed by the `db/seed_*.sql` files **in dependency order** — `disciplines`, `countries`, `members`, `businesses`, `sponsors`, `events`, `blog_posts`, `gallery` — since later ones FK into earlier ones. Then `npm run db:pull`. Also set `AUTH_SECRET` (generate with `npx auth secret`) — required for auth to work at all, see "Auth" below.
 
@@ -68,7 +78,7 @@ Public pages are plain `async` Server Components calling these query functions d
 Config is `web/auth.ts`; full writeup in `docs/web/README.md`'s Auth section. The gotchas worth knowing before touching this:
 
 - **`web/lib/db/auth-schema.ts` is hand-written, not generated** — the one deliberate exception to the `db/schema.sql` → `db:pull` → `drizzle/schema.ts` pipeline everything else follows. `@auth/drizzle-adapter` requires exact property names (`refresh_token`, not the `refreshToken` drizzle-kit's casing would produce) and `mode: "date"` timestamps that introspection can't reproduce. If `db/schema.sql`'s `users`/`accounts`/`sessions`/`verification_tokens` DDL changes, this file needs a matching hand-edit — `db:pull` won't touch it.
-- **`web/proxy.ts`**, not `middleware.ts` — Next.js 16 renamed the file convention; the deprecation warning on build is real, don't recreate `middleware.ts`. It reads `platform_role` off the already-decoded session JWT (set once in `auth.ts`'s `jwt` callback) rather than querying Postgres, because proxy/middleware runs on the Edge runtime where the `postgres` package (raw TCP) doesn't work. A role change takes effect on that member's next sign-in, not instantly.
+- **`web/proxy.ts`**, not `middleware.ts` — Next.js 16 renamed the file convention; the deprecation warning on build is real, don't recreate `middleware.ts`. It runs on the Node.js runtime (the Next 16 default), so it can use `postgres`. It gates `/admin/**` on `platform_role` from the session, and `auth.ts`'s `jwt` callback re-reads the member's role and status from the database on every request — so promotion, demotion and suspension take effect immediately (a suspended member's session ends). The same proxy sets the per-request CSP nonce and security headers (`lib/security/csp.ts`); see "Security hardening" in `docs/web/README.md`.
 - **JWT sessions, not database sessions** — Auth.js doesn't support database sessions with the Credentials provider, so both providers use JWT for consistency.
 - **Members contribute by submitting only:** blog posts (`/blog/submit` → `pending`, admin approves/rejects) and business listings (`/business/submit`, max 2 per member, enforced under an advisory lock); they track status on `/account` but can't edit after submitting.
 - **Member self-service lives at `/account`** (own profile, photos, password); `/forgot-password` + `/reset-password` handle resets for claimed accounts. Name, discipline, email, student ID, role and status are not editable there.

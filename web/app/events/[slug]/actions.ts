@@ -1,5 +1,7 @@
 "use server";
 
+import { consume } from "@/lib/security/rate-limit";
+import { LIMITS } from "@/lib/security/limits";
 import { revalidatePath } from "next/cache";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
@@ -15,6 +17,7 @@ async function requirePublicEvent(eventId: string) {
 
 export async function rsvpGoing(eventId: string, slug: string, _formData: FormData) {
   const memberId = await requireMemberId();
+  if (!(await consume(`rsvp:member:${memberId}`, LIMITS.rsvp)).allowed) return; // silently ignore a flood
   await requirePublicEvent(eventId);
 
   await db
@@ -30,6 +33,7 @@ export async function rsvpGoing(eventId: string, slug: string, _formData: FormDa
 
 export async function cancelRsvp(eventId: string, slug: string, _formData: FormData) {
   const memberId = await requireMemberId();
+  if (!(await consume(`rsvp:member:${memberId}`, LIMITS.rsvp)).allowed) return;
 
   await db
     .update(eventRsvps)

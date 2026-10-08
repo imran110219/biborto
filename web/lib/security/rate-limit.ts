@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 
-// Fixed-window rate limiting backed by the `rate_limits` table (db/migrations/013).
+// Fixed-window rate limiting backed by the `rate_limits` table (see db/schema.sql).
 // It lives in Postgres rather than process memory so limits survive restarts and
 // hold across several server instances. A window is `windowSeconds` long, aligned to
 // the clock; counters for older windows are simply never read again and are deleted

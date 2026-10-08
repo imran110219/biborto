@@ -1,19 +1,10 @@
--- Migrates the 8 sample businesses from web/lib/mock-data.ts into real
--- rows. Depends on seed_members.sql having run first — owner_member_id
--- is resolved by matching `ownerName` against the members already
--- seeded (all 8 owners match an existing member by name).
---
--- Known gaps carried over from the mockup (not invented here):
---   - phone, email, website, cover_photo_key, logo_key: the business
---     detail page (web/app/business/[slug]/page.tsx) fakes a phone
---     number and an email address at render time (e.g.
---     `${slug}@example.com`) — those were never real data, so they're
---     left NULL here rather than baked in as if they were real contact
---     info.
---   - submitted_at: mock data only gives "Mon YYYY" (e.g. "Jan 2026").
---     Defaulted to the 1st of that month.
---   - testimonial: empty-string placeholders in the mock (6 of 8
---     listings) are stored as NULL, not as empty strings.
+-- Sample business-directory listings.
+-- SAMPLE CONTENT: invented demo data for development and tests. `seed.sh --core`
+-- (use it for production) skips this file.
+-- Depends on seed_members.sql: owner_member_id is resolved by matching the owner's name
+-- against the seeded roster. Contact fields (phone, email, website, images) are left NULL
+-- on purpose — nothing here pretends to be real contact info. submitted_at is the 1st of the
+-- month the listing is set in.
 
 insert into businesses
   (slug, owner_member_id, name, category, city, status, tagline, description, offerings, testimonial, submitted_at)

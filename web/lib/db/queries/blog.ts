@@ -4,7 +4,7 @@ import { blogPosts, members } from "@/drizzle/schema";
 import { formatMonthDay, estimateReadTime } from "@/lib/db/format";
 import type { BlogCategoryOption } from "@/lib/types";
 import { blogImageUrl } from "@/lib/blog/images";
-import type { AdminBlogPost, AdminBlogPostDetail, BlogPost, BlogPostDetail } from "@/lib/types";
+import type { AdminBlogPost, AdminBlogPostDetail, BlogPost, BlogPostDetail, BlogPostStatus } from "@/lib/types";
 
 // Same filter public_blog_posts (db/schema.sql) encodes, replicated here
 // so this can join to members for the author's display name — see
@@ -138,7 +138,7 @@ export async function getPublicPostBySlug(slug: string): Promise<BlogPostDetail 
 }
 
 // Admin-only: every post regardless of status/is_public.
-export async function getAdminPosts(): Promise<AdminBlogPost[]> {
+export async function getAdminPosts(status?: BlogPostStatus): Promise<AdminBlogPost[]> {
   const rows = await db
     .select({
       id: blogPosts.id,
@@ -153,6 +153,7 @@ export async function getAdminPosts(): Promise<AdminBlogPost[]> {
     })
     .from(blogPosts)
     .leftJoin(members, eq(members.id, blogPosts.authorMemberId))
+    .where(status ? eq(blogPosts.status, status) : undefined)
     .orderBy(desc(blogPosts.updatedAt));
 
   return rows.map((row) => ({

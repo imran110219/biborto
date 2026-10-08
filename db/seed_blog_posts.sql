@@ -1,26 +1,11 @@
--- Migrates the 4 sample blog posts from web/lib/mock-data.ts into real
--- rows. Depends on seed_members.sql — author_member_id is resolved by
--- matching `author` against a member name where it names one (3 of 4);
--- "Reunion committee" isn't a person, so that post uses author_name
--- instead (author_member_id stays NULL).
---
--- Known gaps carried over from the mockup (not invented here):
---   - `body`: mock-data.ts's BlogPost type has no body field at all —
---     the article text only exists hardcoded in JSX
---     (web/app/blog/[slug]/page.tsx). Reproduced verbatim below for the
---     one post with real content ("planning-the-grand-reunion"); the
---     other 3 get the exact same "coming soon" placeholder the site
---     itself shows for them.
---   - `date`: mock data gives "Mon DD" only, no year. Assumed 2026 —
---     all 4 dates (Aug/Sep) fall before the site's current in-story date
---     (Sep 29, 2026), consistent with these being already-published
---     posts rather than future-dated ones.
---   - `status`/`is_public`: not in the mock type at all. Set to
---     'published' + public (true) for all 4 since that's what the site
---     actually renders (publicly reachable via generateStaticParams,
---     no auth gate) — the "Draft" badge on admin/edit-post is a demo of
---     the editing UI, not a claim about this post's real status.
---   - read time is intentionally not stored — see schema.sql.
+-- Sample blog posts.
+-- SAMPLE CONTENT: invented demo data for development and tests. `seed.sh --core`
+-- (use it for production) skips this file.
+-- Depends on seed_members.sql: author_member_id is resolved by matching the author's name
+-- where it names a member; "Reunion committee" isn't a person, so that post sets author_name
+-- instead. All four are published and public, dated 2026. Only "planning-the-grand-reunion" has
+-- real article text (with [AMOUNT]/[DEADLINE] markers that /admin/settings fills in); the other
+-- three carry the site's "coming soon" body.
 
 insert into blog_posts
   (slug, category, title, author_member_id, author_name, body, tags, status, is_public, featured, published_at)

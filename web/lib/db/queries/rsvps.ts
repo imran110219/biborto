@@ -13,11 +13,11 @@ export async function getMemberRsvpStatus(eventId: string, memberId: string): Pr
 }
 
 export async function getGoingCount(eventId: string): Promise<number> {
-  const rows = await db
-    .select({ id: eventRsvps.id })
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
     .from(eventRsvps)
     .where(and(eq(eventRsvps.eventId, eventId), eq(eventRsvps.status, "going")));
-  return rows.length;
+  return row?.n ?? 0;
 }
 
 // There's no invite list in this schema — RSVP is opt-in, not

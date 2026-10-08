@@ -24,8 +24,7 @@ named.
 - Case-insensitive email matching across sign-in, claim, and Google
   account linking.
 - `members.discipline_id` made nullable for pending requests, plus
-  `db/migrations/001_google_membership_requests.sql` and a superadmin
-  seed (`db/seed_superadmin.sql`).
+  a superadmin seed (`db/seed_superadmin.sql`).
 
 ## 3. Closing the gaps it opened (shipped)
 
@@ -174,7 +173,16 @@ named.
   events/gallery/videos sections hide themselves when empty.
 - Blog post share buttons (copy link, share by email) work; mock-only `lib/mock-data.ts`
   and bracketed placeholder captions were removed.
-- CI now type-checks and lints before building the image.
+- Database cleanup (pre-production): the 15 incremental migrations were folded into `schema.sql` and
+  removed (verified identical); seeds are split into core vs sample (`db:seed:core` for production);
+  stale mockup wording removed from schema and seeds.
+- Tests: Vitest unit, integration and smoke suites (`npm test`, `npm run test:integration`,
+  `npm run test:smoke`) and a CI job that seeds a database, builds and smoke-tests the app before the
+  image is published. See "Testing" in docs/web/README.md.
+- Second audit pass: password forms submit by POST so credentials can't land in the URL before
+  hydration; rate limits added for submissions, blog image upload (also race-free quota), RSVPs and
+  CSV import; home, profile and dashboard queries no longer load every row; stale Edge-runtime
+  statements removed from the docs.
 
 ## 8. Nice-to-have suggestions (not built)
 
@@ -214,10 +222,10 @@ be complete. Pick from here deliberately; none is committed work.
 - Bulk actions for blog posts; role-change confirmation with reason.
 
 **Engineering**
-- Automated tests (unit tests for `lib/` helpers, Playwright smoke tests for sign-in,
-  RSVP, submissions) and a CI database for `next build`.
-- A migration runner that records applied files instead of applying `db/migrations/*`
-  by hand, and a health-check endpoint for the container.
+- Browser-level end-to-end tests (Playwright) for sign-in, RSVP, submitting a post, the CSV
+  import screen; more unit tests as logic moves out of server actions.
+- A migration runner that records applied files (once `db/migrations/` has files — it's empty until the
+  first production deploy), and a health-check endpoint for the container.
 - Error reporting (Sentry or similar) and uptime monitoring.
 - Move rate limiting to Redis if the site ever runs on multiple instances.
 - Accessibility audit (keyboard paths for menus, focus management in dialogs) and a

@@ -10,8 +10,9 @@ import {
   MembersIcon,
   PhotoIcon,
 } from "@/components/ui/icons";
-import { getAdminMembers } from "@/lib/db/queries/members";
-import { getAdminBusinesses } from "@/lib/db/queries/businesses";
+import { getAdminMembersPage } from "@/lib/db/queries/members";
+import { getAdminBusinessesPage } from "@/lib/db/queries/businesses";
+import { getDashboardCounts } from "@/lib/db/queries/dashboard";
 import { getAdminUpcomingEvents } from "@/lib/db/queries/events";
 import { getRsvpSummary } from "@/lib/db/queries/rsvps";
 import { getAdminPosts } from "@/lib/db/queries/blog";
@@ -25,14 +26,15 @@ import { approvePost, rejectPost } from "@/app/admin/edit-post/actions";
 export default async function AdminDashboardPage() {
   const session = await auth();
   const isSuperadmin = session?.user?.platformRole === "superadmin";
-  const allMembers = await getAdminMembers();
-  const pendingMembers = allMembers.filter((m) => m.status === "pending");
-  const allBusinesses = await getAdminBusinesses();
-  const pendingBusinesses = allBusinesses.filter((b) => b.status === "pending");
+  // Counts come from COUNT queries; the approval lists load only the pending rows (first page).
+  const [counts, { items: pendingMembers }, { items: pendingBusinesses }, pendingPosts] = await Promise.all([
+    getDashboardCounts(),
+    getAdminMembersPage({ status: "pending", page: 1 }),
+    getAdminBusinessesPage({ status: "pending", page: 1 }),
+    getAdminPosts("pending"),
+  ]);
   const events = await getAdminUpcomingEvents();
   const eventRsvpSummaries = await Promise.all(events.slice(0, 3).map((e) => getRsvpSummary(e.id)));
-  const posts = await getAdminPosts();
-  const pendingPosts = posts.filter((p) => p.status === "pending");
   const [media, activity] = await Promise.all([getAdminMediaStats(), getRecentActivity()]);
   const firstName = session?.user?.name?.split(" ")[0];
 
@@ -46,8 +48,8 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-5 md:grid-cols-5">
-        <AdminStatCard label="Members" value={String(allMembers.length)} caption={`${pendingMembers.length} waiting for approval`} icon={<MembersIcon />} />
-        <AdminStatCard label="Blog posts" value={String(posts.length)} caption={`${pendingPosts.length} waiting for review`} icon={<DocumentIcon />} />
+        <AdminStatCard label="Members" value={String(counts.members)} caption={`${counts.pendingMembers} waiting for approval`} icon={<MembersIcon />} />
+        <AdminStatCard label="Blog posts" value={String(counts.posts)} caption={`${counts.pendingPosts} waiting for review`} icon={<DocumentIcon />} />
         <AdminStatCard
           label="Upcoming events"
           value={String(events.length)}
@@ -55,7 +57,7 @@ export default async function AdminDashboardPage() {
           icon={<CalendarIcon />}
         />
         <AdminStatCard label="Photos & videos" value={String(media.photos + media.videos)} caption={`${media.uploadsThisMonth} added this month`} icon={<PhotoIcon />} />
-        <AdminStatCard label="Business listings" value={String(allBusinesses.length)} caption={`${pendingBusinesses.length} waiting for approval`} icon={<BriefcaseIcon />} />
+        <AdminStatCard label="Business listings" value={String(counts.businesses)} caption={`${counts.pendingBusinesses} waiting for approval`} icon={<BriefcaseIcon />} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">

@@ -34,7 +34,7 @@ export function SignInForm({ callbackUrl, passwordReset = false }: { callbackUrl
         </p>
       )}
 
-      <form onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-[22px]">
+      <form method="post" onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-[22px]">
         <input type="hidden" name="callbackUrl" value={callbackUrl} />
 
         <label className="flex flex-col gap-1.5 text-sm font-semibold">

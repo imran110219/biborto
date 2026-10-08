@@ -22,7 +22,7 @@ export default async function MemberProfilePage({ params }: PageProps<"/members/
   const member = await getPublicMemberBySlug(slug);
   if (!member) notFound();
 
-  const others = (await getPublicMembers()).filter((m) => m.slug !== member.slug).slice(0, 4);
+  const others = await getPublicMembers({ limit: 4, excludeSlug: member.slug });
   const locationLabel = [member.city, member.country].filter(Boolean).join(", ");
   const hasSocialLinks = member.linkedinUrl || member.facebookUrl || member.websiteUrl;
 

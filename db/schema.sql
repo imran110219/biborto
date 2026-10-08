@@ -1,15 +1,16 @@
 -- Batch 11 platform — full data model.
 --
 -- Target: an independent Postgres database (no Supabase). Field choices
--- are grounded in what the Next.js app already assumes — see
--- web/lib/types.ts, web/lib/mock-data.ts, and the admin pages under
--- web/app/admin/** — this isn't a speculative model, it's what the UI
--- already renders.
+-- are grounded in what the Next.js app assumes — see web/lib/types.ts and
+-- the admin pages under web/app/admin/**.
 --
--- Auth: no Supabase Auth, so there's no auth.users / auth.uid() to sit
--- under. `users` below is a minimal placeholder for login identity
--- (Phase 2, not built yet) — expect it to grow or get replaced once an
--- actual auth approach (library or hand-rolled) is chosen.
+-- This file is the single source of truth: a fresh database is built from
+-- it alone (npm run db:seed / db:reset). Until the first production deploy
+-- it is edited in place; after that, every change also needs a numbered
+-- file in db/migrations/ (see db/migrations/README.md).
+--
+-- Auth: no Supabase Auth, so there's no auth.users / auth.uid(). `users`
+-- below is the login identity, shaped for @auth/drizzle-adapter (Auth.js).
 --
 -- Authorization: no row-level security. Supabase-style RLS leaned on
 -- auth.uid() being available inside every query via Supabase's
@@ -74,7 +75,7 @@ create type business_category as enum (
 );
 
 -- draft: admin working copy; pending: submitted by a member, awaiting review;
--- published / rejected: the outcome of that review (see db/migrations/012).
+-- published / rejected: the outcome of that review.
 create type blog_status as enum ('draft', 'pending', 'published', 'rejected');
 
 -- Scoped to exactly the 4 categories in the current seed data. Add new
@@ -89,7 +90,7 @@ create type event_category as enum ('Reunion', 'Online', 'Chapter', 'Volunteer')
 
 -- ---------------------------------------------------------------------
 -- users, accounts, sessions, verification_tokens — login identity
--- (Phase 2), shaped to match @auth/drizzle-adapter's expected Postgres
+-- shaped to match @auth/drizzle-adapter's expected Postgres
 -- schema (Auth.js / next-auth v5) rather than a bespoke shape, so the
 -- adapter can be pointed at these tables directly. `password_hash` is
 -- the one addition beyond what the adapter expects — Auth.js's
@@ -223,7 +224,7 @@ create table members (
   platform_role   member_platform_role not null default 'member',
   status          member_status not null default 'pending',
 
-  -- Not shown anywhere in the mockup yet; kept out of public_members
+  -- Not shown on the public site; kept out of public_members
   -- below since it's more sensitive than the rest of the public card —
   -- surface it members-only (e.g. an emergency blood-donor search),
   -- not to anonymous visitors.
@@ -250,7 +251,6 @@ create index members_status_idx on members (status);
 create index members_discipline_idx on members (discipline_id);
 create index members_city_idx on members (city);
 -- Roll is unique per member; it is also a second profile URL (/members/<short-code>-<roll>).
--- See db/migrations/015_member_slugs.sql.
 create unique index members_student_id_key on members (student_id) where student_id is not null;
 
 create trigger members_set_updated_at
@@ -339,7 +339,7 @@ create table sponsors (
 );
 
 create index sponsors_tier_idx on sponsors (tier);
--- At most one active diamond sponsor (see db/migrations/010); the admin
+-- At most one active diamond sponsor (partial unique index below); the admin
 -- actions deactivate the previous one when another is activated.
 create unique index sponsors_one_active_diamond_idx
   on sponsors (tier)
@@ -363,7 +363,7 @@ create table events (
   category        event_category,
   description     text,
   featured        boolean not null default false,
-  is_public       boolean not null default true,   -- shown on the public site; see db/migrations/011
+  is_public       boolean not null default true,   -- shown on the public site
   cover_photo_key text,
 
   created_by      uuid references members (id) on delete set null,
@@ -424,7 +424,7 @@ create table blog_posts (
 
   status            blog_status not null default 'draft',
   -- Shown on the public site (landing page, /blog, its own page). Shared
-  -- with events, gallery_albums and gallery_videos; see db/migrations/011.
+  -- with events, gallery_albums and gallery_videos.
   is_public         boolean not null default true,
   featured          boolean not null default false,
   published_at      timestamptz,
@@ -460,7 +460,7 @@ create table gallery_albums (
   name        text not null,
   event_id       uuid references events (id) on delete set null,       -- optional link
   discipline_id  uuid references disciplines (id) on delete set null,  -- optional link
-  is_public   boolean not null default true,   -- shown on the public site; see db/migrations/011
+  is_public   boolean not null default true,   -- shown on the public site
   created_by  uuid references members (id) on delete set null,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
@@ -490,7 +490,7 @@ create table gallery_videos (
   youtube_url  text,             -- null until the real YouTube link is filled in
   event_id       uuid references events (id) on delete set null,       -- optional link
   discipline_id  uuid references disciplines (id) on delete set null,  -- optional link
-  is_public    boolean not null default true,   -- shown on the public site; see db/migrations/011
+  is_public    boolean not null default true,   -- shown on the public site
   added_by     uuid references members (id) on delete set null,
   created_at   timestamptz not null default now()
 );
@@ -501,7 +501,7 @@ create index gallery_videos_discipline_idx on gallery_videos (discipline_id);
 -- ---------------------------------------------------------------------
 -- popups — superadmin-managed home-page popups (custom HTML or an
 -- image/animated GIF). With none active the site falls back to the
--- diamond sponsor popup. See db/migrations/009_popups.sql.
+-- diamond sponsor popup.
 -- ---------------------------------------------------------------------
 create type popup_kind as enum ('html', 'image');
 
@@ -528,7 +528,7 @@ create trigger popups_set_updated_at
   for each row execute function set_updated_at();
 
 -- ---------------------------------------------------------------------
--- site_settings — committee-editable settings (see db/migrations/014_site_settings.sql).
+-- site_settings — committee-editable settings (edited at /admin/settings).
 -- ---------------------------------------------------------------------
 create table site_settings (
   key         text        primary key,
@@ -542,7 +542,7 @@ create trigger site_settings_set_updated_at
 
 -- ---------------------------------------------------------------------
 -- rate_limits — fixed-window counters used by lib/security/rate-limit.ts
--- (see db/migrations/013_rate_limits.sql).
+
 -- ---------------------------------------------------------------------
 create table rate_limits (
   key          text        not null,

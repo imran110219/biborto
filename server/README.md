@@ -58,5 +58,7 @@ such as `docker.io/YOUR_DOCKERHUB_USERNAME/biborto:sha-<commit>`, then run
 
 The app expects Postgres and does not run schema changes automatically at
 startup. Provision the database and apply the SQL in `db/` using the existing
-database setup instructions before serving traffic. Apply new files in
-`db/migrations/` manually before deploying app changes that depend on them.
+database setup instructions before serving traffic. For a first deployment, seed with `npm run db:seed:core` from `web/` (or `bash db/seed.sh --core`) — that
+loads the roster, reference data, default settings and the superadmin, but not the sample content the
+development seed adds. After that, `db/migrations/` (empty until the first production deploy) holds the
+numbered files to apply by hand, in order, before deploying app changes that depend on them.

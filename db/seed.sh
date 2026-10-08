@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
-# Applies db/schema.sql and every db/seed_*.sql file, in the dependency
-# order docs/db/README.md's "Files" section documents (disciplines/
-# countries before members; members before businesses/sponsors/blog_posts;
-# businesses before sponsors) — not alphabetical, since seed_businesses.sql
-# etc. reference rows the earlier files create.
+# Applies db/schema.sql and then the db/seed_*.sql files, in dependency order
+# (disciplines/countries before members; members before businesses/sponsors/
+# blog_posts; businesses before sponsors) — not alphabetical.
 #
-# Usage (from anywhere, typically `npm run db:seed` / `npm run db:reset`
+# Two groups:
+#   core    disciplines, countries, members (the real 241-person roster), superadmin,
+#           site_settings. What a real deployment needs.
+#   sample  businesses, sponsors, events, blog_posts, gallery. Invented demo content
+#           (example.com sponsors, a fictional reunion, ...). For development/tests.
+#
+# Usage (typically `npm run db:seed` / `db:reset` / `db:seed:core` / `db:reset:core`
 # from web/ — see web/package.json):
-#   db/seed.sh          # apply schema + seeds (fails on a non-empty DB —
-#                        # seed_*.sql are plain INSERTs, not upserts)
-#   db/seed.sh --reset  # drop and recreate the public schema first, so
-#                        # this is safe to run against an already-seeded DB
+#   db/seed.sh                  # schema + core + sample (fails on a non-empty DB —
+#                               # the seed files are plain INSERTs, not upserts)
+#   db/seed.sh --core           # schema + core only — use this for production
+#   db/seed.sh --reset [--core] # drop and recreate the public schema first, so it is
+#                               # safe to run against an already-seeded database
 set -euo pipefail
 SUPERADMIN_PASSWORD="${SUPERADMIN_PASSWORD:-}"
 
@@ -39,7 +44,17 @@ if [[ ${#SUPERADMIN_PASSWORD} -lt 8 ]]; then
   exit 1
 fi
 
-if [[ "${1:-}" == "--reset" ]]; then
+RESET=0
+CORE_ONLY=0
+for arg in "$@"; do
+  case "$arg" in
+    --reset) RESET=1 ;;
+    --core) CORE_ONLY=1 ;;
+    *) echo "Unknown option: $arg (use --reset and/or --core)" >&2; exit 1 ;;
+  esac
+done
+
+if [[ "$RESET" == 1 ]]; then
   # Drops schema contents, not the database itself — works the same on a
   # local Postgres and on a managed instance where the connection's user
   # may not have privileges to DROP DATABASE.
@@ -50,7 +65,16 @@ fi
 echo "Applying schema.sql..."
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SCRIPT_DIR/schema.sql"
 
-for entity in disciplines countries members superadmin businesses sponsors events blog_posts gallery site_settings; do
+CORE=(disciplines countries members superadmin site_settings)
+SAMPLE=(businesses sponsors events blog_posts gallery)
+ENTITIES=("${CORE[@]}")
+if [[ "$CORE_ONLY" == 0 ]]; then
+  ENTITIES+=("${SAMPLE[@]}")
+else
+  echo "Core only: skipping sample content (${SAMPLE[*]})."
+fi
+
+for entity in "${ENTITIES[@]}"; do
   echo "Seeding $entity..."
   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SCRIPT_DIR/seed_${entity}.sql"
   if [[ "$entity" == "superadmin" ]]; then

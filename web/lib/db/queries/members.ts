@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, or, sql, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { members, disciplines, countries } from "@/drizzle/schema";
 import { initialsOf, formatMonthYear } from "@/lib/db/format";
@@ -11,7 +11,7 @@ import { getR2PublicUrl } from "@/lib/r2";
 // the display name) and pick which columns to expose. See PublicMember's
 // comment in lib/types.ts for why email/platformRole/status/studentId
 // are never included.
-export async function getPublicMembers(): Promise<PublicMember[]> {
+export async function getPublicMembers({ limit, excludeSlug }: { limit?: number; excludeSlug?: string } = {}): Promise<PublicMember[]> {
   const rows = await db
     .select({
       id: members.id,
@@ -24,8 +24,9 @@ export async function getPublicMembers(): Promise<PublicMember[]> {
     })
     .from(members)
     .leftJoin(disciplines, eq(disciplines.id, members.disciplineId))
-    .where(and(eq(members.status, "active"), eq(members.isPublic, true)))
-    .orderBy(members.name);
+    .where(and(eq(members.status, "active"), eq(members.isPublic, true), excludeSlug ? ne(members.slug, excludeSlug) : undefined))
+    .orderBy(members.name)
+    .limit(limit ?? 10_000); // pages that only show a handful pass a limit instead of loading everyone
 
   return rows.map((row) => ({
     id: row.id,

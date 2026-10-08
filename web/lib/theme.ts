@@ -44,8 +44,8 @@ export function validateThemeColor(label: string, hex: string): string | undefin
 // Fall back to the default for a missing/invalid/low-contrast value instead of breaking the site.
 const safe = (hex: string, fallback: string) => (validateThemeColor("", hex) ? fallback : hex.startsWith("#") ? hex : `#${hex}`);
 
-// The derived shades reproduce the original palette closely (green → #153528 / #2c5a47 /
-// #e4ece6, amber → #f0e8dc / #7b501a), so the default look is unchanged.
+// The derived shades land close to the original hand-picked palette (green → #153528 / #2e5b4b /
+// #e4e9e7, amber → #f0e8dc / #7b5010), so the default look is visually the same.
 export function themeVars(brandHex: string, accentHex: string): Record<string, string> {
   const brand = parseHex(safe(brandHex, DEFAULT_BRAND))!;
   const accent = parseHex(safe(accentHex, DEFAULT_ACCENT))!;

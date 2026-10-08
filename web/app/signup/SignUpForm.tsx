@@ -31,7 +31,7 @@ export function SignUpForm({ requestPending = false }: { requestPending?: boolea
         </p>
       )}
 
-      <form onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-[22px]">
+      <form method="post" onSubmit={retainedFormSubmit(formAction)} className="flex flex-col gap-[22px]">
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
           Email
           <span className="relative flex items-center">

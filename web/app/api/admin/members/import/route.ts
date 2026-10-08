@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireSuperadmin } from "@/lib/auth/require-admin";
 import { logActivity } from "@/lib/activity";
+import { consume } from "@/lib/security/rate-limit";
+import { LIMITS } from "@/lib/security/limits";
 import { ImportFileError, MAX_IMPORT_BYTES, analyzeImport, applyImport, type ImportOptions } from "@/lib/members/import";
 
 export const runtime = "nodejs";
@@ -22,6 +24,11 @@ export async function POST(request: Request) {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin && origin !== `${request.headers.get("x-forwarded-proto") ?? "http"}://${request.headers.get("host")}`) {
     return NextResponse.json({ error: "Cross-origin request refused." }, { status: 403 });
+  }
+
+  const limit = await consume(`member-import:${actorId}`, LIMITS.memberImport);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: "Too many imports. Please wait a while and try again." }, { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } });
   }
 
   const form = await request.formData().catch(() => null);

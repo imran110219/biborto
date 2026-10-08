@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Applies db/schema.sql and then the db/seed_*.sql files, in dependency order
-# (disciplines/countries before members; members before businesses/sponsors/
-# blog_posts; businesses before sponsors) — not alphabetical.
+# (disciplines/countries before members; members before businesses; businesses before
+# sponsors; events before gallery) — not alphabetical.
 #
 # Two groups:
 #   core    disciplines, countries, members (the real 241-person roster), superadmin,
 #           site_settings. What a real deployment needs.
-#   sample  businesses, sponsors, events, blog_posts, gallery. Invented demo content
+#   sample  businesses, sponsors, events, gallery. Invented demo content
 #           (example.com sponsors, a fictional reunion, ...). For development/tests.
 #
 # The superadmin is created with SUPERADMIN_EMAIL (optional) and SUPERADMIN_PASSWORD (required),
@@ -88,7 +88,7 @@ echo "Applying schema.sql..."
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SCRIPT_DIR/schema.sql"
 
 CORE=(disciplines countries members superadmin site_settings)
-SAMPLE=(businesses sponsors events blog_posts gallery)
+SAMPLE=(businesses sponsors events gallery)
 ENTITIES=("${CORE[@]}")
 if [[ "$CORE_ONLY" == 0 ]]; then
   ENTITIES+=("${SAMPLE[@]}")

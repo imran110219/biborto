@@ -26,8 +26,9 @@ real. Member and business approval are real writes now too — see
 [Admin write surface](#admin-write-surface). Admin CRUD also writes
 events, sponsors, videos and blog posts; business submission and event
 RSVP are real. The 241-member seed is based on the active-voter CSV.
-There is no open account registration; superadmins add members manually
-export CSV and import CSV. Gallery images
+There is no registration of any kind: a superadmin adds each member (an email and a roll, by hand or by CSV
+import) and the person activates the account and confirms their name — see [Member onboarding](#member-onboarding).
+Gallery images
 upload to Cloudflare
 R2 through an admin-only server route and display from the bucket's public
 domain. Configure R2 variables in `.env.local` before uploading. Other
@@ -43,103 +44,70 @@ media types are not wired to R2 yet.
   base64 `@font-face` block
 - **Drizzle ORM** (`postgres-js` driver) for the public pages' reads — see
   [Data layer](#data-layer).
+- **Vitest** for unit, integration and smoke tests — see [Testing](#testing).
 - **Auth.js v5** (`next-auth@beta` + `@auth/drizzle-adapter`) for
   sign-in — email/password and Google, JWT sessions — see [Auth](#auth).
   Member/business workflows, business submission, event RSVP and admin
   CRUD for events, sponsors, videos and blog posts have real database
-  writes. Admin member import and non-gallery media uploads are still
+  writes. Non-gallery media uploads (event banners, business images) are still
   unbuilt.
 
 ## Structure
 
 ```
-app/
+app/                         (every page below is dynamic — rendered per request)
+  layout.tsx                  Root: metadata/theme from site settings, BrandProvider, SessionProvider, analytics consent
   page.tsx                    Home
-  members/page.tsx            Member directory
-  members/[slug]/page.tsx     Member profile (dynamic route, SSG)
-  events/page.tsx             Events
-  events/[slug]/page.tsx      Event detail (dynamic route, SSG)
-  gallery/page.tsx            Gallery & videos
-  gallery/[slug]/page.tsx     Album detail (dynamic route, SSG)
-  blog/page.tsx                Blog index — filters, search, pagination (was a redirect to the latest post)
-  blog/[slug]/page.tsx         Blog post detail (dynamic route, SSG)
-  business/page.tsx           Business Directory
-  business/[slug]/page.tsx    Business detail (dynamic route, SSG)
-  signin/page.tsx             Sign in (email/password + Google)
-  signin/actions.ts           Server Actions: credentialsSignIn, googleSignIn
-  signup/page.tsx             "Claim your account" — not open registration,
-                               see Auth below
-  signup/actions.ts           Server Actions: requestClaim + completeClaim
-  api/auth/[...nextauth]/route.ts   Auth.js's own HTTP endpoints (session,
-                                     callback, csrf, etc.) — re-exports
-                                     handlers from ../../auth.ts
-  admin/page.tsx               → redirects to /admin/dashboard
-  admin/dashboard/page.tsx
-  admin/members/page.tsx
-  admin/members/actions.ts     Server Actions: approveMember, suspendMember
-  admin/businesses/page.tsx
-  admin/businesses/actions.ts  Server Actions: approveBusiness, rejectBusiness
-  admin/sponsors/page.tsx
-  admin/events/page.tsx
-  admin/gallery/page.tsx
-  admin/videos/page.tsx
-  admin/settings/page.tsx
-  admin/edit-post/page.tsx
+  members/ [slug]/            Directory (search, filters, pagination) and profile (name slug or discipline-roll slug)
+  events/ [slug]/             Events (Upcoming/Past tabs) and detail (RSVP, calendar.ics route)
+  gallery/ [slug]/            Gallery & videos, album detail
+  blog/ [slug]/ submit/       Blog index, post, member submit form
+  business/ [slug]/ submit/   Business directory, detail, member submit form
+  signin/ signup/ signup/verify/   Sign in; "Activate your account"; set-password via emailed link
+  forgot-password/ reset-password/
+  welcome/                    First sign-in: confirm name, join the directory (proxy.ts sends unfinished members here)
+  account/                    Member self-service, three tabs: profile, submissions & events, security
+  privacy/ terms/             Legal pages
+  popup-frame/[id]/route.ts   Custom-HTML popup as its own sandboxed document
+  admin/
+    dashboard/ members/ (new, import, [id], [id]/edit) businesses/ (new, [slug], [slug]/edit)
+    events/ sponsors/ videos/ popups/ gallery/ edit-post/ (blog) settings/
+    page.tsx → redirects to /admin/dashboard
+  api/
+    auth/[...nextauth]/       Auth.js's own endpoints
+    account/photos/           Member's own profile/cover photo upload
+    admin/members/ export, import, [id]/photos     admin/businesses/export
+    admin/gallery/photos, admin/sponsors/[id]/logo, admin/popups/[id]/image
+    blog/images/              Blog editor image upload
+  robots.ts, sitemap.ts
 
 components/
-  ui/            Atoms: Button, Badge, Avatar, Card, FilterBar, Pagination,
-                 PlaceholderMedia, SectionHeader, PageHero, Quote, icons.tsx
-  layout/        Header, Footer, PublicLayout, AdminSidebar, AdminLayout
-  admin/         AdminStatCard, ApprovalRow
-  *.tsx          Domain cards: MemberCard, BusinessCard, EventCard,
-                 BlogTeaser, GalleryCards, SponsorStrip, CustomPopup
+  ui/            Atoms: Button, Badge, Avatar, Card, FilterBar, Pagination, PlaceholderMedia,
+                 SectionHeader, PageHero, Quote, icons.tsx
+  layout/        Header, Footer, PublicLayout, MemberMenu, BrandMark, Admin{Layout,Sidebar,UserMenu}
+  admin/         AdminStatCard, ApprovalRow, PublicField
+  blog/          RichTextEditor (TipTap), PostEditorShell, PostContentFields, CoverImageField,
+                 DraftAutosave, ShareButtons, ...
+  *.tsx          Domain cards (MemberCard, BusinessCard, EventCard, BlogTeaser, GalleryCards, VideoCard,
+                 SponsorStrip), CustomPopup/PopupShell, BlogBody (safe Markdown), BrandContext,
+                 AnalyticsConsent, SessionSync, StatTile
 
 lib/
-  types.ts       Member, Business, Sponsor, EventItem, BlogPost — plus
-                 PublicMember/BlogPostDetail, the narrower shapes the
-                 real public pages use (see Data layer below)
-  fonts.ts       next/font/google setup
-  auth/
-    require-admin.ts   requireAdminMemberId() — shared by every admin
-                       Server Action (members, businesses, ...); restates
-                       proxy.ts's role check since a Server Action is
-                       directly callable, not just reachable through the
-                       page that renders its bound form
-  db/
-    client.ts    Drizzle instance + pooled postgres-js connection
-                 (cached on globalThis so Next dev's hot-reload doesn't
-                 open a fresh pool per edit)
-    format.ts    DB row → display-string helpers (initials, event/blog
-                 date formatting, read-time estimation)
-    queries/     One file per entity (members, businesses, sponsors,
-                 events, blog, gallery, stats) — each maps rows onto the
-                 types in lib/types.ts, so components need zero changes.
-                 members.ts and businesses.ts also export admin-facing
-                 getAdminMembers()/getAdminBusinesses() (every status,
-                 not just the public-safe rows) — see Admin write surface.
-    auth-schema.ts   users/accounts/sessions/verification_tokens, hand-written
-                     to match @auth/drizzle-adapter's exact expected shape —
-                     see Auth below for why this one file isn't generated
+  types.ts, fonts.ts, images.ts (magic-byte sniffing), r2.ts, email.ts (Resend), url.ts, youtube.ts,
+  activity.ts (activity_log writer), settings.ts (site_settings + brand + reunion placeholders),
+  theme.ts (theme colours), use-retained-form.ts
+  auth/          require-admin.ts, session-member.ts
+  db/            client.ts, format.ts, auth-schema.ts (hand-written for the Auth.js adapter), queries/*.ts
+  members/       form.ts, filters.ts, public-filters.ts, import.ts + csv.ts, onboarding.ts, photo-upload.ts
+  businesses/ blog/ popups/ sponsors/    Per-feature forms, filters and limits
+  security/      csp.ts, rate-limit.ts, limits.ts
 
-drizzle/         Generated by `npm run db:pull` — schema.ts/relations.ts
-                 introspected from the live DB. Committed (components
-                 import from it), but never hand-edited — see Data layer.
-                 Does NOT cover users/accounts/sessions/verification_tokens
-                 for querying — those go through lib/db/auth-schema.ts instead.
-
-auth.ts          NextAuth() config: providers, adapter, callbacks, events —
-                 see Auth below
-proxy.ts         Next.js 16's renamed middleware.ts — gates /admin/** by
-                 role (Node.js runtime) and sets the per-request CSP
-                 nonce + security headers
-types/next-auth.d.ts   Module augmentation adding id/platformRole to
-                       Session.user and JWT
-
-components/BlogBody.tsx   Safe Markdown renderer (react-markdown + GFM) for
-                          blog_posts.body — see "Blog editor" below
-components/blog/          RichTextEditor (TipTap), CoverImageField,
-                          PostContentFields (title + cover + editor + Write/
-                          Preview) — shared by the admin and member forms
+drizzle/         Generated by `npm run db:pull` (schema.ts, relations.ts) — never hand-edited
+auth.ts          NextAuth() config: providers, adapter, callbacks, events
+proxy.ts         Next 16's renamed middleware: /admin gate, onboarding redirect, per-request CSP nonce + headers
+scripts/         init-db.mjs (production database setup), seed-superadmin-login.mjs
+tests/           unit/, integration/, smoke/ (Vitest)
+types/next-auth.d.ts   Session/JWT augmentation (id, platformRole, memberId, profileCompleted)
 ```
 
 ## One real behavior upgrade over the mockup
@@ -207,13 +175,9 @@ directory were rendering *every* mock row regardless of status —
 pending/suspended members and pending/rejected businesses included. Real
 data now correctly filters them out.
 
-Member queries use a left join for disciplines because Google membership
-requests can enter the approval queue before a discipline is known
-(`members.discipline_id` is nullable; see the migration noted in
-[`docs/db/README.md`](../db/README.md)). The public directory, public
-profile, and admin member list display `Not provided` when that relation
-is missing, so they can represent these requests without inventing a
-discipline.
+Member queries use a left join for disciplines because `members.discipline_id` is nullable (a record can exist
+before its discipline is known). The public directory, public profile and admin member list display `Not provided`
+when that relation is missing rather than inventing a discipline.
 
 **Fabricated data replaced with real (empty) fields**: `business/[slug]`
 used to fake a phone number and email address at render time (no such
@@ -398,7 +362,7 @@ The shared writing surface is `PostContentFields`:
   bytes, ≤ 8 MB) into `blog/<member id>/<uuid>.<ext>` and insert `![alt](url)`; each
   image goes in its own paragraph after the current block and never replaces
   selected text. Members may hold **40** images each (`MAX_BLOG_IMAGES_PER_MEMBER`,
-  counted by listing their R2 folder); admins are uncapped. Unused uploads are not
+  counted by listing their R2 folder, serialized per member by an advisory lock) and upload at most 60 an hour; admins are uncapped. Unused uploads are not
   garbage-collected yet.
 - **Cover photo** — `CoverImageField` uploads through the same route and submits
   `coverKey`; the actions store it in `blog_posts.cover_photo_key` after
@@ -423,7 +387,7 @@ The shared writing surface is `PostContentFields`:
   other's drafts; drafts older than 30 days, corrupt data, or blocked/full storage are
   ignored without breaking the form (and the "auto-saved at …" line only appears
   after a real save); a rejected submit keeps the draft; a successful one clears it
-  (`ClearBlogDraft` on `/account?submitted=blog`); signing out clears every blog draft
+  (`ClearBlogDraft` on `/account/submissions?submitted=blog`); signing out clears every blog draft
   in the browser. Drafts never leave the browser — admins' drafts are saved to the
   server (Save draft), as before. See `lib/blog/draft.ts`.
 - Dependencies: `@tiptap/*` v2, `tiptap-markdown`, `react-markdown`, `remark-gfm`
@@ -434,7 +398,7 @@ The shared writing surface is `PostContentFields`:
 Members can contribute in exactly two ways, and only by **submitting** — they
 never publish or edit content themselves. Every submission goes through the
 committee, and members follow each one's status under "My blog posts" and "My
-businesses" on `/account` (read-only).
+businesses" on `/account/submissions` (read-only).
 
 - **Blog posts** (`/blog/submit`, `submitPost`): title, category, an optional cover
   photo, a rich-text body written in the [blog editor](#blog-editor) (100–20,000
@@ -473,7 +437,8 @@ directly as an admin still fails.
 | List with search, filters, pagination | `/admin/members` | admin, superadmin |
 | Read-only profile (all fields incl. private) | `/admin/members/[id]` | admin, superadmin |
 | Edit (every `members` column except `slug`/`email`) | `/admin/members/[id]/edit` | superadmin (others redirect to the view page) |
-| Add member | `/admin/members/new`, `createMember` | superadmin |
+| Add member (email + roll) | `/admin/members/new`, `createMember` | superadmin |
+| Import CSV | `/admin/members/import`, `/api/admin/members/import` | superadmin |
 | Approve / reject / suspend / reactivate, bulk activate/suspend | list + dashboard, `actions.ts` | superadmin |
 | Profile/cover photo upload | `/api/admin/members/[id]/photos` | superadmin |
 | Export CSV | `/api/admin/members/export` | superadmin |
@@ -483,7 +448,7 @@ so views are shareable and the page stays a plain Server Component.
 `lib/members/filters.ts` validates the params (shared by the list and the
 export); `getAdminMembersPage` applies them in SQL (search matches name,
 email, student ID or city, with LIKE wildcards escaped) and paginates 25
-per page. The dashboard still uses the unfiltered `getAdminMembers`.
+per page. The dashboard no longer loads every member: it uses COUNT queries and only the pending rows (see "Keeping queries small").
 Checkbox selection for bulk actions is per page.
 
 **Add member** takes just an **email and a roll** (plus an optional discipline override) and creates a roster row
@@ -557,8 +522,8 @@ The home page shows **one popup**: the active custom popup, or **no popup
 at all** when none is active (`app/page.tsx`) — there is no sponsor or other
 fallback. A custom popup is either:
 
-- **Custom HTML** — rendered in an `<iframe sandbox="allow-scripts
-  allow-popups allow-popups-to-escape-sandbox" srcdoc=…>` **without**
+- **Custom HTML** — served as its own document from `/popup-frame/[id]` (with its own sandbox CSP) and shown in an
+  `<iframe sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" src=…>` **without**
   `allow-same-origin`. Scripts and CSS animations run, but in an opaque
   origin: the markup can't read this site's cookies, storage or DOM (and the
   site can't read it). Links open in a new tab (`<base target=_blank>`). Max
@@ -576,8 +541,7 @@ uploaded (the create action redirects straight to the upload step). At most
 list page says what visitors currently see, and each row has Preview (the
 saved version, in the real modal), Edit, Activate/Deactivate and Delete
 (which also removes the R2 object). `getActivePopup()` ignores an active
-popup that has nothing to render, and a failure loading it (e.g. an
-unmigrated table) is logged and simply shows no popup rather than
+popup that has nothing to render, and a failure loading it is logged and simply shows no popup rather than
 breaking the home page.
 
 ## Admin sponsors
@@ -641,8 +605,7 @@ submissions panel hides approve/reject for admins (`ApprovalRow readOnly`).
 (name, owner or city), category and city (distinct cities of active listings)
 — with real pagination (12 per page, `Pagination current/hrefFor`) and an
 accurate "Showing x–y of N" line. Only `active` listings are ever returned,
-whatever `status` is in the URL. Note the seeded businesses reference owner
-names that aren't in the member roster, so their owner is empty until set.
+whatever `status` is in the URL. The sample businesses' owners don't match anyone on the real roster, so they have no owner until a superadmin sets one.
 
 ## Auth
 
@@ -659,24 +622,18 @@ Email/password and Google, via Auth.js v5 (`next-auth@beta` +
 sessions with the Credentials provider, so both providers use JWT for
 consistency rather than splitting strategy per provider.
 
-**There is no public account registration.** `/signup` ("Request
-membership" in the UI) lets a person claim an existing `members` row by
-email; it does not create an active member account. The committee-managed
-roster is currently loaded from `active-voter-list.csv` via
-`db/seed_members.sql`; superadmins can add members manually (see
-[Admin members](#admin-members)), and a CSV import (see
-[Member CSV import](#member-csv-import)) adds or updates roster rows. Claiming is email-verified: enter the email on
+**There is no registration of any kind.** `/signup` ("Activate your account") lets a person claim an existing
+`members` row by email; it never creates a member. The roster comes from `active-voter-list.csv` via
+`db/seed_members.sql`, and superadmins add people by email + roll (see [Admin members](#admin-members) and
+[Member CSV import](#member-csv-import)); [Member onboarding](#member-onboarding) describes the whole path. Claiming is email-verified: enter the email on
 file → a one-time link (sha256-hashed token in `verification_tokens`, 1 hour,
 single use, sent via Resend — see `lib/email.ts`; without `RESEND_API_KEY` in
 dev the link is logged to the server console) → `/signup/verify` sets the
 password → creates the `users` row → sets `members.user_id`. The response
 never reveals whether an email is on the roster. Gmail members can skip all
-this with Google sign-in, which already asserts a verified email. Works for
-`status='pending'` as well as
-`'active'` (so a member awaiting approval can have a password ready),
-but actually signing in requires `status='active'` — a newly-claimed
-pending member's first sign-in attempt correctly fails until approved,
-not a bug. A `'suspended'` member can neither claim nor sign in.
+this with Google sign-in, which already asserts a verified email. Claiming works for `status='pending'` as well as `'active'`, but signing in requires `status='active'` —
+`pending` is now only a state an admin sets by hand ("not allowed in yet"), and such a member's sign-in correctly
+fails. A `'suspended'` member can neither claim nor sign in.
 
 Google sign-in has no separate claim step. For an active matching member, the `events.createUser` callback links
 `members.user_id` the same way the credentials claim flow does. The Google email must be verified, matching is
@@ -714,14 +671,12 @@ OAuth client values belong in ignored `.env.local`; `.env.example` keeps
 these variables blank. R2 credentials and the public bucket URL also
 belong in `.env.local`, using the `R2_*` variables from the example.
 
-**Not built**: forgot-password (needs an email-sending provider — a
-separate infrastructure decision, same shape of gap as R2), and any
-member-facing area beyond the public profile pages that already exist —
-there's no "my account" or "edit my profile" page yet.
+**Not built**: sharing photos to the gallery as a member, and editing a submission after it is in (members
+submit; the committee edits).
 
 ## Security hardening
 
-- **Rate limiting** (`lib/security/rate-limit.ts`, limits in `lib/security/limits.ts`): Postgres-backed fixed windows in the `rate_limits` table (migration 013). Sign-in is limited per email+IP, per email and per IP inside `authorize()` (so direct POSTs to `/api/auth/callback/credentials` are covered); password reset, claim, password change and photo upload have their own limits, as do blog and business submissions (10 and 6 per hour per member), blog image uploads (60/hour), RSVPs (60/hour) and the member CSV import (30/hour per superadmin). A limited API route answers 429 with `Retry-After`; a limited server action returns a "too quickly, try again in …" message (RSVPs are ignored silently). Blog image uploads are also serialized per member behind a Postgres advisory lock, so parallel uploads can't slip past the per-member image cap. The client IP is the first `X-Forwarded-For` entry, so the reverse proxy must overwrite that header.
+- **Rate limiting** (`lib/security/rate-limit.ts`, limits in `lib/security/limits.ts`): Postgres-backed fixed windows in the `rate_limits` table (defined in `db/schema.sql`). Sign-in is limited per email+IP, per email and per IP inside `authorize()` (so direct POSTs to `/api/auth/callback/credentials` are covered); password reset, claim, password change and photo upload have their own limits, as do blog and business submissions (10 and 6 per hour per member), blog image uploads (60/hour), RSVPs (60/hour) and the member CSV import (30/hour per superadmin). A limited API route answers 429 with `Retry-After`; a limited server action returns a "too quickly, try again in …" message (RSVPs are ignored silently). Blog image uploads are also serialized per member behind a Postgres advisory lock, so parallel uploads can't slip past the per-member image cap. The client IP is the first `X-Forwarded-For` entry, so the reverse proxy must overwrite that header.
 - **Live role/status check**: the `jwt` callback re-reads the member row on every request, so promotion, demotion and suspension apply immediately (a suspended member's session ends). `proxy.ts` runs on the Node.js runtime (Next 16 default), which is why this works there.
 - **Analytics consent** (`components/AnalyticsConsent.tsx`): Google Analytics loads only after the visitor accepts, never on private/token routes, and sends path-only page views. "Cookie settings" in the footer reopens the choice.
 - **CSP and headers** (`proxy.ts`, `lib/security/csp.ts`): per-request nonce CSP (`script-src 'nonce-…' 'strict-dynamic'`), `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, and HSTS/`upgrade-insecure-requests` in production when `APP_URL` is https. Pages are therefore dynamically rendered. New third-party origins (images, embeds, scripts) must be added to `buildCsp`.
@@ -750,7 +705,9 @@ there's no "my account" or "edit my profile" page yet.
    it (the preview is never trusted) and writes all valid rows in **one transaction**.
    Skipped rows don't block the rest. One `activity_log` entry is written.
 
-Rules (all in `lib/members/import.ts`): `Name` and `Email` are required; headers are
+Rules (all in `lib/members/import.ts`): `Email` is required, plus a roll (`Roll`/`Student ID`) for anyone not
+already on the roster; `Name` is optional (a row with a name is treated as confirmed and public, one without stays
+hidden until the person confirms at `/welcome`); the discipline is read from the roll unless given; headers are
 case/punctuation-insensitive with aliases (Roll → Student ID, Dept → Discipline, …);
 discipline matches the department short code, code or full name; country matches ISO code or
 name; dates accept `YYYY-MM-DD` or `DD/MM/YYYY`; "Public profile" is Yes/No. A roll that already belongs to another member (or repeats in the file) skips the row. Existing members
@@ -758,7 +715,7 @@ are matched by **email, case-insensitively**; with "update existing" on, only ce
 value are applied (a blank cell never erases data). A duplicate email later in the file is
 skipped. **Role, Status and Joined columns are ignored** — access is never granted from a
 spreadsheet; new members are always `member`, with status Active or Pending chosen on the page,
-and are created without a login (they claim the row at `/signup`). A leading `'` added by
+and are created without a login (they activate the account at `/signup` or with Google). A leading `'` added by
 the exporter's formula protection is stripped. Limits: 1 MB, 2,000 rows. Because the export
 and import share column names, an exported file can be edited and imported back.
 
@@ -771,7 +728,7 @@ Every member has two URLs that show the same profile:
   links, the sitemap and `<link rel="canonical">` use.
 - `/members/<discipline>-<roll>` — e.g. `/members/arch-110101`: the discipline short code
   and the member's `student_id`, lowercase and hyphen-separated. The roll is **unique**
-  (partial unique index `members_student_id_key`, migration 015), so the pair is too. A
+  (partial unique index `members_student_id_key` in `db/schema.sql`), so the pair is too. A
   member with no discipline or no roll has only the name URL. A bare `/members/110101`
   does not resolve.
 
@@ -857,8 +814,8 @@ Terms pages, a few page descriptions/headings that say "Batch 11", and the admin
   default. Other colours (cream background, text, borders, diamond blue) stay fixed.
 - `hero_description`, `footer_description` — the home-page introduction and footer blurb.
 - `contact_email`, `youtube_url`, `facebook_url` — footer links, each shown only when set.
-- `registration_fee`, `registration_deadline` — used by `fillReunionPlaceholders()`, which swaps `[AMOUNT]`/`[DEADLINE]` in the reunion blog post
-and event description (and says "to be announced" while unset). Links from settings are
+- `registration_fee`, `registration_deadline` — used by `fillReunionPlaceholders()`, which swaps `[AMOUNT]`/`[DEADLINE]` in any blog post
+or event description (and says "to be announced" while unset). Links from settings are
 rendered only if they are http(s).
 
 ## Testing
@@ -867,9 +824,9 @@ Vitest, three suites (`web/package.json` scripts; configs `vitest*.config.mts`):
 
 | Command | Needs | Covers |
 |---|---|---|
-| `npm test` | nothing | `tests/unit`: CSV parser; member-import rules (`interpretTable`, `decideRows` — header aliases, ignored role/status, per-field validation, duplicates, roll conflicts, "blank never erases"); theme colours/contrast; settings helpers (reunion placeholders, safe URLs, brand logo); CSP and security headers; member-form validation and `slugify`; filter parsing; rate-limit/format helpers; blog image-key ownership |
-| `npm run test:integration` | Postgres from `.env.local` | `tests/integration`: the rate limiter against a real database (limit, atomic under parallel calls, key isolation, peek/reset) and schema invariants (unique roll and slug, lowercase slugs, DB rejects a duplicate roll, one active popup/diamond sponsor, known setting keys, `public_members` hides private columns) |
-| `npm run test:smoke` | a running, seeded server (`SMOKE_BASE_URL`, default `http://localhost:3000`) | `tests/smoke`: public pages 200 and unknown things 404; both member URLs and the canonical tag; no private member data in public HTML; per-request CSP nonce that matches the scripts; anonymous users bounced from `/admin` and `/account`; protected APIs refuse; the `.ics` download |
+| `npm test` | nothing | `tests/unit`: CSV parser; member-import rules (`interpretTable`, `decideRows` — header aliases, ignored role/status, per-field validation, duplicates, roll conflicts, "blank never erases"); theme colours/contrast; settings helpers (reunion placeholders, safe URLs, brand logo); onboarding helpers (roll → discipline, placeholder names); CSP and security headers; member-form validation and `slugify`; filter parsing; rate-limit/format helpers; blog image-key ownership |
+| `npm run test:integration` | Postgres from `.env.local` | `tests/integration`: the rate limiter against a real database (limit, atomic under parallel calls, key isolation, peek/reset) and schema invariants (unique roll and slug, lowercase slugs, DB rejects a duplicate roll, one active popup/diamond sponsor, known setting keys, `public_members` hides private columns, nobody is public before confirming at `/welcome`) |
+| `npm run test:smoke` | a running, seeded server (`SMOKE_BASE_URL`, default `http://localhost:3000`) | `tests/smoke`: public pages 200 and unknown things 404; both member URLs and the canonical tag; no private member data in public HTML; per-request CSP nonce that matches the scripts; anonymous users bounced from `/admin`, `/account` and `/welcome`; the sign-up page offers activation, not registration; protected APIs refuse; the `.ics` download |
 
 Integration tests only touch rows keyed `itest:…` and clean up. The smoke suite assumes the seed data
 (e.g. member `md-zahidur-rahman`). CI (`.github/workflows/container.yml`) runs type check, lint and unit
@@ -887,34 +844,25 @@ npm install   # registry.npmjs.org is blocked on this network — see .npmrc,
 npm run build
 ```
 
-`DATABASE_URL` must point at a live, schema-loaded Postgres for `npm run
-build` to succeed now: the public pages' `generateStaticParams()`
-functions query it at build time to enumerate blog/business slugs (see
-[Data layer](#data-layer)). Every route in `app/` — including those
-dynamic routes — still builds as static (`○`) or SSG (`●`) output, same
-as before the database existed; only *how* the data gets baked in at
-build time changed, not that it does. No `output: "export"` in
-`next.config.ts`: Route Handlers are already in use (`api/auth/[...nextauth]`)
-and stay available for the rest of the write-path work auth unlocks
-(admin content, forms), without requiring a config change or a project
-restructure first.
+Every page renders per request (the root layout reads the site settings, and the proxy sets a CSP nonce), so
+`npm run build` **does not need a database** — the Docker image builds in CI without one. A live `DATABASE_URL`
+is needed at runtime, and for the integration and smoke tests. `next.config.ts` sets `output: "standalone"`
+(the Dockerfile copies that bundle) and `poweredByHeader: false`.
 
 ## Known gaps vs. the mockup
 
 - A handful of Tailwind arbitrary values (`h-[52px]`, `w-[104px]`, etc.)
   stand in for exact mockup pixel values that don't land on Tailwind's
   default spacing scale — intentional precision, not leftover cruft.
-- Only one real blog post has real article content (matching the
-  mockup); the other 3 seeded posts render the same "coming soon"
-  placeholder body the mockup always showed for them — see
-  `db/seed_blog_posts.sql`.
+- The seed contains no blog posts: the blog starts empty (the home page hides its blog section and `/blog`
+  shows its empty state) until a member submits one or an admin writes one.
 - Sign-in/sign-up, member and business review, business submission,
   event RSVP, settings, and admin CRUD for events, sponsors, videos and blog posts
   use real database writes. Gallery image upload and public display also
   use R2. Gallery album management, photo captions/deletion, and the
   album/video tabs are implemented. The members, events and business lists
-  (admin and public) have real search/filters/tabs and pagination. Member CSV
-  import remains unbuilt, and event banners and the home page's photo slots still
+  (admin and public) have real search/filters/tabs and pagination, and members can be added one by one or by CSV.
+  Event banners and the home page's photo slots still
   show neutral placeholder tiles because there is no image source for them yet
   (see "Nice-to-have suggestions" in docs/ROADMAP.md).
 - The seed has 241 active roster members and 0 gallery photos. Country

@@ -28,6 +28,11 @@ markup.
 Token names below are the actual `--color-*` custom properties in
 `web/app/globals.css`.
 
+> **Theme colours are configurable.** The hex values below are the *defaults* in `globals.css`. A superadmin can
+> change `brand-green` and `accent-amber` in `/admin/settings` → Theme colours; the root layout overrides the whole
+> brand-green and accent-amber families on `<html style>`, deriving the dark, mid and tint shades (`lib/theme.ts`).
+> The cream background, text, border and diamond-blue tokens are fixed.
+
 | Token | Hex | Usage |
 |---|---|---|
 | `bg-public` | `#F5F2EA` | Public page background |

@@ -26,7 +26,7 @@ this isn't a speculative model, it's what the UI assumes.
 - `db/seed.sh` — runs `schema.sql` then the `seed_*.sql` files below against
   `$DATABASE_URL` (or `web/.env.local`'s, if unset), in the required order. Two groups:
   **core** (`disciplines`, `countries`, `members`, `superadmin`, `site_settings`) is what a real
-  deployment needs; **sample** (`businesses`, `sponsors`, `events`, `blog_posts`, `gallery`) is
+  deployment needs; **sample** (`businesses`, `sponsors`, `events`, `gallery`) is
   invented demo content for development and tests. Wired up from `web/` as `npm run db:seed` /
   `db:reset` (core + sample, for development) and `npm run db:seed:core` / `db:reset:core`
   (core only, **use these for production**) — see "How to run this" below.
@@ -57,10 +57,10 @@ this isn't a speculative model, it's what the UI assumes.
   settings — contact email, social links, reunion fee/deadline — are left unset on purpose.
   `activity_log` has no seed.
 - **Sample content (skipped by `--core`):** `db/seed_businesses.sql`, `db/seed_sponsors.sql`,
-  `db/seed_events.sql`, `db/seed_blog_posts.sql` and `db/seed_gallery.sql` — fictional listings,
-  `.example` sponsors, a pretend Grand Reunion on 2026-12-12, four blog posts and six empty albums,
-  in dependency order (businesses link to members; sponsors can link to businesses; blog posts can
-  link to members). The test suites (`npm run test:smoke`) and CI use them.
+  `db/seed_events.sql` and `db/seed_gallery.sql` — fictional listings,
+  `.example` sponsors, one event ("First Batch Meetup", 2026-12-12), and one empty album with the same name plus a
+  placeholder video, both linked to that event, in dependency order (businesses link to members; sponsors can
+  link to businesses; the gallery links to the event). There is no blog seed: the blog starts empty. The test suites (`npm run test:smoke`) and CI use them.
   `users`/`accounts`/`sessions` are populated at runtime by claiming an
   account or signing in, not by a SQL seed.
 
@@ -68,7 +68,7 @@ this isn't a speculative model, it's what the UI assumes.
 
 | Table | What it is |
 |---|---|
-| `users`, `accounts`, `sessions`, `verification_tokens` | Login identity (Phase 2, built) — shaped to match `@auth/drizzle-adapter`'s expected schema so Auth.js (next-auth v5) can be pointed at them directly, plus `password_hash` on `users` for credentials sign-in, which the adapter doesn't provide. See `docs/web/README.md`'s Auth section. |
+| `users`, `accounts`, `sessions`, `verification_tokens` | Login identity — shaped to match `@auth/drizzle-adapter`'s expected schema so Auth.js (next-auth v5) can be pointed at them directly, plus `password_hash` on `users` for credentials sign-in, which the adapter doesn't provide. See `docs/web/README.md`'s Auth section. |
 | `disciplines` | Khulna University's discipline reference list (codes 01-24), grouped by `school`. A real table, not an enum — see "Disciplines are a reference table" below. |
 | `countries` | ISO 3166-1 countries/territories for the "current country" dropdown. Same reasoning as `disciplines` — see "Countries are a reference table" below. |
 | `members` | The alumni directory / profile data. `profile_completed_at` is NULL until the person confirms their details at `/welcome` (admin-added records start hidden); the roster seed sets it. `slug` powers `web/app/members/[slug]`. `discipline_id` references `disciplines`; `country_id` (nullable) references `countries`. `user_id` links to `users` once a member logs in; a roster row can exist without a login. |
@@ -78,7 +78,9 @@ this isn't a speculative model, it's what the UI assumes.
 | `events`, `event_rsvps` | Reunion/chapter events (with `is_public`) and member RSVPs (`going` / `interested` / `declined`). |
 | `blog_posts` | `status` (`draft` admin working copy, `pending` member submission awaiting review, `published`, `rejected`), `is_public` (replaced the old public/members-only `visibility`), tags. `body` holds the full article; read time is computed at render time, not stored. `author_name` is a free-text byline fallback for posts with no real member author (e.g. "Reunion committee"). |
 | `gallery_albums`, `gallery_photos`, `gallery_videos` | R2-hosted photo albums (with `is_public`; photos inherit their album's visibility) with optional event/discipline links, plus YouTube videos (with `is_public`) with optional event/discipline links. Superadmins create, edit, and delete empty albums; admins and superadmins upload, caption, and delete photos. |
-| `activity_log` | Backs the admin dashboard's "Recent activity" panel — precomputed human-readable entries, generic across entity types. |
+| `activity_log` | Backs the admin dashboard's "Recent activity" panel — precomputed human-readable entries, generic across entity types; written by `web/lib/activity.ts`. |
+| `site_settings` | Committee-editable key/value settings (batch name, institution, motto, theme colours, intro texts, contact email, social links, reunion fee/deadline), edited at `/admin/settings`; keys are listed in `web/lib/settings.ts`. A missing row means "not set". |
+| `rate_limits` | Fixed-window counters for rate limiting (sign-in failures, emails, uploads, submissions…), keyed by an opaque string + window start; tiny and short-lived. See `web/lib/security/rate-limit.ts`. |
 
 ## Key design decisions
 
@@ -87,10 +89,10 @@ this isn't a speculative model, it's what the UI assumes.
   into every connection. A plain Postgres connection doesn't get that for
   free — reproducing it would mean `SET LOCAL` session variables per
   request. Simpler default: authorization lives in application code —
-  Server Components querying Postgres directly for reads, and now (Phase
-  2, built) a `proxy.ts` (Next.js 16's renamed `middleware.ts`) reading
-  `platform_role` off the session JWT to gate `/admin/**` for writes —
-  same as any other Postgres-backed app. See `docs/web/README.md`'s Auth
+  Server Components querying Postgres directly for reads, and a `proxy.ts`
+  (Next.js 16's renamed `middleware.ts`) gating `/admin/**` on the member's
+  role, which the Auth.js `jwt` callback re-reads from Postgres on every
+  request — same as any other Postgres-backed app. See `docs/web/README.md`'s Auth
   section for how sign-in and role-gating actually work.
 - **Files are stored in R2, not Postgres.** Columns named `*_key`
   (`avatar_key`, `cover_photo_key`, `logo_key`, `r2_key`) store an object
@@ -99,8 +101,8 @@ this isn't a speculative model, it's what the UI assumes.
   `R2_PUBLIC_URL`. Photo uploads accept JPEG, PNG, WebP, and GIF up to
   15 MB. Member profile and cover images use the same bucket through a
   separate admin upload flow.
-- **Sponsors are not businesses.** 5 of the current 5 mock sponsors
-  happen to match businesses by name — a sponsor is often also a
+- **Sponsors are not businesses.** The 5 sample sponsors happen to match
+  sample businesses by name — a sponsor is often also a
   batchmate's business — but the design (see `docs/web/DESIGN.md`)
   treats them as separately curated. `sponsors.business_id` is an
   optional cross-link, not a hard dependency.
@@ -113,16 +115,13 @@ this isn't a speculative model, it's what the UI assumes.
   from `public_members` too. A birthday-reminder feature would only need
   month+day, not the full date; not built, so the full date stays
   admin-only for now rather than splitting it preemptively.
-- **`avatar_key` (the member photo) is wired through the app layer, not
-  just the DB.** `PublicMember`/`PublicMemberDetail` in `web/lib/types.ts`
-  now carry it and the query layer selects it, but nothing renders it
-  yet — `Avatar` (`web/components/ui/Avatar.tsx`) still displays initials.
-  Member photo upload/rendering is separate from the implemented gallery
-  upload path.
+- **`avatar_key` / `cover_photo_key` (member photos) are wired through the app.**
+  `PublicMember`/`PublicMemberDetail` carry the resolved URLs, `Avatar` renders the photo (initials when
+  there is none), and members upload their own from `/account` (a superadmin can upload for anyone).
 - **`platform_role` has three values:** `member`, `admin`, `superadmin`.
   All 241 roster rows are ordinary members. The separate bootstrap
-  superadmin has no discipline; admin roles are assigned by the committee,
-  not inferred from the active-voter CSV.
+  superadmin has no discipline; admin roles are assigned by a superadmin
+  (never from a CSV, which ignores role and status), not inferred from the active-voter CSV.
 - **Disciplines are a reference table, not an enum.** They started as a
   12-value `member_discipline` enum scoped to the mock data — reasonable
   when that was all the data available. Given Khulna University's real,
@@ -146,18 +145,19 @@ this isn't a speculative model, it's what the UI assumes.
   CLDR/EU/SWIFT-recognized and near-universal in real country dropdowns.
   `members.country_id` is nullable — the active-voter CSV has no country
   field, so seeded members have no country set.
-- **Other categorical fields are still fixed enums, scoped to what's
-  seeded.** `business_category` (6 values), `blog_category` (4 values),
-  and `event_category` (4 values) cover exactly what's in the current
-  mock/seed data, not necessarily the full set each will ever need — an
+- **Members are created by admins only, with a two-step identity.** An admin supplies an email and a roll; the
+  roll is unique (partial unique index on `student_id`) and its digits 3–4 are the discipline code.
+  `profile_completed_at` stays NULL (and `is_public` false) until the person confirms their name at `/welcome`.
+  `members.slug` is the slugified name; the second profile URL (`/members/<discipline short code>-<roll>`) is
+  computed at request time, not stored. See "Member onboarding" in `docs/web/README.md`.
+- **Other categorical fields are still fixed enums.** `business_category` (6 values), `blog_category` (4 values),
+  and `event_category` (4 values) cover what the app offers today, not necessarily the full set each will ever need — an
   enum stays the right shape for these since (unlike disciplines) there's
   no known larger authoritative list behind them yet. Add new values with
   `alter type <type_name> add value '...'` as real data needs them — see
   the comment above each type in `db/schema.sql`.
-- **"Invited" counts aren't modeled.** The admin dashboard shows "[00]
-  going of [000] invited" per event; there's no per-event audience
-  targeting yet, so "invited" should be derived as all active members
-  until a real invite-list feature is needed.
+- **"Invited" counts aren't modeled.** The admin dashboard shows "N going of M responded" per event, from
+  `event_rsvps`; there's no per-event audience targeting, so there is no invite list to count against.
 
 ## How to run this
 
@@ -169,8 +169,7 @@ Docker, RDS, etc.):
    `DATABASE_URL` at it (see `web/.env.example`).
 2. From `web/`: `npm run db:seed` — applies `db/schema.sql` then every
    `db/seed_*.sql` file via `db/seed.sh`, in the dependency order above
-   (disciplines/countries → members/superadmin → businesses/sponsors/blog_posts →
-   events/gallery). `db/seed.sh` reads `DATABASE_URL` from the
+   (disciplines/countries → members/superadmin → businesses → sponsors → events → gallery). `db/seed.sh` reads `DATABASE_URL` from the
    environment, falling back to `web/.env.local` if unset.
    To enable gallery uploads, also set `R2_ACCOUNT_ID`,
    `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and

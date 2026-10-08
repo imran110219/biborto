@@ -1,8 +1,8 @@
 -- Sample business-directory listings.
 -- SAMPLE CONTENT: invented demo data for development and tests. `seed.sh --core`
 -- (use it for production) skips this file.
--- Depends on seed_members.sql: owner_member_id is resolved by matching the owner's name
--- against the seeded roster. Contact fields (phone, email, website, images) are left NULL
+-- Depends on seed_members.sql: owner_member_id is looked up by matching the owner's name
+-- against the seeded roster (none of the invented owners are on the real roster, so it stays NULL). Contact fields (phone, email, website, images) are left NULL
 -- on purpose — nothing here pretends to be real contact info. submitted_at is the 1st of the
 -- month the listing is set in.
 

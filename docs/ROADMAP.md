@@ -23,7 +23,7 @@ named.
   unknown Google email now records nothing (see §7, "Member onboarding").
 - Case-insensitive email matching across sign-in, claim, and Google
   account linking.
-- `members.discipline_id` made nullable for pending requests, plus
+- `members.discipline_id` is nullable (a record can exist before its discipline is known), plus
   a superadmin seed (`db/seed_superadmin.sql`).
 
 ## 3. Closing the gaps it opened (shipped)
@@ -35,8 +35,7 @@ named.
   work/location, links, admin-only private details (phone, student ID,
   blood group, date of birth), status, platform role and the
   public-directory toggle (`app/admin/members/[id]/edit`), with photo
-  upload. Covers the "set discipline on a
-  Google-origin request" and "publish toggle" gaps in one form.
+  upload. Covers the "set discipline" and "publish toggle" gaps in one form.
 - Reactivate action for suspended members, plus per-row
   approve/reject/suspend/reactivate directly on the members list, not
   just the dashboard widget.
@@ -51,7 +50,7 @@ named.
 - Member list search, status/discipline/role filters and 25-per-page
   pagination, all driven by URL params (`lib/members/filters.ts`,
   `getAdminMembersPage`).
-- Manual member creation (`/admin/members/new`, `createMember`) and
+- Member creation (`/admin/members/new`, `createMember` — now just email + roll, see §7) and
   filtered CSV export (`/api/admin/members/export`).
 - Blog index page: `/blog` is now a real list (lead story + card grid, category pills,
   search, pagination, CTA) instead of redirecting to the latest post.
@@ -101,9 +100,8 @@ named.
   (`lib/businesses/`).
 - Still open: no field-level audit trail beyond `reviewedBy`/
   `reviewedAt`; `approveMember` still doesn't hard-require a discipline
-  before activating (mitigated today only because a Google-origin
-  request is created with `is_public = false`, so an incomplete profile
-  can't reach the public directory regardless).
+  before activating (mitigated today: an admin-added record always gets its discipline from the roll or
+  from the admin, and stays hidden until the person confirms at `/welcome`).
 
 ## 4. Public-facing write forms (shipped)
 
@@ -138,7 +136,7 @@ named.
 
 ## 6. Infrastructure and remaining media work
 
-- Cloudflare R2 — gallery and member profile/cover photo upload and display
+- Cloudflare R2 — gallery, member profile/cover, blog image, popup and sponsor logo upload and display
   are implemented, but credentials and the public bucket domain must be
   configured. Business image upload/rendering is not implemented.
 - Google OAuth — provider code exists and local client settings are in
@@ -209,8 +207,7 @@ be complete. Pick from here deliberately; none is committed work.
 - Recurring or multi-day events.
 
 **Communication**
-- Email notifications to admins for new membership requests, business and blog
-  submissions (the removed Settings "Notifications" toggles were never wired up; they
+- Email notifications to admins for new business and blog submissions (the removed Settings "Notifications" toggles were never wired up; they
   need a mail queue and per-admin preferences first).
 - Email the author when their post or listing is approved or rejected, with the reason.
 - Announcement banner / newsletter digest of new posts and events.

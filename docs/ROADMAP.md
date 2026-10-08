@@ -19,8 +19,8 @@ named.
 
 - Member approve/suspend (`app/admin/members/actions.ts`).
 - Business approve/reject (`app/admin/businesses/actions.ts`).
-- Google sign-in with no matching member now files a pending
-  membership request instead of a bare rejection (`auth.ts`).
+- ~~Google sign-in with no matching member files a pending request~~ — removed: registration is closed, an
+  unknown Google email now records nothing (see §7, "Member onboarding").
 - Case-insensitive email matching across sign-in, claim, and Google
   account linking.
 - `members.discipline_id` made nullable for pending requests, plus
@@ -126,7 +126,7 @@ named.
   would be added / updated / skipped with per-row reasons → confirm. See "Member CSV
   import" in docs/web/README.md. `db/seed_members.sql` still holds the original
   241-row roster; other records come from manual creation, import, or pending
-  requests from unmatched Google sign-ins. No open account registration is available.
+  nothing else — no one can register themselves.
 - Gallery image uploads now go through a Node Route Handler that checks
   for `admin`/`superadmin`, validates JPEG/PNG/WebP/GIF signatures and a
   15 MB limit, stores the object in R2, and inserts its key into
@@ -179,6 +179,10 @@ named.
 - `server/init-db.sh` (+ `web/scripts/init-db.mjs`, shipped in the Docker image): one-command, one-transaction
   first-time production database setup — schema, core seed and the superadmin login — that refuses a
   non-empty database.
+- Member onboarding, closed registration: an admin adds just an **email + roll** (discipline derived from the
+  roll) or imports a CSV; the person activates with Google or a verified-email link and confirms their name at
+  `/welcome` before being listed; unknown Google emails create nothing; admin list flags "Not signed in yet";
+  profile-progress card on `/account`. See "Member onboarding" in docs/web/README.md.
 - Tests: Vitest unit, integration and smoke suites (`npm test`, `npm run test:integration`,
   `npm run test:smoke`) and a CI job that seeds a database, builds and smoke-tests the app before the
   image is published. See "Testing" in docs/web/README.md.

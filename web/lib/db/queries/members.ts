@@ -277,6 +277,7 @@ export async function getAdminMembersPage(filters: AdminMemberFilters) {
       platformRole: members.platformRole,
       status: members.status,
       joinedAt: members.joinedAt,
+      profileCompletedAt: members.profileCompletedAt,
     })
     .from(members)
     .leftJoin(disciplines, eq(disciplines.id, members.disciplineId))
@@ -297,6 +298,7 @@ export async function getAdminMembersPage(filters: AdminMemberFilters) {
     platformRole: row.platformRole,
     status: row.status,
     joinedAt: formatMonthYear(row.joinedAt),
+    onboarded: !!row.profileCompletedAt,
   }));
 
   return { items, total, page, pageCount };

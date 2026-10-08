@@ -122,7 +122,14 @@ export default async function AdminMembersPage({ searchParams }: PageProps<"/adm
                     <div className="flex items-center gap-3">
                       <Avatar initials={m.initials} size="sm" />
                       <div className="flex flex-col">
-                        <span className="text-[15px] font-semibold">{m.name}</span>
+                        <span className="text-[15px] font-semibold">
+                          {m.name}
+                          {m.onboarded === false && (
+                            <span title="Added by the committee; hasn't signed in and confirmed their details yet" className="ml-2 rounded-full bg-accent-amber-tint px-2 py-0.5 align-middle text-[11px] font-semibold text-accent-amber-text">
+                              Not signed in yet
+                            </span>
+                          )}
+                        </span>
                         <span className="text-[13px] text-text-secondary">{m.email}</span>
                       </div>
                     </div>

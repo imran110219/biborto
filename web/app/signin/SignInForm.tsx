@@ -6,7 +6,7 @@ import Link from "next/link";
 import { LockIcon, MailIcon } from "@/components/ui/icons";
 import { credentialsSignIn, devSuperadminSignIn, googleSignIn } from "./actions";
 
-export function SignInForm({ callbackUrl, passwordReset = false }: { callbackUrl: string; passwordReset?: boolean }) {
+export function SignInForm({ callbackUrl, passwordReset = false, denied = false }: { callbackUrl: string; passwordReset?: boolean; denied?: boolean }) {
   const [error, formAction, pending] = useActionState(credentialsSignIn, undefined);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -19,12 +19,19 @@ export function SignInForm({ callbackUrl, passwordReset = false }: { callbackUrl
     <div className="flex w-full max-w-[420px] flex-col gap-[22px]">
       <div>
         <h2 className="font-serif text-3xl font-medium">Sign in</h2>
-        <p className="mt-1 text-text-secondary">Use the email you registered with.</p>
+        <p className="mt-1 text-text-secondary">Use the email the committee has for you.</p>
       </div>
 
       {passwordReset && !error && (
         <p role="status" className="rounded-xl bg-brand-green-tint px-4 py-3 text-sm text-brand-green">
           Password updated — sign in with your new password.
+        </p>
+      )}
+
+      {denied && !error && (
+        <p role="alert" className="rounded-xl bg-[#F8ECE4] px-4 py-3 text-sm text-[#9C3D10]">
+          That Google account isn&apos;t on the member roster, or the membership isn&apos;t active. Sign in with the email the
+          committee has for you, or ask the committee to add it.
         </p>
       )}
 
@@ -114,9 +121,9 @@ export function SignInForm({ callbackUrl, passwordReset = false }: { callbackUrl
       )}
 
       <p className="text-center text-sm text-text-secondary">
-        Not registered yet?{" "}
+        First time here? The committee adds members by email.{" "}
         <Link href="/signup" className="font-semibold text-brand-green">
-          Request membership
+          Activate your account
         </Link>
       </p>
       <Link href="/" className="text-center text-sm font-semibold text-brand-green">

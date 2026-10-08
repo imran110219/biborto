@@ -3,7 +3,14 @@ import { db } from "@/lib/db/client";
 import { countries, disciplines, members } from "@/drizzle/schema";
 import { parseCsv } from "@/lib/members/csv";
 import { BLOOD_GROUPS, slugify, type BloodGroup } from "@/lib/members/form";
+import { disciplineCodeFromRoll, placeholderName, validateRoll } from "@/lib/members/onboarding";
 
+// Member CSV import. A row needs an email and — for a person who isn't on the roster yet — a roll;
+// everything else is optional. A row WITHOUT a name creates the same kind of record as the admin
+// "Add member" form: the discipline is read from the roll, the name is a placeholder, and the record
+// stays hidden until the person confirms their details at /welcome. A row WITH a name is treated as
+// already confirmed by the committee (like the roster seed) and is public straight away.
+//
 // Member CSV import: analyze() turns a file into a plan (what would be created / updated /
 // skipped, with per-row reasons) without touching the database; apply() runs the same plan.
 // The file is always re-analyzed on the server — the preview the admin saw is never trusted.
@@ -78,11 +85,11 @@ export interface ImportAnalysis {
 }
 
 export type Values = Partial<{
-  name: string; email: string; phoneNumber: string; studentId: string; disciplineId: string; campusName: string;
+  name: string; email: string; phoneNumber: string; studentId: string; disciplineId: string; derivedDisciplineId: string; campusName: string;
   profession: string; currentEmployer: string; city: string; countryId: string; bloodGroup: BloodGroup;
   dateOfBirth: string; isPublic: boolean; linkedinUrl: string; facebookUrl: string; websiteUrl: string;
 }>;
-export type PlanItem = { kind: "create"; values: Values & { name: string; email: string } } | { kind: "update"; id: string; set: Values };
+export type PlanItem = { kind: "create"; values: Values & { name: string; email: string }; confirmed: boolean } | { kind: "update"; id: string; set: Values };
 
 const emptyCounts = (): Record<RowAction, number> => ({ create: 0, update: 0, unchanged: 0, error: 0 });
 const fatal = (message: string): ImportAnalysis => ({ fatal: message, columns: { recognized: [], ignored: [], unknown: [] }, rows: [], counts: emptyCounts() });
@@ -115,6 +122,7 @@ function isHttpUrl(value: string) {
 
 export interface Lookups {
   disciplineBy: Map<string, string>; // lowercase short code / code / full name → discipline id
+  disciplineByCode: Map<string, string>; // two-digit code ("02") → discipline id, for deriving it from a roll
   countryBy: Map<string, string>; // lowercase ISO code / name → country id
 }
 
@@ -124,7 +132,7 @@ export type Interpreted =
   | { columns: ImportAnalysis["columns"]; parsed: ParsedRow[] };
 
 // Pure: reads the header, validates every row and turns cells into typed values. No database.
-export function interpretTable(table: string[][], { disciplineBy, countryBy }: Lookups): Interpreted {
+export function interpretTable(table: string[][], { disciplineBy, disciplineByCode, countryBy }: Lookups): Interpreted {
   if (table.length === 0) return { fatal: "The file is empty." };
 
   const header = table[0];
@@ -141,8 +149,8 @@ export function interpretTable(table: string[][], { disciplineBy, countryBy }: L
     else unknown.push(h.trim());
   });
   const have = new Set(fieldAt.values());
-  if (!have.has("name") || !have.has("email")) {
-    return { fatal: "The first row must be a header with at least “Name” and “Email” columns." };
+  if (!have.has("email")) {
+    return { fatal: "The first row must be a header with at least an “Email” column (and a “Roll” or “Student ID” column to add new people)." };
   }
   const dataRows = table.slice(1);
   if (dataRows.length === 0) return { fatal: "The file has a header but no members." };
@@ -162,14 +170,14 @@ export function interpretTable(table: string[][], { disciplineBy, countryBy }: L
     const email = (raw.email ?? "").toLowerCase();
     const fail = (error: string): ParsedRow => ({ line, name, email, error });
 
-    if (!name) return fail("Name is missing.");
     if (!email) return fail("Email is missing.");
     if (!EMAIL.test(email)) return fail(`“${raw.email}” is not a valid email address.`);
     for (const [field, max] of Object.entries(CAPS) as [Field, number][]) {
       if ((raw[field]?.length ?? 0) > max) return fail(`${LABELS[field]} is too long (${max} characters max).`);
     }
 
-    const values: Values = { name, email };
+    const values: Values = { email };
+    if (name) values.name = name;
     for (const f of ["phoneNumber", "studentId", "campusName", "profession", "currentEmployer", "city"] as const) {
       if (raw[f]) values[f] = raw[f];
     }
@@ -183,6 +191,14 @@ export function interpretTable(table: string[][], { disciplineBy, countryBy }: L
       const id = disciplineBy.get(raw.discipline.toLowerCase());
       if (!id) return fail(`Unknown discipline “${raw.discipline}”. Use the department code (e.g. CSE) or its full name.`);
       values.disciplineId = id;
+    }
+    if (raw.studentId) {
+      const rollError = validateRoll(raw.studentId);
+      if (rollError) return fail(rollError);
+      // No discipline given: read it from the roll (digits 3–4). Used for new people, and for existing
+      // ones only when they have no discipline yet — it never overrides a stored value.
+      const code = disciplineCodeFromRoll(raw.studentId);
+      if (!values.disciplineId && code && disciplineByCode.has(code)) values.derivedDisciplineId = disciplineByCode.get(code);
     }
     if (raw.country) {
       const id = countryBy.get(raw.country.toLowerCase());
@@ -271,7 +287,21 @@ export function decideRows(
       seenRolls.add(roll);
     }
     if (!current) {
-      push({ action: "create" }, { kind: "create", values: p.values as Values & { name: string; email: string } });
+      const v = p.values;
+      if (!roll) {
+        push({ action: "error", error: "Roll (student ID) is required to add a new person." }, null);
+        continue;
+      }
+      const disciplineId = v.disciplineId ?? v.derivedDisciplineId;
+      if (!disciplineId) {
+        push({ action: "error", error: `Couldn't work out the discipline from roll ${roll} — add a Discipline value.` }, null);
+        continue;
+      }
+      const { derivedDisciplineId: _derived, ...rest } = v;
+      push(
+        { action: "create" },
+        { kind: "create", confirmed: !!v.name, values: { ...rest, disciplineId, name: v.name ?? placeholderName(v.email!), email: v.email! } },
+      );
       continue;
     }
     if (!options.updateExisting) {
@@ -291,6 +321,9 @@ export function decideRows(
     diff("name", "name", current.name);
     diff("phoneNumber", "phone", current.phoneNumber);
     diff("studentId", "student ID", current.studentId);
+    if (p.values.disciplineId === undefined && p.values.derivedDisciplineId && !current.disciplineId) {
+      p.values.disciplineId = p.values.derivedDisciplineId; // fill a missing discipline from the roll
+    }
     diff("disciplineId", "discipline", current.disciplineId);
     diff("campusName", "campus name", current.campusName);
     diff("profession", "profession", current.profession);
@@ -323,8 +356,9 @@ async function plan(csvText: string, options: ImportOptions): Promise<{ analysis
   for (const d of disciplineRows) for (const k of [d.shortCode, d.code, d.name]) disciplineBy.set(k.toLowerCase().trim(), d.id);
   const countryBy = new Map<string, string>();
   for (const c of countryRows) for (const k of [c.isoCode, c.name]) countryBy.set(k.toLowerCase().trim(), c.id);
+  const disciplineByCode = new Map(disciplineRows.map((d) => [d.code, d.id]));
 
-  const interpreted = interpretTable(table, { disciplineBy, countryBy });
+  const interpreted = interpretTable(table, { disciplineBy, disciplineByCode, countryBy });
   if ("fatal" in interpreted) return { analysis: fatal(interpreted.fatal), items: [] };
   const { columns, parsed } = interpreted;
 
@@ -373,9 +407,14 @@ export async function applyImport(csvText: string, options: ImportOptions, actor
         let slug = base;
         for (let n = 2; taken.has(slug); n++) slug = `${base}-${n}`;
         taken.add(slug);
+        const { isPublic: requestedPublic, ...fields } = item.values;
         await tx.insert(members).values({
-          ...item.values,
+          ...fields,
           slug,
+          // A named row is confirmed by the committee and public (unless it says otherwise); a nameless
+          // one stays hidden until the person confirms their details at /welcome.
+          isPublic: item.confirmed ? (requestedPublic ?? true) : false,
+          profileCompletedAt: item.confirmed ? now : null,
           platformRole: "member", // access is never granted from a spreadsheet
           status: options.newStatus,
           ...(options.newStatus === "active" ? { reviewedBy: actorId, reviewedAt: now } : {}),

@@ -13,6 +13,8 @@ export interface Member {
   platformRole: PlatformRole;
   status: MemberStatus;
   joinedAt: string; // "Jan 2025"
+  // False for a record the committee added by email + roll whose owner hasn't yet confirmed their details at /welcome.
+  onboarded?: boolean;
 }
 
 // The editable form of a member's admin-only record — everything the

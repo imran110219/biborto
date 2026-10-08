@@ -63,7 +63,7 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="overflow-hidden rounded-2xl border border-border-default bg-white">
           <div className="flex items-center justify-between border-b border-[#EFEAE0] px-6 py-5">
-            <h2 className="text-lg font-semibold">Membership requests</h2>
+            <h2 className="text-lg font-semibold">Members waiting for approval</h2>
             <Link href="/admin/members" className="text-sm font-semibold">
               View all
             </Link>

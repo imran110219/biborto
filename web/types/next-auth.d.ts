@@ -7,6 +7,8 @@ declare module "next-auth" {
       id: string;
       platformRole: PlatformRole;
       memberId?: string;
+      /** False until the member has confirmed their details at /welcome. */
+      profileCompleted: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -16,5 +18,6 @@ declare module "next-auth/jwt" {
     userId?: string;
     platformRole?: PlatformRole;
     memberId?: string;
+    profileCompleted?: boolean;
   }
 }

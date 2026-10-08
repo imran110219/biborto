@@ -5,7 +5,7 @@ import { SignInForm } from "./SignInForm";
 
 export default async function SignInPage({ searchParams }: PageProps<"/signin">) {
   const brand = await getBrand();
-  const { callbackUrl, reset } = await searchParams;
+  const { callbackUrl, reset, denied } = await searchParams;
   const target = typeof callbackUrl === "string" ? callbackUrl : "";
 
   return (
@@ -29,7 +29,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/signin">)
       </div>
 
       <div className="flex items-center justify-center bg-bg-public p-9 md:p-14">
-        <SignInForm callbackUrl={target} passwordReset={reset === "1"} />
+        <SignInForm callbackUrl={target} passwordReset={reset === "1"} denied={denied === "1"} />
       </div>
     </div>
   );

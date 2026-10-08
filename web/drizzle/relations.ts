@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, sessions, members, disciplines, countries, businesses, sponsors, events, eventRsvps, galleryVideos, galleryAlbums, galleryPhotos, blogPosts, activityLog, popups, accounts } from "./schema";
+import { users, sessions, businesses, sponsors, members, events, eventRsvps, galleryVideos, disciplines, galleryAlbums, galleryPhotos, blogPosts, activityLog, countries, popups, accounts } from "./schema";
 
 export const sessionsRelations = relations(sessions, ({one}) => ({
 	user: one(users, {
@@ -12,53 +12,6 @@ export const usersRelations = relations(users, ({many}) => ({
 	sessions: many(sessions),
 	members: many(members),
 	accounts: many(accounts),
-}));
-
-export const membersRelations = relations(members, ({one, many}) => ({
-	user: one(users, {
-		fields: [members.userId],
-		references: [users.id]
-	}),
-	discipline: one(disciplines, {
-		fields: [members.disciplineId],
-		references: [disciplines.id]
-	}),
-	country: one(countries, {
-		fields: [members.countryId],
-		references: [countries.id]
-	}),
-	member: one(members, {
-		fields: [members.reviewedBy],
-		references: [members.id],
-		relationName: "members_reviewedBy_members_id"
-	}),
-	members: many(members, {
-		relationName: "members_reviewedBy_members_id"
-	}),
-	events: many(events),
-	eventRsvps: many(eventRsvps),
-	galleryVideos: many(galleryVideos),
-	galleryPhotos: many(galleryPhotos),
-	blogPosts: many(blogPosts),
-	galleryAlbums: many(galleryAlbums),
-	activityLogs: many(activityLog),
-	businesses_ownerMemberId: many(businesses, {
-		relationName: "businesses_ownerMemberId_members_id"
-	}),
-	businesses_reviewedBy: many(businesses, {
-		relationName: "businesses_reviewedBy_members_id"
-	}),
-	popups: many(popups),
-}));
-
-export const disciplinesRelations = relations(disciplines, ({many}) => ({
-	members: many(members),
-	galleryVideos: many(galleryVideos),
-	galleryAlbums: many(galleryAlbums),
-}));
-
-export const countriesRelations = relations(countries, ({many}) => ({
-	members: many(members),
 }));
 
 export const sponsorsRelations = relations(sponsors, ({one}) => ({
@@ -92,6 +45,43 @@ export const eventsRelations = relations(events, ({one, many}) => ({
 	galleryAlbums: many(galleryAlbums),
 }));
 
+export const membersRelations = relations(members, ({one, many}) => ({
+	events: many(events),
+	eventRsvps: many(eventRsvps),
+	galleryVideos: many(galleryVideos),
+	galleryPhotos: many(galleryPhotos),
+	blogPosts: many(blogPosts),
+	galleryAlbums: many(galleryAlbums),
+	activityLogs: many(activityLog),
+	businesses_ownerMemberId: many(businesses, {
+		relationName: "businesses_ownerMemberId_members_id"
+	}),
+	businesses_reviewedBy: many(businesses, {
+		relationName: "businesses_reviewedBy_members_id"
+	}),
+	user: one(users, {
+		fields: [members.userId],
+		references: [users.id]
+	}),
+	discipline: one(disciplines, {
+		fields: [members.disciplineId],
+		references: [disciplines.id]
+	}),
+	country: one(countries, {
+		fields: [members.countryId],
+		references: [countries.id]
+	}),
+	member: one(members, {
+		fields: [members.reviewedBy],
+		references: [members.id],
+		relationName: "members_reviewedBy_members_id"
+	}),
+	members: many(members, {
+		relationName: "members_reviewedBy_members_id"
+	}),
+	popups: many(popups),
+}));
+
 export const eventRsvpsRelations = relations(eventRsvps, ({one}) => ({
 	event: one(events, {
 		fields: [eventRsvps.eventId],
@@ -116,6 +106,12 @@ export const galleryVideosRelations = relations(galleryVideos, ({one}) => ({
 		fields: [galleryVideos.addedBy],
 		references: [members.id]
 	}),
+}));
+
+export const disciplinesRelations = relations(disciplines, ({many}) => ({
+	galleryVideos: many(galleryVideos),
+	galleryAlbums: many(galleryAlbums),
+	members: many(members),
 }));
 
 export const galleryPhotosRelations = relations(galleryPhotos, ({one}) => ({
@@ -157,6 +153,10 @@ export const activityLogRelations = relations(activityLog, ({one}) => ({
 		fields: [activityLog.actorMemberId],
 		references: [members.id]
 	}),
+}));
+
+export const countriesRelations = relations(countries, ({many}) => ({
+	members: many(members),
 }));
 
 export const popupsRelations = relations(popups, ({one}) => ({

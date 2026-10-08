@@ -1,4 +1,4 @@
-import { pgTable, unique, uuid, text, timestamp, foreignKey, index, uniqueIndex, date, boolean, time, check, integer, primaryKey, pgView, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, unique, uuid, text, timestamp, foreignKey, index, uniqueIndex, boolean, date, time, check, integer, primaryKey, pgView, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blogCategory = pgEnum("blog_category", ['Reunion', 'Memories', 'Careers', 'Campus'])
@@ -68,68 +68,6 @@ export const countries = pgTable("countries", {
 }, (table) => [
 	unique("countries_iso_code_key").on(table.isoCode),
 	unique("countries_name_key").on(table.name),
-]);
-
-export const members = pgTable("members", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	userId: uuid("user_id"),
-	slug: text().notNull(),
-	name: text().notNull(),
-	disciplineId: uuid("discipline_id"),
-	campusName: text("campus_name"),
-	shortBio: text("short_bio"),
-	favoriteCampusPlace: text("favorite_campus_place"),
-	mostMemorableEvent: text("most_memorable_event"),
-	profession: text(),
-	currentEmployer: text("current_employer"),
-	bio: text(),
-	city: text(),
-	countryId: uuid("country_id"),
-	avatarKey: text("avatar_key"),
-	coverPhotoKey: text("cover_photo_key"),
-	linkedinUrl: text("linkedin_url"),
-	facebookUrl: text("facebook_url"),
-	websiteUrl: text("website_url"),
-	email: text().notNull(),
-	phoneNumber: text("phone_number"),
-	studentId: text("student_id"),
-	platformRole: memberPlatformRole("platform_role").default('member').notNull(),
-	status: memberStatus().default('pending').notNull(),
-	bloodGroup: bloodGroup("blood_group"),
-	dateOfBirth: date("date_of_birth"),
-	isPublic: boolean("is_public").default(true).notNull(),
-	joinedAt: timestamp("joined_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	reviewedBy: uuid("reviewed_by"),
-	reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: 'string' }),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	index("members_city_idx").using("btree", table.city.asc().nullsLast().op("text_ops")),
-	index("members_discipline_idx").using("btree", table.disciplineId.asc().nullsLast().op("uuid_ops")),
-	index("members_status_idx").using("btree", table.status.asc().nullsLast().op("enum_ops")),
-	uniqueIndex("members_student_id_key").using("btree", table.studentId.asc().nullsLast().op("text_ops")).where(sql`(student_id IS NOT NULL)`),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "members_user_id_fkey"
-		}).onDelete("set null"),
-	foreignKey({
-			columns: [table.disciplineId],
-			foreignColumns: [disciplines.id],
-			name: "members_discipline_id_fkey"
-		}),
-	foreignKey({
-			columns: [table.countryId],
-			foreignColumns: [countries.id],
-			name: "members_country_id_fkey"
-		}),
-	foreignKey({
-			columns: [table.reviewedBy],
-			foreignColumns: [table.id],
-			name: "members_reviewed_by_fkey"
-		}).onDelete("set null"),
-	unique("members_slug_key").on(table.slug),
-	unique("members_email_key").on(table.email),
 ]);
 
 export const sponsors = pgTable("sponsors", {
@@ -374,6 +312,69 @@ export const siteSettings = pgTable("site_settings", {
 	value: text().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 });
+
+export const members = pgTable("members", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	userId: uuid("user_id"),
+	slug: text().notNull(),
+	name: text().notNull(),
+	disciplineId: uuid("discipline_id"),
+	campusName: text("campus_name"),
+	shortBio: text("short_bio"),
+	favoriteCampusPlace: text("favorite_campus_place"),
+	mostMemorableEvent: text("most_memorable_event"),
+	profession: text(),
+	currentEmployer: text("current_employer"),
+	bio: text(),
+	city: text(),
+	countryId: uuid("country_id"),
+	avatarKey: text("avatar_key"),
+	coverPhotoKey: text("cover_photo_key"),
+	linkedinUrl: text("linkedin_url"),
+	facebookUrl: text("facebook_url"),
+	websiteUrl: text("website_url"),
+	email: text().notNull(),
+	phoneNumber: text("phone_number"),
+	studentId: text("student_id"),
+	platformRole: memberPlatformRole("platform_role").default('member').notNull(),
+	status: memberStatus().default('pending').notNull(),
+	bloodGroup: bloodGroup("blood_group"),
+	dateOfBirth: date("date_of_birth"),
+	isPublic: boolean("is_public").default(true).notNull(),
+	joinedAt: timestamp("joined_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	reviewedBy: uuid("reviewed_by"),
+	reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: 'string' }),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	profileCompletedAt: timestamp("profile_completed_at", { withTimezone: true, mode: 'string' }),
+}, (table) => [
+	index("members_city_idx").using("btree", table.city.asc().nullsLast().op("text_ops")),
+	index("members_discipline_idx").using("btree", table.disciplineId.asc().nullsLast().op("uuid_ops")),
+	index("members_status_idx").using("btree", table.status.asc().nullsLast().op("enum_ops")),
+	uniqueIndex("members_student_id_key").using("btree", table.studentId.asc().nullsLast().op("text_ops")).where(sql`(student_id IS NOT NULL)`),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "members_user_id_fkey"
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.disciplineId],
+			foreignColumns: [disciplines.id],
+			name: "members_discipline_id_fkey"
+		}),
+	foreignKey({
+			columns: [table.countryId],
+			foreignColumns: [countries.id],
+			name: "members_country_id_fkey"
+		}),
+	foreignKey({
+			columns: [table.reviewedBy],
+			foreignColumns: [table.id],
+			name: "members_reviewed_by_fkey"
+		}).onDelete("set null"),
+	unique("members_slug_key").on(table.slug),
+	unique("members_email_key").on(table.email),
+]);
 
 export const popups = pgTable("popups", {
 	id: uuid().defaultRandom().primaryKey().notNull(),

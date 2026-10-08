@@ -3,45 +3,17 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
-import { getCountryOptions } from "@/lib/db/queries/countries";
-import type { AdminMemberDetail } from "@/lib/types";
-import { AccessCard, EditMemberForm } from "../[id]/edit/EditMemberForm";
+import { AddMemberForm } from "./AddMemberForm";
 
-const BLANK_MEMBER: AdminMemberDetail = {
-  id: "",
-  name: "",
-  disciplineId: null,
-  campusName: "",
-  shortBio: "",
-  favoriteCampusPlace: "",
-  mostMemorableEvent: "",
-  profession: "",
-  currentEmployer: "",
-  city: "",
-  countryId: null,
-  bio: "",
-  linkedinUrl: "",
-  facebookUrl: "",
-  websiteUrl: "",
-  email: "",
-  phoneNumber: "",
-  studentId: "",
-  bloodGroup: null,
-  dateOfBirth: "",
-  platformRole: "member",
-  status: "active",
-  isPublic: true,
-};
-
-export default async function NewMemberPage() {
+export default async function NewMemberPage({ searchParams }: PageProps<"/admin/members/new">) {
   const session = await auth();
   if (session?.user?.platformRole !== "superadmin") redirect("/admin/members");
 
-  const [disciplines, countries] = await Promise.all([getDisciplineOptions(), getCountryOptions()]);
+  const [disciplines, { added, roll }] = await Promise.all([getDisciplineOptions(), searchParams]);
 
   return (
     <AdminLayout>
-      <div className="flex max-w-6xl flex-col gap-6">
+      <div className="flex max-w-3xl flex-col gap-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-text-secondary">
           <Link href="/admin/members" className="font-semibold text-brand-green">
             Members
@@ -53,23 +25,20 @@ export default async function NewMemberPage() {
         <div className="flex flex-col gap-1.5">
           <h1 className="font-serif text-4xl font-medium">Add member</h1>
           <p className="max-w-2xl text-text-secondary">
-            Add a batchmate to the roster. No account is created — they claim it later by signing up with this email.
-            You can upload photos after adding.
+            Enter the member&apos;s email and roll. That&apos;s all you need: they sign in with that email (Google, or the
+            verification link at the sign-up page), confirm their name, and fill in the rest of their profile themselves.
+            Adding many people? <Link href="/admin/members/import" className="font-semibold text-brand-green">Import a CSV</Link>.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <EditMemberForm
-            mode="create"
-            member={BLANK_MEMBER}
-            disciplines={disciplines}
-            countries={countries}
-            returnTo="/admin/members"
-          />
-          <aside className="lg:sticky lg:top-6">
-            <AccessCard member={BLANK_MEMBER} isSelf={false} canEditRole />
-          </aside>
-        </div>
+        {typeof added === "string" && (
+          <p role="status" className="rounded-xl bg-brand-green-tint px-4 py-3 text-sm font-medium text-brand-green">
+            Added {added}
+            {typeof roll === "string" ? ` (roll ${roll})` : ""}. They can sign in now with that email. Add another below.
+          </p>
+        )}
+
+        <AddMemberForm key={`${added}|${roll}`} disciplines={disciplines} />
       </div>
     </AdminLayout>
   );

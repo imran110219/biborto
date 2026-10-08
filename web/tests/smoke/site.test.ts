@@ -86,7 +86,7 @@ describe("security headers", () => {
 
 describe("access control", () => {
   it("sends anonymous visitors from /admin to sign in", async () => {
-    for (const path of ["/admin", "/admin/dashboard", "/admin/members", "/admin/settings", "/admin/members/import"]) {
+    for (const path of ["/admin", "/admin/dashboard", "/admin/members", "/admin/members/new", "/admin/settings", "/admin/members/import"]) {
       const res = await get(path);
       expect(res.status, path).toBe(307);
       expect(res.headers.get("location"), path).toContain("/signin");
@@ -94,11 +94,18 @@ describe("access control", () => {
   });
 
   it("sends anonymous visitors from member pages to sign in", async () => {
-    for (const path of ["/account", "/account/submissions", "/account/security"]) {
+    for (const path of ["/account", "/account/submissions", "/account/security", "/welcome"]) {
       const res = await get(path);
       expect(res.status, path).toBe(307);
       expect(res.headers.get("location"), path).toContain("/signin");
     }
+  });
+
+  it("has no public registration: the sign-up page only activates existing accounts", async () => {
+    const html = await (await get("/signup")).text();
+    expect(html).toContain("Activate your account");
+    expect(html).not.toMatch(/Request membership/i);
+    expect((await get("/signin?denied=1")).status).toBe(200);
   });
 
   it("refuses protected APIs without a session", async () => {

@@ -21,6 +21,7 @@ const OPEN_EVENT = "analytics:open-settings";
 const PRIVATE_PREFIXES = [
   "/admin",
   "/account",
+  "/welcome",
   "/signin",
   "/signup",
   "/forgot-password",

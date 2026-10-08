@@ -241,6 +241,12 @@ create table members (
   is_public       boolean not null default true,
 
   joined_at       timestamptz not null default now(),
+
+  -- Onboarding: NULL until the member has confirmed their own details at /welcome after their
+  -- first sign-in. Admin-added records carry only an email and a roll (the name is a placeholder),
+  -- so they stay hidden (is_public = false) until this is set. The roster seed and CSV rows that
+  -- come with a real name are marked complete up front.
+  profile_completed_at timestamptz,
   reviewed_by     uuid references members (id) on delete set null,
   reviewed_at     timestamptz,
   created_at      timestamptz not null default now(),

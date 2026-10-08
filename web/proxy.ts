@@ -6,6 +6,10 @@ import { securityHeaders } from "@/lib/security/csp";
 // auth.ts can re-check the member row on every request. Two jobs:
 //  1. Per-request CSP nonce + security headers on every page response.
 //  2. Gate /admin/** to admin/superadmin sessions.
+//  3. Send members who haven't finished onboarding to /welcome.
+const ONBOARDING_OK = ["/welcome", "/signin", "/signup", "/forgot-password", "/reset-password", "/privacy", "/terms"];
+const isOnboardingPath = (pathname: string) => ONBOARDING_OK.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
@@ -16,6 +20,12 @@ export default auth((req) => {
       signInUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(signInUrl);
     }
+  }
+
+  // First sign-in: until the member has confirmed their details they can only see /welcome (plus the
+  // legal pages and the sign-in screens). The flag is re-read from the database on every request.
+  if (req.auth?.user && req.auth.user.profileCompleted === false && !isOnboardingPath(pathname)) {
+    return NextResponse.redirect(new URL("/welcome", req.nextUrl.origin));
   }
 
   const nonce = btoa(crypto.randomUUID());

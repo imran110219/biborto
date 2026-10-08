@@ -32,6 +32,17 @@ describe("database invariants", () => {
     expect([...diamonds][0].n).toBeLessThanOrEqual(1);
   });
 
+  it("nobody is public before confirming their details at /welcome", async () => {
+    const leaked = await db.execute(sql`select email from members where profile_completed_at is null and is_public`);
+    expect([...leaked]).toEqual([]);
+  });
+
+  it("no member is stuck in a sign-up-style pending state with no way in (registration is closed)", async () => {
+    // 'pending' is only ever set by an admin now; a Google sign-in for an unknown email must not create rows.
+    const googleStubs = await db.execute(sql`select email from members where slug like 'google-%'`);
+    expect([...googleStubs]).toEqual([]);
+  });
+
   it("every stored setting key is one the app knows", async () => {
     const rows = [...(await db.execute(sql`select key from site_settings`))] as { key: string }[];
     for (const { key } of rows) expect(SETTING_KEYS as readonly string[]).toContain(key);

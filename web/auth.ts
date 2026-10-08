@@ -31,13 +31,11 @@ export async function signInLockSeconds(email: string, ip: string): Promise<numb
   return Math.max(...[pair, perEmail, perIp].map((r) => (r.blocked ? r.retryAfterSeconds : 0)));
 }
 
-// Members are committee-entered before anyone ever logs in (see
-// db/schema.sql's comment on `members`) — there is no open signup.
-// Signing in (either provider) requires an existing, active `members`
-// row matching the email; claiming an account (creating the `users` row
-// in the first place) happens in the /signup Server Action, not here —
-// see that file for why `status = 'pending'` is allowed to claim but not
-// to sign in.
+// Members are added by an admin (an email and a roll) before anyone ever logs in — there is no
+// registration of any kind. Signing in (either provider) requires an existing, active `members`
+// row matching the email; claiming an account (creating the `users` row in the first place)
+// happens in the /signup Server Action, not here. A first sign-in lands on /welcome until the
+// member has confirmed their details (members.profile_completed_at).
 async function activeMemberByEmail(email: string) {
   const normalizedEmail = email.trim().toLowerCase();
   const [member] = await db
@@ -121,7 +119,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // Runs for every sign-in attempt, both providers. For Google this is
     // what actually gates access — there's no separate "claim" step for
     // OAuth, so an unrecognized or non-active email is rejected right
-    // here, before the adapter creates any user/account row.
+    // here, before the adapter creates any user/account row. An unknown
+    // email creates NOTHING: no pending request, no user, no session.
     async signIn({ user, account, profile }) {
       if (account?.provider === "credentials") return true; // already gated in authorize()
       if (!user.email) return false;
@@ -136,23 +135,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         .where(sql`lower(${members.email}) = ${normalizedEmail}`)
         .limit(1);
 
-      if (member) return member.status === "active";
-
-      // A verified Google identity with no committee-entered record becomes
-      // a private membership request. Do not create the Auth.js user/session
-      // until an admin approves the request and the person signs in again.
-      await db
-        .insert(members)
-        .values({
-          slug: `google-${account?.providerAccountId ?? normalizedEmail.replace(/[^a-z0-9]+/g, "-")}`,
-          name: user.name?.trim() || normalizedEmail.split("@")[0],
-          email: normalizedEmail,
-          platformRole: "member",
-          status: "pending",
-          isPublic: false,
-        })
-        .onConflictDoNothing({ target: members.email });
-      return false;
+      return member?.status === "active"; // not on the roster (or not active) → refused, nothing recorded
     },
     // The token carries the member's role so the proxy and pages can gate /admin/**
     // without a lookup of their own — but a role in a token goes stale: a demoted
@@ -167,7 +150,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!userId) return token;
 
       const [member] = await db
-        .select({ id: members.id, platformRole: members.platformRole, status: members.status })
+        .select({ id: members.id, platformRole: members.platformRole, status: members.status, profileCompletedAt: members.profileCompletedAt })
         .from(members)
         .where(eq(members.userId, userId))
         .limit(1);
@@ -177,12 +160,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.userId = user.id;
         token.platformRole = member?.platformRole ?? "member";
         token.memberId = member?.id;
+        token.profileCompleted = !!member?.profileCompletedAt;
         return token;
       }
 
       if (!member || member.status !== "active") return null; // end the session
       token.platformRole = member.platformRole;
       token.memberId = member.id;
+      token.profileCompleted = !!member.profileCompletedAt; // false → the proxy sends them to /welcome
       return token;
     },
     async session({ session, token }) {
@@ -190,6 +175,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.userId as string;
         session.user.platformRole = token.platformRole as "member" | "admin" | "superadmin";
         session.user.memberId = token.memberId as string | undefined;
+        session.user.profileCompleted = token.profileCompleted !== false;
       }
       return session;
     },

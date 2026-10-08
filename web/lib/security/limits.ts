@@ -32,6 +32,9 @@ export const LIMITS = {
   // CSV member imports per superadmin (each analyzes up to 2,000 rows).
   memberImport: { limit: 30, windowSeconds: HOUR } satisfies Rule,
 
+  // Confirming details at /welcome (a handful of tries is plenty).
+  onboarding: { limit: 10, windowSeconds: HOUR } satisfies Rule,
+
   // Profile / cover photo uploads per member (each writes to R2).
   photoUpload: { limit: 30, windowSeconds: HOUR } satisfies Rule,
 } as const;

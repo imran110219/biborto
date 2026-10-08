@@ -7,27 +7,22 @@ import { MailIcon } from "@/components/ui/icons";
 import { googleSignIn } from "@/app/signin/actions";
 import { requestClaim } from "./actions";
 
-export function SignUpForm({ requestPending = false }: { requestPending?: boolean }) {
+export function SignUpForm() {
   const [message, formAction, pending] = useActionState(requestClaim, undefined);
 
   return (
     <div className="flex w-full max-w-[420px] flex-col gap-[22px]">
       <div>
-        <h2 className="font-serif text-3xl font-medium">Request membership</h2>
+        <h2 className="font-serif text-3xl font-medium">Activate your account</h2>
         <p className="mt-1 text-text-secondary">
-          Gmail members can continue with Google below. Everyone else: enter your roster email and we&apos;ll send a link to set your password.
+          Use the email the committee has on file. Gmail members can continue with Google below; everyone else enters their
+          email and we send a link to verify it and set a password.
         </p>
       </div>
 
       {message && (
         <p role="status" className="rounded-xl bg-[#F8F3E6] px-4 py-3 text-sm text-text-primary">
           {message}
-        </p>
-      )}
-
-      {requestPending && (
-        <p role="status" className="rounded-xl bg-[#F8F3E6] px-4 py-3 text-sm text-text-primary">
-          Access is waiting on admin review. A first-time Google sign-in sends a membership request; existing pending members can sign in after approval. If you already have an active membership, contact the committee for help.
         </p>
       )}
 

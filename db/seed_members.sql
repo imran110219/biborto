@@ -251,3 +251,6 @@ values
   ('shakila-alam', 'Shakila Alam', (select id from disciplines where short_code = 'BAN'), 'shakilasr.ku26@gmail.com', '01778714954', '111926', 'member', 'active', true),
   ('sabuj-kumar-mondal', 'Sabuj Kumar Mondal', (select id from disciplines where short_code = 'BAN'), 'mondalsabuj07@gmail.com', '+880 1920-587415', '111928', 'member', 'active', true),
   ('sufal-das', 'Sufal das', (select id from disciplines where short_code = 'BAN'), 'sufal.dmtcl.ku@gmail.com', '+880 01739322587', '111933', 'member', 'active', true);
+
+-- The roster comes with real names, so these members skip the first-login confirmation step.
+update members set profile_completed_at = now() where profile_completed_at is null;

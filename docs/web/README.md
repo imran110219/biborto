@@ -247,9 +247,8 @@ bucket, and a public custom domain (or `r2.dev` for local development).
 The app does not create the bucket or configure its domain.
 
 `lib/mock-data.ts` has been removed — nothing renders mock content any more. Members come from seed
-data, manual creation or CSV import by a superadmin, or a pending request created by an
-unmatched Google sign-in. That request does not create an account or
-grant access until an admin approves it.
+data, or an admin adding them (email + roll, or CSV import). There is no registration:
+nobody can add themselves, and a Google sign-in for an email that isn't on the roster records nothing.
 
 ## Admin write surface
 
@@ -487,14 +486,15 @@ email, student ID or city, with LIKE wildcards escaped) and paginates 25
 per page. The dashboard still uses the unfiltered `getAdminMembers`.
 Checkbox selection for bulk actions is per page.
 
-**Add member** creates a roster row only — **no login account**. The person
-claims it later at `/signup`, which links the existing row by email.
-Defaults: `active`, role `member`, public. Name and email are required;
-email is stored lowercase and checked case-insensitively for duplicates
-(sign-in matches on `lower(email)`); a unique-violation race is caught at
-insert. The slug is generated from the name with `-2`, `-3`… on collision.
-The creator is recorded in `reviewed_by`/`reviewed_at`. Photos are uploaded
-after creation, from the edit page.
+**Add member** takes just an **email and a roll** (plus an optional discipline override) and creates a roster row
+only — **no login account**. The discipline is read from the roll (digits 3–4 are the discipline code; if the roll
+doesn't have that shape the admin must pick one). Defaults: `active`, role `member`, **hidden** (`is_public = false`,
+`profile_completed_at` NULL) with a stand-in name made from the email, until the person signs in and confirms their
+details at `/welcome` — see "Member onboarding". Email is stored lowercase and checked case-insensitively for
+duplicates (sign-in matches on `lower(email)`), the roll must be unique, and a unique-violation race is caught at
+insert. The creator is recorded in `reviewed_by`/`reviewed_at`. After a save the form clears so several people can be
+added in a row. Everything else (photos, profession, …) is filled in by the member, or edited by a superadmin from the
+edit page.
 
 **Edit** shares its parsing/validation with Add (`lib/members/form.ts`):
 URLs must be http(s), blood group must be a valid enum value, date of birth
@@ -678,19 +678,11 @@ but actually signing in requires `status='active'` — a newly-claimed
 pending member's first sign-in attempt correctly fails until approved,
 not a bug. A `'suspended'` member can neither claim nor sign in.
 
-Google sign-in has no separate claim step. For an active matching member,
-the `events.createUser` callback links `members.user_id` the same way the
-credentials claim flow does. A verified Google email with no matching
-member creates a private `pending` membership request, but no Auth.js
-user or session; this is a request for committee review, not an active
-account. The sign-up page offers Google sign-in as well: a verified Google email
-matching an active committee member finds that existing profile. Google
-email matching is case-insensitive, and a Google account can link to a
-previously password-claimed account with the same verified email. If no
-member record matches, the app creates a private `pending` member request
-using the Google name and email, then denies sign-in until an admin
-approves it from the member queue. The initial request has no discipline
-or public profile details; admins can collect those before publishing it.
+Google sign-in has no separate claim step. For an active matching member, the `events.createUser` callback links
+`members.user_id` the same way the credentials claim flow does. The Google email must be verified, matching is
+case-insensitive, and a Google account can link to a previously password-claimed account with the same verified
+email. A Google email with **no** matching active member is refused and nothing is recorded: no `pending` row, no
+Auth.js user, no session (`/signin?denied=1` explains it). See "Member onboarding".
 
 **Role-gating `/admin/**`**: `proxy.ts` (Next.js 16 renamed
 `middleware.ts` — the deprecation warning is real, don't ignore it) reads
@@ -801,6 +793,36 @@ backs the home page (4 members) and a profile's "other members" (4); the admin d
 (`getAdminMembersPage({ status: "pending" })`, `getAdminBusinessesPage`, `getAdminPosts("pending")`);
 `getGoingCount` is a COUNT. Still loading everything on purpose: the sitemap (needs every slug),
 `/admin/edit-post` (the full post list) and the CSV export.
+
+## Member onboarding
+
+No one registers themselves. The only way into the system is an admin entering a person's **email and roll**
+(`/admin/members/new`) or importing them from a CSV.
+
+1. **Admin adds** `email + roll`. The discipline comes from the roll. The record is `active`, hidden, with a
+   placeholder name, and `profile_completed_at = NULL`. (A CSV row that also has a **Name** is treated as
+   already confirmed: it is public immediately, like the original roster seed.)
+2. **The person activates the account** at `/signin` or `/signup` ("Activate your account"):
+   - *Google*: the Google email must be verified and match the roster email. An email that isn't on the roster
+     (or whose member isn't `active`) is refused with a notice and **nothing is stored**.
+   - *Any other email*: enter it at `/signup`; a one-time link (sha256-hashed token, 1 hour, single use,
+     rate-limited, identical response whether or not the email is on the roster) proves they own the mailbox and
+     lets them set a password. So a non-Google email is always verified before a login exists.
+3. **`/welcome`** — on the first request after sign-in `proxy.ts` sees `session.user.profileCompleted === false`
+   (re-read from the database on every request in the `jwt` callback) and redirects every page except `/welcome`,
+   the sign-in/sign-up/reset pages and the legal pages. The page shows their roll, discipline and email ("is this
+   you?"), asks for their **full name** (pre-filled from Google when available) and whether to appear in the
+   directory (default yes). `completeOnboarding` sets the name **once** (afterwards only a superadmin can change
+   it), regenerates the profile slug from it (`-2`, `-3`… on collision), sets `is_public` and
+   `profile_completed_at` in one guarded update, and logs "joined". They land on `/account?welcome=1`.
+4. **Profile**: `/account` shows a "Finish your profile" progress card (photo, profession, city, short bio) until
+   those are filled in. Seeded roster members, who already have names, skip step 3 and see the same card.
+
+The admin list marks records that haven't been through step 3 with "Not signed in yet". Hidden records are
+unreachable by either profile URL and are left out of the directory, stats and sitemap. An admin who mistypes an
+email lets the owner of that mailbox claim the record, which is why `/welcome` shows the roll for the person to
+confirm. The `pending` member status is no longer part of any sign-up flow; it remains only as a manual "not
+allowed to sign in yet" state an admin can set.
 
 ## Activity feed
 

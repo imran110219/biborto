@@ -8,6 +8,7 @@ import { getSessionMemberId } from "@/lib/auth/session-member";
 import { getAdminMemberById } from "@/lib/db/queries/members";
 import { getDisciplineOptions } from "@/lib/db/queries/disciplines";
 import { getCountryOptions } from "@/lib/db/queries/countries";
+import { ProfileNudge } from "./ProfileNudge";
 import { MemberHeader } from "@/app/admin/members/[id]/MemberHeader";
 import { EditMemberForm } from "@/app/admin/members/[id]/edit/EditMemberForm";
 import { MemberPhotoControls } from "@/app/admin/members/[id]/edit/MemberPhotoControls";
@@ -24,7 +25,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
     getCountryOptions(),
   ]);
   if (!member) return null;
-  const { saved } = await searchParams;
+  const { saved, welcome } = await searchParams;
 
   const publicSlug = member.isPublic && member.status === "active" ? await slugOf(member.id) : undefined;
 
@@ -35,6 +36,21 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           View my public profile →
         </Link>
       )}
+
+      {welcome === "1" && (
+        <p role="status" className="rounded-xl bg-brand-green-tint px-4 py-3 text-sm font-medium text-brand-green">
+          Welcome aboard! Your profile is confirmed. Tell your batchmates a bit more about you below.
+        </p>
+      )}
+
+      <ProfileNudge
+        missing={[
+          !member.avatarUrl && "a profile photo",
+          !member.profession && "your profession",
+          !member.city && "the city you live in",
+          !member.shortBio && "a short bio",
+        ].filter((x): x is string => !!x)}
+      />
 
       {saved === "1" && (
         <p role="status" className="rounded-xl bg-brand-green-tint px-4 py-3 text-sm font-medium text-brand-green">

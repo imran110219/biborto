@@ -5,10 +5,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { members } from "@/drizzle/schema";
+import { disciplines, members } from "@/drizzle/schema";
 import { requireAdmin, requireSuperadmin } from "@/lib/auth/require-admin";
 import type { MemberStatus } from "@/lib/types";
 import { parseMemberForm, safeReturnTo, slugify } from "@/lib/members/form";
+import { disciplineCodeFromRoll, isEmail, placeholderName, validateRoll } from "@/lib/members/onboarding";
 
 // Member moderation (approve/suspend/reactivate/edit) is superadmin-only;
 // admins have view-only access to member profiles.
@@ -129,28 +130,36 @@ export async function updateMember(memberId: string, _prevState: string | undefi
   redirect(safeReturnTo(returnTo));
 }
 
-// Committee-entered roster record. No auth user is created — the person
-// claims it later at /signup, which links the existing row by email.
+// Adds a roster record from just an email and a roll — nobody registers themselves. The person
+// signs in with that email (Google, or the verified-email link at /signup) and confirms their name
+// at /welcome; until then the record is hidden from the public directory. Discipline comes from the
+// roll (digits 3–4 are the discipline code) unless the admin picks one. No login account is created.
 export async function createMember(_prevState: string | undefined, formData: FormData) {
   const actorId = await requireSuperadmin();
 
-  const parsed = parseMemberForm(formData, { requireEmail: true });
-  if ("error" in parsed) return parsed.error;
-  const { returnTo: _returnTo, ...values } = parsed.values;
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const roll = String(formData.get("studentId") ?? "").trim();
+  const chosenDiscipline = String(formData.get("disciplineId") ?? "").trim();
 
-  // Sign-in matches on lower(email), so uniqueness is checked the same way.
-  const [existing] = await db
-    .select({ id: members.id })
-    .from(members)
-    .where(sql`lower(${members.email}) = ${values.email}`)
-    .limit(1);
-  if (existing) return "A member with this email already exists.";
-  if (values.studentId) {
-    const [clash] = await db.select({ name: members.name }).from(members).where(eq(members.studentId, values.studentId)).limit(1);
-    if (clash) return `Student ID ${values.studentId} already belongs to ${clash.name}.`;
+  if (!isEmail(email) || email.length > 200) return "Enter a valid email address.";
+  const rollError = validateRoll(roll);
+  if (rollError) return rollError;
+
+  let disciplineId = chosenDiscipline || null;
+  if (!disciplineId) {
+    const code = disciplineCodeFromRoll(roll);
+    const [derived] = code ? await db.select({ id: disciplines.id }).from(disciplines).where(eq(disciplines.code, code)).limit(1) : [];
+    if (!derived) return "Couldn't work out the discipline from this roll — choose it from the list.";
+    disciplineId = derived.id;
   }
 
-  const base = slugify(values.name);
+  // Sign-in matches on lower(email), so uniqueness is checked the same way.
+  const [sameEmail] = await db.select({ id: members.id }).from(members).where(sql`lower(${members.email}) = ${email}`).limit(1);
+  if (sameEmail) return "A member with this email already exists.";
+  const [sameRoll] = await db.select({ name: members.name, email: members.email }).from(members).where(eq(members.studentId, roll)).limit(1);
+  if (sameRoll) return `Roll ${roll} already belongs to ${sameRoll.name} (${sameRoll.email}).`;
+
+  const base = slugify(placeholderName(email));
   let slug = base;
   for (let n = 2; ; n++) {
     const [taken] = await db.select({ id: members.id }).from(members).where(eq(members.slug, slug)).limit(1);
@@ -162,17 +171,28 @@ export async function createMember(_prevState: string | undefined, formData: For
   try {
     [created] = await db
       .insert(members)
-      .values({ ...values, slug, reviewedBy: actorId, reviewedAt: new Date().toISOString() })
+      .values({
+        slug,
+        name: placeholderName(email),
+        email,
+        studentId: roll,
+        disciplineId,
+        platformRole: "member",
+        status: "active",
+        isPublic: false, // hidden until the member confirms their details at /welcome
+        reviewedBy: actorId,
+        reviewedAt: new Date().toISOString(),
+      })
       .returning({ id: members.id });
   } catch (error) {
-    // Lost a race on the unique email/slug between the checks above and the insert.
+    // Lost a race on the unique email/roll between the checks above and the insert.
     const code = (error as { code?: string; cause?: { code?: string } }).code ?? (error as { cause?: { code?: string } }).cause?.code;
-    if (code === "23505") return "A member with this email or student ID already exists.";
+    if (code === "23505") return "A member with this email or roll already exists.";
     throw error;
   }
 
-  await logActivity({ actorId, action: "member.created", targetType: "member", targetId: created.id, summary: `{actor} added ${values.name} to the roster` });
+  await logActivity({ actorId, action: "member.created", targetType: "member", targetId: created.id, summary: `{actor} added ${email} (roll ${roll}) to the roster` });
 
   revalidateMemberPaths();
-  redirect(`/admin/members/${created.id}`);
+  redirect(`/admin/members/new?added=${encodeURIComponent(email)}&roll=${encodeURIComponent(roll)}`);
 }

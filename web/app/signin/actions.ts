@@ -51,7 +51,8 @@ export async function googleSignIn(formData: FormData) {
     await signIn("google", { redirectTo: (formData.get("callbackUrl") as string) || "/" });
   } catch (error) {
     if (error instanceof AuthError && error.type === "AccessDenied") {
-      redirect("/signup?request=pending");
+      // Not on the roster (or not active). Nothing is recorded — there is no sign-up.
+      redirect("/signin?denied=1");
     }
     throw error;
   }

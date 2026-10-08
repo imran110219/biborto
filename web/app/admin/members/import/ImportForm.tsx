@@ -215,12 +215,17 @@ export function ImportForm() {
       <section className={card}>
         <h2 className="font-serif text-xl font-medium">File format</h2>
         <p className="text-sm text-text-secondary">
-          <strong>Name</strong> and <strong>Email</strong> are required. Optional columns: Phone, Student ID (or Roll), Discipline (department code such as CSE, or full name),
-          Campus name, Profession, Current employer, City, Country, Blood group, Date of birth (YYYY-MM-DD or DD/MM/YYYY), Public profile (Yes/No), LinkedIn, Facebook, Website.
-          Column names are not case-sensitive. A file exported with <em>Export CSV</em> can be edited and imported back; its Role, Status and Joined columns are ignored —
-          access level is never set from a spreadsheet, and new members are always regular members.
+          For someone new, <strong>Email</strong> and <strong>Roll</strong> (or Student ID) are all you need. Their discipline is read from the roll,
+          they sign in with that email and confirm their own name, and they stay out of the public directory until they do. Add a <strong>Name</strong>
+          column and that row is treated as already confirmed: the person is listed straight away, like the original roster.
         </p>
-        <a href="data:text/csv;charset=utf-8,Name%2CEmail%2CPhone%2CStudent%20ID%2CDiscipline%2CCity%0AJane%20Doe%2Cjane%40example.com%2C01700000000%2C110999%2CCSE%2CDhaka%0A" download="members-template.csv" className="self-start text-sm font-semibold text-brand-green">
+        <p className="text-sm text-text-secondary">
+          Optional columns: Name, Phone, Discipline (department code such as CSE, or full name), Campus name, Profession, Current employer, City, Country, Blood group,
+          Date of birth (YYYY-MM-DD or DD/MM/YYYY), Public profile (Yes/No), LinkedIn, Facebook, Website. Column names are not case-sensitive. A file exported with
+          <em> Export CSV</em> can be edited and imported back; its Role, Status and Joined columns are ignored — access level is never set from a spreadsheet,
+          and new members are always regular members.
+        </p>
+        <a href="data:text/csv;charset=utf-8,Email%2CRoll%0Ajane%40example.com%2C110299%0A" download="members-template.csv" className="self-start text-sm font-semibold text-brand-green">
           Download a template
         </a>
       </section>

@@ -27,7 +27,7 @@ jobs:
           pnpm install --frozen-lockfile
 
       - name: Type check
-        run: npx tsc --noEmit
+        run: npx next typegen && npx tsc --noEmit
 
       - name: Lint (errors fail, warnings don't)
         run: npx eslint --quiet

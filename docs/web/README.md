@@ -807,10 +807,27 @@ the write succeeds.
 ## Site settings
 
 `/admin/settings` edits the `site_settings` key/value table (`lib/settings.ts` lists the
-keys; superadmin-only to edit, admins can view). Used by the home-page headline (`motto`,
-default "One as an individual, united as one"; a comma starts a new line), the footer (organization name,
-contact email, YouTube/Facebook links — each link appears only when set) and by
-`fillReunionPlaceholders()`, which swaps `[AMOUNT]`/`[DEADLINE]` in the reunion blog post
+keys; superadmin-only to edit, admins can view). The batch's identity (name, institution, motto, intro texts) comes from here and
+applies on the next request (pages render per request). Still static prose: the Privacy and
+Terms pages, a few page descriptions/headings that say "Batch 11", and the admin copy.
+
+- `batch_name` + `institution` — header, footer, admin sidebar, sign-in/sign-up screens, page
+  titles (root layout's `title.template` → "Members — Batch 11"), the meta description, the
+  calendar file and the claim/reset emails. The round logo shows the digits of the batch name
+  ("Batch 11" → 11; initials when there are none). Client components read them through
+  `BrandProvider`/`useBrand()` (`components/BrandContext.tsx`); server code uses `getBrand()`.
+- `motto` — the home-page headline (default "One as an individual, united as one"; a comma
+  starts a new line) and the meta description.
+- `theme_color` (main) and `accent_color` — the site palette. `globals.css` defines the
+  default colours as CSS custom properties; the root layout overrides the brand-green and
+  accent-amber families on `<html style>` from `lib/theme.ts`, which derives the dark, mid and
+  tint shades from the two chosen colours (the defaults reproduce the original palette) and
+  also sets the mobile browser's `theme-color`. Saving rejects invalid hex and colours too light
+  for white text (contrast under 4.5:1); at render time a bad stored value falls back to the
+  default. Other colours (cream background, text, borders, diamond blue) stay fixed.
+- `hero_description`, `footer_description` — the home-page introduction and footer blurb.
+- `contact_email`, `youtube_url`, `facebook_url` — footer links, each shown only when set.
+- `registration_fee`, `registration_deadline` — used by `fillReunionPlaceholders()`, which swaps `[AMOUNT]`/`[DEADLINE]` in the reunion blog post
 and event description (and says "to be announced" while unset). Links from settings are
 rendered only if they are http(s).
 

@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getBrand } from "@/lib/settings";
 
 // Base URL used inside emailed links. Taken from config, never from the
 // request's Host header, so a forged Host can't point a verification
@@ -26,11 +27,12 @@ export async function sendClaimEmail(to: string, name: string, link: string): Pr
   const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM is not set.");
 
+  const batch = (await getBrand()).batchName;
   const { error } = await new Resend(apiKey).emails.send({
     from,
     to,
-    subject: "Verify your Batch 11 account",
-    text: `Hi ${name},\n\nUse this link to set your password and claim your Batch 11 account (valid for 1 hour):\n\n${link}\n\nIf you didn't ask for this, you can ignore this email.`,
+    subject: `Verify your ${batch} account`,
+    text: `Hi ${name},\n\nUse this link to set your password and claim your ${batch} account (valid for 1 hour):\n\n${link}\n\nIf you didn't ask for this, you can ignore this email.`,
   });
   if (error) throw new Error(`Resend failed: ${error.message}`);
 }
@@ -51,11 +53,12 @@ export async function sendPasswordResetEmail(to: string, name: string, link: str
   const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM is not set.");
 
+  const batch = (await getBrand()).batchName;
   const { error } = await new Resend(apiKey).emails.send({
     from,
     to,
-    subject: "Reset your Batch 11 password",
-    text: `Hi ${name},\n\nUse this link to choose a new password for your Batch 11 account (valid for 1 hour):\n\n${link}\n\nIf you didn't ask for this, you can ignore this email — your password won't change.`,
+    subject: `Reset your ${batch} password`,
+    text: `Hi ${name},\n\nUse this link to choose a new password for your ${batch} account (valid for 1 hour):\n\n${link}\n\nIf you didn't ask for this, you can ignore this email — your password won't change.`,
   });
   if (error) throw new Error(`Resend failed: ${error.message}`);
 }

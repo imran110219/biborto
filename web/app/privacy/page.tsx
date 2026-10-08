@@ -3,7 +3,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { getSiteSettings } from "@/lib/settings";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Batch 11",
+  title: "Privacy Policy",
   description: "How the Khulna University Batch 11 website handles personal information.",
 };
 

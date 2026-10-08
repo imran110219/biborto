@@ -4,7 +4,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { getSessionMemberId } from "@/lib/auth/session-member";
 import { AccountTabs } from "./AccountTabs";
 
-export const metadata = { title: "My account — Batch 11" };
+export const metadata = { title: "My account" };
 
 // Shared shell for the member's own pages: Profile | Submissions & events | Security.
 export default async function AccountLayout({ children }: LayoutProps<"/account">) {

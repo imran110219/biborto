@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useBrand } from "@/components/BrandContext";
+import { BrandMark } from "@/components/layout/BrandMark";
 import {
   DashboardIcon,
   MembersIcon,
@@ -32,18 +34,13 @@ const NAV_ITEMS: { label: string; href: string; icon: typeof DashboardIcon; supe
 export function AdminSidebar({ className = "" }: { className?: string }) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const brand = useBrand();
   const role = session?.user?.platformRole;
 
   return (
     <aside className={`flex flex-col gap-9 overflow-y-auto bg-brand-green-dark p-5 text-bg-public ${className}`}>
       <div className="flex items-center gap-3 px-1.5">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-bg-public font-serif text-lg font-semibold text-brand-green">
-          11
-        </div>
-        <div className="flex flex-col leading-tight">
-          <span className="text-base font-bold">Batch 11</span>
-          <span className="text-sm text-brand-green-tint">Khulna University</span>
-        </div>
+        <BrandMark brand={brand} tone="dark" />
       </div>
 
       <nav aria-label="Admin" className="flex flex-col gap-1">

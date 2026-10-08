@@ -1,19 +1,16 @@
 import Link from "next/link";
+import { BrandMark } from "@/components/layout/BrandMark";
+import { getBrand } from "@/lib/settings";
 import { SignUpForm } from "./SignUpForm";
 
 export default async function SignUpPage({ searchParams }: PageProps<"/signup">) {
+  const brand = await getBrand();
   const { request } = await searchParams;
   return (
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-2">
       <div className="flex flex-col justify-between gap-10 bg-brand-green-dark p-9 text-bg-public md:p-[72px]">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-bg-public font-serif text-lg font-semibold text-brand-green">
-            11
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-base font-bold">Batch 11</span>
-            <span className="text-sm text-brand-green-tint">Khulna University</span>
-          </div>
+          <BrandMark brand={brand} tone="dark" />
         </Link>
 
         <div className="flex flex-col gap-5">

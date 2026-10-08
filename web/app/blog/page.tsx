@@ -10,7 +10,7 @@ import { blogFiltersToQuery, parseBlogFilters } from "@/lib/blog/filters";
 import { BLOG_CATEGORIES } from "@/lib/types";
 
 export const metadata = {
-  title: "Blog — Batch 11",
+  title: "Blog",
   description: "Stories, memories and news from the Batch 11 community.",
 };
 

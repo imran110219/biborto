@@ -161,8 +161,9 @@ named.
   (the action also rejects past or private events).
 - Member account is three tabs — Profile, Submissions & events, Security — with a
   "My events" list (cancel upcoming RSVPs) and an avatar dropdown in the navbar.
-- Admin Settings is real (`site_settings`, superadmin-only edit): organization name,
-  contact email, YouTube/Facebook links (footer) and the reunion fee/deadline that fill
+- Admin Settings is real (`site_settings`, superadmin-only edit, seeded by
+  `db/seed_site_settings.sql`): batch name, institution, motto, theme colours and intro texts (so the
+  site's identity is no longer hard-coded), contact email, YouTube/Facebook links (footer) and the reunion fee/deadline that fill
   the `[AMOUNT]`/`[DEADLINE]` markers in the reunion post and event text. Footer
   links that had nowhere to go are shown only when configured.
 - Dashboard: real "Recent activity" feed (`activity_log`, written by `lib/activity.ts`
@@ -206,6 +207,8 @@ be complete. Pick from here deliberately; none is committed work.
 - Site-wide search across members, posts, events and businesses.
 
 **Admin**
+- Move the remaining static "Batch 11" prose (Privacy/Terms text, some headings and
+  descriptions) onto the settings too, and let the committee edit those legal pages.
 - Field-level audit trail (who changed what), beyond the activity feed's summaries.
 - Admin activity feed filters and an "export report" (the old placeholder button).
 - Bulk actions for blog posts; role-change confirmation with reason.

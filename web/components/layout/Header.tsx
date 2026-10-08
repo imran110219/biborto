@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useBrand } from "@/components/BrandContext";
+import { BrandMark } from "@/components/layout/BrandMark";
 import { MEMBER_LINKS, MemberMenu, signOutMember } from "@/components/layout/MemberMenu";
 import { LockIcon, MenuIcon } from "@/components/ui/icons";
 
@@ -67,19 +69,14 @@ export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { data: session, status } = useSession();
+  const brand = useBrand();
   const isAdmin = session?.user?.platformRole === "admin" || session?.user?.platformRole === "superadmin";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border-default bg-bg-public">
       <div className="flex h-[84px] items-center justify-between px-5 md:px-20">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-green font-serif text-lg font-semibold text-bg-public">
-            11
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-base font-bold">Batch 11</span>
-            <span className="text-sm text-text-secondary">Khulna University</span>
-          </div>
+          <BrandMark brand={brand} />
         </Link>
 
         <button

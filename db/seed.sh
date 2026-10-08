@@ -50,7 +50,7 @@ fi
 echo "Applying schema.sql..."
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SCRIPT_DIR/schema.sql"
 
-for entity in disciplines countries members superadmin businesses sponsors events blog_posts gallery; do
+for entity in disciplines countries members superadmin businesses sponsors events blog_posts gallery site_settings; do
   echo "Seeding $entity..."
   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$SCRIPT_DIR/seed_${entity}.sql"
   if [[ "$entity" == "superadmin" ]]; then

@@ -10,7 +10,7 @@ import { getGoingCounts } from "@/lib/db/queries/rsvps";
 import { getDiamondSponsor } from "@/lib/db/queries/sponsors";
 import { fillReunionPlaceholders, getSiteSettings } from "@/lib/settings";
 
-export const metadata = { title: "Events — Batch 11" };
+export const metadata = { title: "Events" };
 
 export default async function EventsPage({ searchParams }: PageProps<"/events">) {
   const { view } = await searchParams;

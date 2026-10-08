@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { ImportForm } from "./ImportForm";
 
-export const metadata = { title: "Import members — Batch 11" };
+export const metadata = { title: "Import members" };
 
 export default async function ImportMembersPage() {
   const session = await auth();

@@ -7,7 +7,7 @@ import { MemberCard } from "@/components/MemberCard";
 import { PUBLIC_MEMBERS_PAGE_SIZE, getPublicMemberFilterOptions, getPublicMembersPage } from "@/lib/db/queries/members";
 import { parsePublicMemberFilters, publicMemberFiltersToQuery } from "@/lib/members/public-filters";
 
-export const metadata = { title: "Members — Batch 11" };
+export const metadata = { title: "Members" };
 
 export default async function MembersPage({ searchParams }: PageProps<"/members">) {
   const filters = parsePublicMemberFilters(await searchParams);

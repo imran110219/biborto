@@ -3,7 +3,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { getSiteSettings } from "@/lib/settings";
 
 export const metadata: Metadata = {
-  title: "Terms of Use — Batch 11",
+  title: "Terms of Use",
   description: "Terms for using the Khulna University Batch 11 website.",
 };
 

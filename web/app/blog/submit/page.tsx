@@ -5,7 +5,7 @@ import { getActiveSessionMemberId } from "@/lib/auth/session-member";
 import { getBlogImageBase } from "@/lib/blog/images";
 import { BlogSubmitForm } from "./BlogSubmitForm";
 
-export const metadata = { title: "Write for the blog — Batch 11" };
+export const metadata = { title: "Write for the blog" };
 
 export default async function SubmitPostPage() {
   const memberId = await getActiveSessionMemberId();

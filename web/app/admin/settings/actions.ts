@@ -6,11 +6,17 @@ import { siteSettings } from "@/drizzle/schema";
 import { requireSuperadmin } from "@/lib/auth/require-admin";
 import { logActivity } from "@/lib/activity";
 import { SETTING_KEYS, safeHttpUrl, type SettingKey } from "@/lib/settings";
+import { validateThemeColor } from "@/lib/theme";
 import { sql } from "drizzle-orm";
 
 const MAX_LENGTH: Record<SettingKey, number> = {
-  org_name: 100,
+  batch_name: 60,
+  institution: 100,
   motto: 100,
+  theme_color: 7,
+  accent_color: 7,
+  hero_description: 400,
+  footer_description: 300,
   contact_email: 120,
   youtube_url: 300,
   facebook_url: 300,
@@ -27,8 +33,15 @@ export async function saveSettings(_prev: string | undefined, formData: FormData
   for (const key of SETTING_KEYS) values[key] = String(formData.get(key) ?? "").trim().slice(0, MAX_LENGTH[key] + 1);
   for (const key of SETTING_KEYS) if (values[key].length > MAX_LENGTH[key]) return "One of the fields is too long.";
 
-  if (!values.org_name) return "Organization name is required.";
+  if (!values.batch_name) return "Batch name is required.";
+  if (!values.institution) return "Institution is required.";
+  const hex = (v: string) => `#${v.replace(/^#/, "")}`.toLowerCase();
+  values.theme_color = hex(values.theme_color);
+  values.accent_color = hex(values.accent_color);
+  const colorError = validateThemeColor("The main colour", values.theme_color) ?? validateThemeColor("The accent colour", values.accent_color);
+  if (colorError) return colorError;
   if (!values.motto) return "The batch motto can't be empty.";
+  if (!values.hero_description || !values.footer_description) return "The home-page and footer descriptions can't be empty.";
   if (values.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.contact_email)) return "Enter a valid contact email address.";
   for (const key of ["youtube_url", "facebook_url"] as const) {
     if (values[key] && !safeHttpUrl(values[key])) return "Social links must be full http(s) addresses.";

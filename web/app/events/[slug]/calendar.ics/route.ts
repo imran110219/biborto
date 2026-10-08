@@ -1,4 +1,5 @@
 import { getEventCalendarData } from "@/lib/db/queries/events";
+import { getBrand } from "@/lib/settings";
 
 // RFC 5545 text escaping + line folding (75 octets; we fold by characters, which is
 // safe for the mostly-ASCII content here and tolerated by calendar apps otherwise).
@@ -13,6 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const e = await getEventCalendarData(slug);
   if (!e) return new Response("Not found", { status: 404 });
 
+  const brand = await getBrand();
   const day = e.eventDate.replace(/-/g, "");
   const time = (t: string) => t.slice(0, 5).replace(":", "") + "00";
   const when: string[] = [];
@@ -28,7 +30,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Batch 11 Khulna University//Events//EN",
+    `PRODID:-//${brand.batchName} ${brand.institution}//Events//EN`,
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
     `UID:${e.slug}@batch11`,

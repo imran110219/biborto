@@ -81,7 +81,11 @@ this isn't a speculative model, it's what the UI assumes.
   `db/seed_gallery.sql` seed the remaining sample content in dependency
   order (businesses link to members; sponsors can link to businesses;
   blog posts can link to members). Their headers document mockup gaps
-  rather than invent missing source values. `activity_log` has no seed.
+  rather than invent missing source values. `db/seed_site_settings.sql` seeds the default
+  batch name, institution, motto, theme colours and intro texts (idempotent: `on conflict do nothing`, so
+  it can also be run by hand against a database that already has settings). Optional
+  settings — contact email, social links, reunion fee/deadline — are left unset on purpose.
+  `activity_log` has no seed.
   `users`/`accounts`/`sessions` are populated at runtime by claiming an
   account or signing in, not by a SQL seed.
 

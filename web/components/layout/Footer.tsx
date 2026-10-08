@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { CookieSettingsLink } from "@/components/AnalyticsConsent";
-import { getSiteSettings, safeHttpUrl } from "@/lib/settings";
+import { BrandMark } from "@/components/layout/BrandMark";
+import { brandOf, getSiteSettings, safeHttpUrl } from "@/lib/settings";
 
 export async function Footer() {
   const settings = await getSiteSettings();
+  const brand = brandOf(settings);
   const youtube = safeHttpUrl(settings.youtube_url);
   const facebook = safeHttpUrl(settings.facebook_url);
   const contact = settings.contact_email;
@@ -12,17 +14,9 @@ export async function Footer() {
       <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-bg-public font-serif text-lg font-semibold text-brand-green">
-              11
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-base font-bold">Batch 11</span>
-              <span className="text-sm text-brand-green-tint">Khulna University</span>
-            </div>
+            <BrandMark brand={brand} tone="dark" />
           </div>
-          <p className="text-sm leading-relaxed text-brand-green-tint">
-            The official space for Khulna University Batch 11 to stay connected.
-          </p>
+          <p className="text-sm leading-relaxed text-brand-green-tint">{settings.footer_description}</p>
         </div>
 
         <FooterColumn title="Explore">
@@ -50,10 +44,10 @@ export async function Footer() {
       </div>
 
       <div className="flex flex-col gap-2 border-t border-brand-green-mid pt-6 text-sm text-brand-green-tint sm:flex-row sm:justify-between">
-        <span>© {settings.org_name}</span>
+        <span>© {brand.batchName}, {brand.institution}</span>
         <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
           <CookieSettingsLink />
-          <span>Maintained by the Batch 11 committee</span>
+          <span>Maintained by the {brand.batchName} committee</span>
         </span>
       </div>
     </footer>

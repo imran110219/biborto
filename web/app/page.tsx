@@ -53,7 +53,7 @@ export default async function HomePage() {
           <div className="flex items-center gap-3">
             <span className="h-px w-8 bg-accent-amber" />
             <span className="text-xs font-bold tracking-[0.1em] text-accent-amber uppercase">
-              Khulna University · Batch 11
+              {settings.institution} · {settings.batch_name}
             </span>
           </div>
           <h1 className="font-serif text-5xl font-medium leading-[1.02] tracking-tight md:text-6xl lg:text-[3.6rem]">
@@ -64,10 +64,7 @@ export default async function HomePage() {
               </span>
             ))}
           </h1>
-          <p className="max-w-[520px] text-lg leading-relaxed text-text-muted">
-            The home of Khulna University Batch 11. Find batchmates, read their stories, join the next
-            reunion, and relive campus days in photos and videos.
-          </p>
+          <p className="max-w-[520px] text-lg leading-relaxed text-text-muted">{settings.hero_description}</p>
           <div className="flex flex-wrap gap-3.5">
             <Button href="/members">
               Find a batchmate <ArrowRightIcon />

@@ -193,8 +193,10 @@ password login without reseeding other data. `db:seed-superadmin` looks the memb
 in the admin UI either, so to change it later run an `update` on `members` and `users` by hand.
 
 **Development** uses the full seed (`npm run db:seed` / `db:reset`). **Production** should use
-`npm run db:seed:core` (or `bash db/seed.sh --core`): the 241-member roster, disciplines, countries,
-default settings and the bootstrap superadmin, with none of the sample content. After seeding,
+`server/init-db.sh` (see `server/README.md`): it runs `web/scripts/init-db.mjs` inside the app image against an
+empty database — schema, then the core seed (the 241-member roster, disciplines, countries, default settings and
+the bootstrap superadmin) plus the superadmin's login, all in one transaction, refusing a database that already
+has the schema, with none of the sample content. (`npm run db:seed:core` does the same from a development checkout.) After seeding,
 sign in as the superadmin (your `SUPERADMIN_EMAIL`, with the `SUPERADMIN_PASSWORD` you set) and fill in
 Settings; there is nothing to migrate. Because the app isn't deployed yet, any change to
 `schema.sql` is applied with `npm run db:reset` — it drops everything.

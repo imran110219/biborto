@@ -176,6 +176,9 @@ named.
 - Database cleanup (pre-production): the 15 incremental migrations were folded into `schema.sql` and
   removed (verified identical); seeds are split into core vs sample (`db:seed:core` for production);
   stale mockup wording removed from schema and seeds.
+- `server/init-db.sh` (+ `web/scripts/init-db.mjs`, shipped in the Docker image): one-command, one-transaction
+  first-time production database setup — schema, core seed and the superadmin login — that refuses a
+  non-empty database.
 - Tests: Vitest unit, integration and smoke suites (`npm test`, `npm run test:integration`,
   `npm run test:smoke`) and a CI job that seeds a database, builds and smoke-tests the app before the
   image is published. See "Testing" in docs/web/README.md.

@@ -18,7 +18,9 @@ Docker Compose plugin is installed. Create the runtime configuration:
 cp .env.example .env
 ```
 
-Edit `.env` and set at least `DATABASE_URL`, `AUTH_SECRET`, and `APP_URL`.
+Edit `.env` and set at least `DATABASE_URL`, `AUTH_SECRET`, `APP_URL` and `SUPERADMIN_PASSWORD`
+(8+ characters; put it in double quotes if it contains `#`). `SUPERADMIN_EMAIL` is optional
+(default `superadmin@biborto11.com`).
 Set `GA_MEASUREMENT_ID` and `GOOGLE_SITE_VERIFICATION` there when needed;
 the running server reads both values at request time. Add Google OAuth, R2,
 and Resend settings if those features are enabled. Keep `.env` private. Point
@@ -56,9 +58,23 @@ such as `docker.io/YOUR_DOCKERHUB_USERNAME/biborto:sha-<commit>`, then run
 
 ## Database setup
 
-The app expects Postgres and does not run schema changes automatically at
-startup. Provision the database and apply the SQL in `db/` using the existing
-database setup instructions before serving traffic. For a first deployment, seed with `npm run db:seed:core` from `web/` (or `bash db/seed.sh --core`) — that
-loads the roster, reference data, default settings and the superadmin, but not the sample content the
-development seed adds. After that, `db/migrations/` (empty until the first production deploy) holds the
-numbered files to apply by hand, in order, before deploying app changes that depend on them.
+The app expects Postgres and does not run schema changes automatically at startup.
+
+**First deployment** — provision an empty Postgres database, put its `DATABASE_URL` (reachable from
+inside the app container) and `SUPERADMIN_PASSWORD` in `server/.env`, then run once:
+
+```sh
+./init-db.sh      # schema + core data + superadmin, in one transaction
+./deploy.sh       # start the app
+```
+
+`init-db.sh` runs inside the app image (which carries the SQL), so the server needs only Docker — no
+`psql`, no Node, no copy of the repo's `db/` folder. It loads the 241-member roster, disciplines,
+countries, default settings and the bootstrap superadmin, but **not** the sample content the
+development seed adds. It refuses to run if the database already has the schema, and any failure rolls
+back, so it is safe to retry after fixing the cause. Then sign in as the superadmin and fill in Settings.
+Once it has succeeded you can remove `SUPERADMIN_PASSWORD` from `.env`: the running app never needs it.
+
+**Later releases** — `./deploy.sh` alone is enough unless the release changes the schema.
+`db/migrations/` is empty until the first production deploy; from then on it holds numbered files to apply
+by hand, in order, before deploying app changes that depend on them (see `db/migrations/README.md`).

@@ -14,6 +14,13 @@ RUN mkdir -p public
 
 RUN npm run build
 
+# Runtime-only packages for scripts/init-db.mjs. Next's standalone bundle inlines the app's own
+# copies of these, so they are not importable as modules in the final image.
+FROM node:22-alpine AS init-tools
+WORKDIR /tools
+COPY web/.npmrc ./
+RUN npm install --no-save --no-audit --no-fund postgres@3.4.9 bcryptjs@3.0.3
+
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
@@ -27,6 +34,11 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# One-time database setup (server/init-db.sh): the script, the SQL it applies, and its two packages.
+COPY --chown=nextjs:nodejs web/scripts/init-db.mjs ./scripts/init-db.mjs
+COPY --chown=nextjs:nodejs db/schema.sql db/seed_disciplines.sql db/seed_countries.sql db/seed_members.sql db/seed_superadmin.sql db/seed_site_settings.sql ./db/
+COPY --from=init-tools --chown=nextjs:nodejs /tools/node_modules/ ./node_modules/
 
 USER nextjs
 EXPOSE 3000

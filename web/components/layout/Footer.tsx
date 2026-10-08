@@ -36,6 +36,8 @@ export async function Footer() {
         <FooterColumn title="Community">
           <FooterLink href="/signin">Member login</FooterLink>
           <FooterLink href="/blog/submit">Share your story</FooterLink>
+          <FooterLink href="/privacy">Privacy policy</FooterLink>
+          <FooterLink href="/terms">Terms of use</FooterLink>
           {contact && <FooterLink href={`mailto:${contact}`}>Contact the committee</FooterLink>}
         </FooterColumn>
 

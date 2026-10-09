@@ -52,7 +52,7 @@ export async function googleSignIn(formData: FormData) {
   } catch (error) {
     if (error instanceof AuthError && error.type === "AccessDenied") {
       // Not on the roster (or not active). Nothing is recorded — there is no sign-up.
-      redirect("/signin?denied=1");
+      redirect("/signin?error=AccessDenied");
     }
     throw error;
   }

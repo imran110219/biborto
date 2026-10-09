@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { securityHeaders } from "@/lib/security/csp";
+import { publicOrigin } from "@/lib/site-url";
 
 // Runs on the Node.js runtime (the Next 16 default for proxy), so the jwt callback in
 // auth.ts can re-check the member row on every request. Two jobs:
@@ -16,7 +17,8 @@ export default auth((req) => {
   if (pathname.startsWith("/admin")) {
     const role = req.auth?.user?.platformRole;
     if (role !== "admin" && role !== "superadmin") {
-      const signInUrl = new URL("/signin", req.nextUrl.origin);
+      const origin = publicOrigin(req.nextUrl.origin);
+      const signInUrl = new URL("/signin", origin);
       signInUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(signInUrl);
     }
@@ -25,7 +27,7 @@ export default auth((req) => {
   // First sign-in: until the member has confirmed their details they can only see /welcome (plus the
   // legal pages and the sign-in screens). The flag is re-read from the database on every request.
   if (req.auth?.user && req.auth.user.profileCompleted === false && !isOnboardingPath(pathname)) {
-    return NextResponse.redirect(new URL("/welcome", req.nextUrl.origin));
+    return NextResponse.redirect(new URL("/welcome", publicOrigin(req.nextUrl.origin)));
   }
 
   const nonce = btoa(crypto.randomUUID());

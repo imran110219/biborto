@@ -10,6 +10,13 @@ import { members } from "@/drizzle/schema";
 import { clientIp, consume, normalizeKeyPart, peek, reset } from "@/lib/security/rate-limit";
 import { LIMITS } from "@/lib/security/limits";
 
+// Behind a reverse proxy the request's own origin can be internal (localhost:3000), and Auth.js
+// builds its redirects — after sign-in and sign-out — from it unless AUTH_URL is set. Default
+// AUTH_URL to the configured public site (APP_URL) so those redirects always go to the real domain.
+if (!process.env.AUTH_URL && !process.env.NEXTAUTH_URL && process.env.APP_URL) {
+  process.env.AUTH_URL = process.env.APP_URL;
+}
+
 // A genuine bcrypt hash, compared against when the email is unknown so a missing
 // account takes as long to reject as a wrong password does (no timing oracle).
 const DUMMY_HASH = bcrypt.hashSync("not-a-real-password-used-for-timing", 10);
@@ -64,7 +71,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // providers, so Google sign-ins behave the same way as credentials
   // ones rather than splitting session strategy per provider.
   session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 }, // 7 days; admin actions re-check the DB anyway
-  pages: { signIn: "/signin" },
+  // Auth.js's own error page is raw and unbranded; send every failed or refused sign-in (e.g. a Google
+  // account that isn't on the roster → AccessDenied) back to /signin?error=…, which explains it.
+  pages: { signIn: "/signin", error: "/signin" },
   providers: [
     Credentials({
       credentials: {

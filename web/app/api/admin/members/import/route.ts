@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireSuperadmin } from "@/lib/auth/require-admin";
 import { logActivity } from "@/lib/activity";
+import { configuredOrigin } from "@/lib/site-url";
 import { consume } from "@/lib/security/rate-limit";
 import { LIMITS } from "@/lib/security/limits";
 import { ImportFileError, MAX_IMPORT_BYTES, analyzeImport, applyImport, type ImportOptions } from "@/lib/members/import";
@@ -22,7 +23,9 @@ export async function POST(request: Request) {
 
   // Cookies are SameSite=Lax already; this also refuses a cross-origin POST outright.
   const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin && origin !== `${request.headers.get("x-forwarded-proto") ?? "http"}://${request.headers.get("host")}`) {
+  // Behind a proxy the request's own URL may be internal, so the configured public origin counts too.
+  const allowed = [new URL(request.url).origin, `${request.headers.get("x-forwarded-proto") ?? "http"}://${request.headers.get("host")}`, configuredOrigin()];
+  if (origin && !allowed.includes(origin)) {
     return NextResponse.json({ error: "Cross-origin request refused." }, { status: 403 });
   }
 

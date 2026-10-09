@@ -6,7 +6,7 @@ import Link from "next/link";
 import { LockIcon, MailIcon } from "@/components/ui/icons";
 import { credentialsSignIn, devSuperadminSignIn, googleSignIn } from "./actions";
 
-export function SignInForm({ callbackUrl, passwordReset = false, denied = false }: { callbackUrl: string; passwordReset?: boolean; denied?: boolean }) {
+export function SignInForm({ callbackUrl, passwordReset = false, notice }: { callbackUrl: string; passwordReset?: boolean; notice?: string }) {
   const [error, formAction, pending] = useActionState(credentialsSignIn, undefined);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -28,10 +28,9 @@ export function SignInForm({ callbackUrl, passwordReset = false, denied = false 
         </p>
       )}
 
-      {denied && !error && (
+      {notice && !error && (
         <p role="alert" className="rounded-xl bg-[#F8ECE4] px-4 py-3 text-sm text-[#9C3D10]">
-          That Google account isn&apos;t on the member roster, or the membership isn&apos;t active. Sign in with the email the
-          committee has for you, or ask the committee to add it.
+          {notice}
         </p>
       )}
 

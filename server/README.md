@@ -29,7 +29,10 @@ the server's TLS reverse proxy to `http://127.0.0.1:3000` (or the selected
 header with the real client address — sign-in and form rate limiting key on its
 first entry, so a client-supplied value would let an attacker dodge the limits.
 Serve the site over HTTPS and set `APP_URL` to the `https://` origin: that turns on
-HSTS and `upgrade-insecure-requests` in the security headers.
+HSTS and `upgrade-insecure-requests` in the security headers. `APP_URL` is also what the app
+uses for redirects after sign-in and sign-out and for the links in emails (it is copied into
+`AUTH_URL` when that is blank), so a proxy that doesn't forward the public `Host` can't send people
+to `localhost`; still, pass `Host` / `X-Forwarded-Host` and `X-Forwarded-Proto` through.
 
 For a private Docker Hub repository, log in once on the server with a Docker
 Hub access token that can pull images:

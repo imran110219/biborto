@@ -639,7 +639,15 @@ Google sign-in has no separate claim step. For an active matching member, the `e
 `members.user_id` the same way the credentials claim flow does. The Google email must be verified, matching is
 case-insensitive, and a Google account can link to a previously password-claimed account with the same verified
 email. A Google email with **no** matching active member is refused and nothing is recorded: no `pending` row, no
-Auth.js user, no session (`/signin?denied=1` explains it). See "Member onboarding".
+Auth.js user, no session. Auth.js reports it as `AccessDenied` from its callback, and `pages.error` sends every auth error to
+`/signin?error=<Type>`, where `/signin` shows a plain-language notice (not on the roster; Google sign-in didn't complete; …) instead of
+Auth.js's raw error page. A server-side failure in the OAuth callback (bad client secret, a database error, a redirect-URI mismatch)
+surfaces as `error=Configuration`; the real cause is in the server log (`docker compose logs web`, lines starting `[auth][error]`). See "Member onboarding".
+
+**Public origin behind a proxy.** Auth.js builds its post-sign-in/sign-out redirects from the request's origin unless
+`AUTH_URL` is set, and behind a reverse proxy that origin can be the container's own (`localhost:3000`). `auth.ts` therefore
+defaults `AUTH_URL` to `APP_URL` when neither is set, and `proxy.ts` and the CSV-import origin check use
+`lib/site-url.ts` (`publicOrigin`/`configuredOrigin`) the same way. Set `APP_URL` in production.
 
 **Role-gating `/admin/**`**: `proxy.ts` (Next.js 16 renamed
 `middleware.ts` — the deprecation warning is real, don't ignore it) reads

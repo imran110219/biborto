@@ -105,7 +105,10 @@ describe("access control", () => {
     const html = await (await get("/signup")).text();
     expect(html).toContain("Activate your account");
     expect(html).not.toMatch(/Request membership/i);
-    expect((await get("/signin?denied=1")).status).toBe(200);
+    const denied = await (await get("/signin?error=AccessDenied")).text();
+    expect(denied).toMatch(/isn(&#x27;|&apos;|')t on the member roster/);
+    const failed = await (await get("/signin?error=Configuration")).text();
+    expect(failed).toMatch(/Google sign-in didn(&#x27;|&apos;|')t complete/);
   });
 
   it("refuses protected APIs without a session", async () => {

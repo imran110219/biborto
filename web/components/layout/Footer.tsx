@@ -47,7 +47,12 @@ export async function Footer() {
         <span>© {brand.batchName}, {brand.institution}</span>
         <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
           <CookieSettingsLink />
-          <span>Maintained by the {brand.batchName} committee</span>
+          <span>
+            Maintained by{" "}
+            <a href="https://www.ciphertextlabs.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-bg-public hover:underline">
+              Cipher Text Lab
+            </a>
+          </span>
         </span>
       </div>
     </footer>

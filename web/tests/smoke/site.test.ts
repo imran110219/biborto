@@ -31,6 +31,7 @@ describe("public pages", () => {
     const html = await (await get("/")).text();
     expect(html).toMatch(/One as an individual/);
     expect(html).toMatch(/<footer/);
+    expect(html).toMatch(/href="https:\/\/www\.ciphertextlabs\.com"[^>]*>Cipher Text Lab</);
   });
 
   it("member search and filters work, and junk filters are ignored", async () => {
